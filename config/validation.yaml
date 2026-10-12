@@ -1,0 +1,22 @@
+# Validation policy (DESIGN §9, brief §7). Confidence is internal only and never shown to users.
+confidence_threshold: 0.85
+# Required for a record to be `valid` (publishable). Missing → needs_review.
+required:
+  credit_card: [official_name, segment, annual_fee_cents]
+  checking: [official_name, monthly_fee_cents, min_opening_deposit_cents]
+  savings: [official_name, monthly_fee_cents, apy]          # apy = apy_pct or apy_tiers
+# Key fields for the "Verified" label. Missing → published as "Partially verified" (listed to users).
+key:
+  credit_card: [reward_currency, base_rate, foreign_tx_fee_pct]
+  checking: [fee_waivers]
+  savings: [min_opening_deposit_cents]
+generic_names: [unknown, "credit card", "credit cards", card, "apply now", checking, savings, "checking account",
+                "savings account", "learn more", "compare cards", "rewards card", "n/a", "none"]
+sanity:
+  card_annual_fee_max_cents: 100000      # $1,000
+  deposit_monthly_fee_max_cents: 5000    # $50
+  apy_max_pct: 15
+  apr_max_pct: 40
+  regulator_tolerance_pct: 0.01
+  regulator_tolerance_cents: 0
+regulator_conflict_downgrades: false

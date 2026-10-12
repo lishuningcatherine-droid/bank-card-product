@@ -1,0 +1,18 @@
+# Controlled vocabulary for reward categories, with synonym phrases (matched case-insensitively, longest first).
+categories:
+  groceries: {label: Groceries, synonyms: ["grocery stores", "groceries", "supermarkets", "u.s. supermarkets", "grocery"]}
+  dining: {label: Dining, synonyms: ["dining", "restaurants", "takeout", "eligible delivery services", "food delivery"]}
+  travel: {label: Travel, synonyms: ["travel", "travel purchases", "flights", "hotels and car rentals"]}
+  airline: {label: Airline, synonyms: ["flights booked directly with airlines", "airline purchases", "airfare"]}
+  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels"]}
+  gas: {label: Gas, synonyms: ["gas stations", "gas", "fuel", "u.s. gas stations", "gas and ev charging"]}
+  ev_charging: {label: EV charging, synonyms: ["ev charging", "electric vehicle charging"]}
+  entertainment: {label: Entertainment, synonyms: ["entertainment", "live entertainment"]}
+  streaming: {label: Streaming, synonyms: ["streaming services", "select u.s. streaming subscriptions", "streaming"]}
+  transit: {label: Transit, synonyms: ["transit", "rideshare", "commuting", "parking", "tolls", "trains", "buses"]}
+  online_shopping: {label: Online shopping, synonyms: ["online shopping", "online retail purchases", "online purchases"]}
+  drugstores: {label: Drugstores, synonyms: ["drugstores", "drugstore purchases", "pharmacies"]}
+  wholesale_clubs: {label: Wholesale clubs, synonyms: ["wholesale clubs"]}
+  home_improvement: {label: Home improvement, synonyms: ["home improvement stores", "home improvement"]}
+  rotating: {label: Rotating bonus categories, synonyms: ["bonus categories", "quarterly categories", "rotating categories"]}
+  other: {label: Everything else, synonyms: ["all other purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase"]}

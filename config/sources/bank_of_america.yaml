@@ -1,0 +1,5 @@
+# No product URLs yet: none could be retrieved or confirmed from the build environment
+# (egress policy refused the domain; see docs/REACHABILITY.md). Add only URLs confirmed on the
+# official site. Discovered URLs go to bank_of_america.discovered.yaml with enabled: false.
+bank_id: bank_of_america
+sources: []

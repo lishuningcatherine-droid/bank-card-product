@@ -1,0 +1,10 @@
+# Change classification (DESIGN §21.3, brief §9). Anything not listed as minor is major (review).
+minor:
+  apy_pct: {max_abs_change_pp: 0.25}
+  apy_tiers: {max_abs_change_pp: 0.25, same_tier_boundaries: true}
+  variable_apr_uniform_shift: {max_abs_change_pp: 0.50}
+  terms_url: {same_domain: true}
+# Informational fields that may change without review (wording-only evidence changes).
+ignore: [rate_type_note, overdraft_summary, eligibility_restrictions, credit_profile_guidance]
+# New offers on existing products go to review. This can be relaxed once parsers have a track record.
+new_offer_on_existing_product: review

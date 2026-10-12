@@ -1,0 +1,14 @@
+# Declarative extraction rules for the fictional Example Bank.
+name_selector: "h1.product-name"
+reward_selector: ".earn-rates li"
+credit_selector: ".credits li"
+benefit_selector: ".benefits li"
+offer_selector: ".offer .offer-headline"
+offer_footnote_selector: ".offer .footnote"
+offer_tier_selector: ".offer .tiers li"
+waiver_selector: ".fee-waivers li"
+apy_tier_selector: "table.apy-tiers tr"
+terms_link_selector: "a.terms-link"
+reward_program_pattern: "Example Rewards"
+co_brands:
+  airline: ["Example Air"]

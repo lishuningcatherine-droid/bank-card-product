@@ -1,0 +1,21 @@
+# Capital One. Product-type availability stays "unknown" until the reachability survey (docs/REACHABILITY.md)
+# confirms it from an official page. Nothing below was retrieved from this build environment.
+bank_id: capital_one
+display_name: "Capital One"
+official_domains: [capitalone.com]
+adapter: capital_one
+capture_timezone: America/New_York
+product_types:
+  credit_card: {availability: unknown, note: "pending reachability survey"}
+  checking: {availability: unknown, note: "pending reachability survey"}
+  savings: {availability: unknown, note: "pending reachability survey"}
+meaningful_query_params: []
+referral_url_patterns: []
+boilerplate_phrases: []
+cfpb_issuer_names: []
+discovery:
+  robots_url: "https://www.capitalone.com/robots.txt"
+  sitemaps: ["https://www.capitalone.com/sitemap.xml"]
+known_limitations:
+  - "Owner pre-survey (unverified here): card pages are static."
+  - "Owner pre-survey: savings APY is rendered client-side and appears as NaN in static HTML (requires_render)."

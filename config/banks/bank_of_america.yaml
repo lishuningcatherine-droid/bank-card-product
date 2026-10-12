@@ -1,0 +1,21 @@
+# Bank of America. Product-type availability stays "unknown" until the reachability survey (docs/REACHABILITY.md)
+# confirms it from an official page. Nothing below was retrieved from this build environment.
+bank_id: bank_of_america
+display_name: "Bank of America"
+official_domains: [bankofamerica.com]
+adapter: bank_of_america
+capture_timezone: America/New_York
+product_types:
+  credit_card: {availability: unknown, note: "pending reachability survey"}
+  checking: {availability: unknown, note: "pending reachability survey"}
+  savings: {availability: unknown, note: "pending reachability survey"}
+meaningful_query_params: []
+referral_url_patterns: []
+boilerplate_phrases: ["temporarily unavailable"]
+cfpb_issuer_names: []
+discovery:
+  robots_url: "https://www.bankofamerica.com/robots.txt"
+  sitemaps: ["https://www.bankofamerica.com/content/sitemap_index.xml"]
+known_limitations:
+  - "Owner pre-survey (unverified here): card pages are static but contain hidden temporarily unavailable boilerplate."
+  - "Owner pre-survey: robots disallows /deposits/*.pdf."

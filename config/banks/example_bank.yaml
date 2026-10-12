@@ -1,0 +1,21 @@
+# FICTIONAL bank used to prove extensibility and to drive tests/E2E. Never published in production.
+bank_id: example_bank
+display_name: "Example Bank (test data)"
+official_domains: [examplebank.example]
+adapter: example_bank
+test_only: true
+capture_timezone: America/New_York
+product_types:
+  credit_card: {availability: offered, evidence_url: "https://www.examplebank.example/credit-cards"}
+  checking: {availability: offered, evidence_url: "https://www.examplebank.example/checking"}
+  savings: {availability: offered, evidence_url: "https://www.examplebank.example/savings"}
+meaningful_query_params: []
+referral_url_patterns: ["/invite/"]
+block_signatures: []
+boilerplate_phrases: ["this feature is temporarily unavailable"]
+cfpb_issuer_names: ["EXAMPLE BANK, N.A."]
+discovery:
+  robots_url: "https://www.examplebank.example/robots.txt"
+  sitemaps: ["https://www.examplebank.example/sitemap.xml"]
+known_limitations:
+  - "Fictional test bank; all pages are synthetic fixtures under tests/fixtures/example_bank/."

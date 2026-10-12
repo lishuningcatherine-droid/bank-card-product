@@ -1,0 +1,135 @@
+# Fictional Example Bank sources (test_only). fixture_path serves the synthetic page instead of the network.
+bank_id: example_bank
+sources:
+- bank_id: example_bank
+  slug: everyday-cash
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/everyday-cash
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Everyday Cash Card
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/card_everyday_cash.html
+- bank_id: example_bank
+  slug: voyager-rewards
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/voyager-rewards
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Voyager Rewards Card
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/card_voyager_rewards.html
+- bank_id: example_bank
+  slug: example-air-miles
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/example-air-miles
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Air Miles Card from Example Bank
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/card_example_air_miles.html
+- bank_id: example_bank
+  slug: business-cash
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/business-cash
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Business Cash Card
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/card_business_cash.html
+- bank_id: example_bank
+  slug: secured
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/secured
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Secured Card
+  has_offers: false
+  fixture_path: tests/fixtures/example_bank/card_secured.html
+- bank_id: example_bank
+  slug: student-cash
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/student-cash
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Student Cash Card
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/card_student_cash.html
+- bank_id: example_bank
+  slug: rotating-cash
+  product_type: credit_card
+  source_url: https://www.examplebank.example/credit-cards/rotating-cash
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Rotating Cash Card
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/card_rotating_cash.html
+- bank_id: example_bank
+  slug: everyday-checking
+  product_type: checking
+  source_url: https://www.examplebank.example/checking/everyday-checking
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Everyday Checking
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/checking_everyday_checking.html
+- bank_id: example_bank
+  slug: online-checking
+  product_type: checking
+  source_url: https://www.examplebank.example/checking/online-checking
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Online Checking
+  has_offers: false
+  fixture_path: tests/fixtures/example_bank/checking_online_checking.html
+- bank_id: example_bank
+  slug: high-yield
+  product_type: savings
+  source_url: https://www.examplebank.example/savings/high-yield
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank High Yield Savings
+  has_offers: true
+  fixture_path: tests/fixtures/example_bank/savings_high_yield.html
+- bank_id: example_bank
+  slug: tiered
+  product_type: savings
+  source_url: https://www.examplebank.example/savings/tiered
+  source_kind: product_detail
+  parser_name: example_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Example Bank Tiered Savings
+  has_offers: false
+  fixture_path: tests/fixtures/example_bank/savings_tiered.html

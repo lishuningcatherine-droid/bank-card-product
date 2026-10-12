@@ -1,0 +1,111 @@
+"""Fresh-context Playwright rendering for ``requires_render`` sources (DESIGN §22.1, brief §6.4).
+
+The browser is injected (one per run) so adapters and tests can mock it. Every page gets a brand-new context with no
+cookies, no storage state and no login, en-US locale and a U.S. timezone. The page is loaded once; XHR/fetch
+responses the page itself loads from official domains are kept as supporting evidence; requests to robots-disallowed
+paths are aborted, never fetched.
+"""
+
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+from urllib.parse import urlsplit
+
+from bankrec.failures import Failure
+from bankrec.ingest.fetch import FetchResult, HostRateLimiter, RobotsCache
+from bankrec.registry.schema import BankConfig, SourceEntry
+from bankrec.registry.urls import canonicalize, domain_allowed, looks_like_referral
+from bankrec.settings import Settings
+
+VIEWPORT = {"width": 1280, "height": 900}
+MAX_EVIDENCE_BYTES = 200_000
+
+
+class Renderer:
+    def __init__(self, settings: Settings, browser: Any, robots: RobotsCache, limiter: HostRateLimiter) -> None:
+        self.settings, self.browser, self.robots, self.limiter = settings, browser, robots, limiter
+
+    def render(self, source: SourceEntry, bank: BankConfig) -> FetchResult:
+        url = canonicalize(str(source.source_url), bank.meaningful_query_params)
+        started = datetime.now(UTC)
+        blocked = self.robots.check(url)
+        if blocked is not None:
+            return FetchResult(url, url, None, "", b"", started, failure=blocked, detail="robots.txt")
+        self.limiter.wait(urlsplit(url).netloc)
+        context = self.browser.new_context(storage_state=None, locale="en-US", timezone_id=bank.capture_timezone,
+                                           user_agent=self.settings.user_agent, viewport=VIEWPORT,
+                                           java_script_enabled=True)
+        cookies_at_start = len(context.cookies())
+        evidence: list[dict[str, Any]] = []
+        aborted: list[str] = []
+
+        def on_route(route: Any) -> None:
+            req = route.request
+            if req.resource_type in {"xhr", "fetch", "document"} and domain_allowed(req.url, bank.official_domains):
+                if self.robots.check(req.url) is not None:
+                    aborted.append(req.url)
+                    route.abort()
+                    return
+            route.continue_()
+
+        def on_response(resp: Any) -> None:
+            req = resp.request
+            if req.resource_type in {"xhr", "fetch"} and domain_allowed(resp.url, bank.official_domains):
+                try:
+                    body = resp.body()[:MAX_EVIDENCE_BYTES]
+                    evidence.append({"url": resp.url, "status": resp.status,
+                                     "content_type": resp.headers.get("content-type", ""),
+                                     "body": body.decode("utf-8", errors="replace")})
+                except Exception:  # noqa: S110  (evidence is best-effort)
+                    pass
+
+        try:
+            context.route("**/*", on_route)
+            page = context.new_page()
+            page.on("response", on_response)
+            resp = page.goto(url, wait_until="networkidle", timeout=45_000)
+            waited = "networkidle"
+            if source.render_ready_selector:
+                page.wait_for_selector(source.render_ready_selector, timeout=15_000)
+                waited += f"+selector:{source.render_ready_selector}"
+            clicked = []
+            for sel in source.expand_selectors:
+                loc = page.locator(sel)
+                if loc.count():
+                    loc.first.click()
+                    clicked.append(sel)
+            html = page.content()
+            final = page.url
+            status = resp.status if resp is not None else None
+            chain: list[str] = []
+            r = resp.request if resp is not None else None
+            while r is not None and r.redirected_from is not None:
+                r = r.redirected_from
+                chain.insert(0, r.url)
+            browser_version = self.browser.version
+        except Exception as e:
+            context.close()
+            msg = str(e)
+            f = Failure.TIMEOUT if "Timeout" in msg else (
+                Failure.ENV_NETWORK_BLOCKED if "ERR_TUNNEL" in msg or "ERR_PROXY" in msg or "ERR_NAME" in msg
+                else Failure.HTTP_ERROR)
+            return FetchResult(url, url, None, "", b"", started, failure=f, detail=msg[:300])
+        context.close()
+        now = datetime.now(UTC)
+        conditions = {
+            "capture_context": "public_default", "method": "playwright", "context_fresh": True,
+            "cookies_at_start": cookies_at_start, "storage_state": None, "login": False, "locale": "en-US",
+            "timezone_id": bank.capture_timezone, "viewport": VIEWPORT, "user_agent": self.settings.user_agent,
+            "url_canonical": url, "url_final": final, "redirect_chain": chain,
+            "render_wait": {"strategy": waited}, "expanders_clicked": clicked, "aborted_robots_disallowed": aborted,
+            "captured_at": now.isoformat(), "browser": f"chromium {browser_version}",
+            "runner_label": self.settings.capture_runner_label,
+        }
+        res = FetchResult(url, final, status, "text/html; charset=utf-8", html.encode("utf-8"), now, chain,
+                          capture_conditions=conditions, supporting_responses=evidence)
+        if not domain_allowed(final, bank.official_domains):
+            res.failure, res.detail = Failure.REDIRECT_OFF_DOMAIN, f"redirected to {final}"
+        elif looks_like_referral(final, bank.referral_url_patterns):
+            conditions["capture_anomaly"] = "redirected_to_referral_or_tracking_url"
+        return res

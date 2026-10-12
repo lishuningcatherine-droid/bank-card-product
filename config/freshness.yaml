@@ -1,0 +1,8 @@
+# Check cadence (schedule) is separate from the staleness window (stale_after_days). DESIGN §11, §21.1.
+timezone: UTC
+offer_expiry_timezone: America/New_York
+tiers:
+  apy:               {schedule: "0 */12 * * *", stale_after_days: 7}
+  offer:             {schedule: "15 6 * * *",   stale_after_days: 14}
+  terms:             {schedule: "30 7 * * 1",   stale_after_days: 60}
+  regulator_release: {schedule: "45 8 * * *",   mode: on_release}

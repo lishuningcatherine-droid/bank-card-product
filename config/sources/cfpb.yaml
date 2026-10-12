@@ -1,0 +1,4 @@
+# Add the TCCP and Credit Card Agreements dataset URLs once confirmed (source_kind: regulator_dataset,
+# parser_name: cfpb_tccp | cfpb_agreements). See docs/REACHABILITY.md.
+bank_id: cfpb
+sources: []

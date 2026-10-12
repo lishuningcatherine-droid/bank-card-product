@@ -1,0 +1,10 @@
+# Consumer Financial Protection Bureau: cross-check source only (DESIGN §21.7). Never publishes values.
+bank_id: cfpb
+display_name: "Consumer Financial Protection Bureau"
+role: regulator
+official_domains: [consumerfinance.gov]
+adapter: cfpb
+discovery:
+  robots_url: "https://www.consumerfinance.gov/robots.txt"
+known_limitations:
+  - "Dataset landing-page and download URLs are not configured: consumerfinance.gov was refused by the build environment's egress policy, and URLs are never guessed."
