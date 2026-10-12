@@ -26,9 +26,14 @@ _CAP = re.compile(
     r"billing\s+cycle|cardmember\s+year)",
     re.IGNORECASE,
 )
-_POST_CAP = re.compile(r"(?:then|after that,?)\s+(?P<num>\d{1,2}(?:\.\d{1,2})?)\s*(?:%|[xX]\b)", re.IGNORECASE)
-_ROTATING = re.compile(r"\b(?:rotating|bonus categories (?:that change )?each quarter|quarterly bonus categories|"
-                       r"categories each quarter)\b", re.IGNORECASE)
+_POST_CAP = re.compile(
+    r"(?:then|after that,?)\s+(?P<num>\d{1,2}(?:\.\d{1,2})?)\s*(?:%|[xX]\b)", re.IGNORECASE
+)
+_ROTATING = re.compile(
+    r"\b(?:rotating|bonus categories (?:that change )?each quarter|quarterly bonus categories|"
+    r"categories each quarter)\b",
+    re.IGNORECASE,
+)
 _ACTIVATION = re.compile(r"\b(?:activate|activation|enroll(?:ment)?|opt[- ]in)\b", re.IGNORECASE)
 _PORTAL = re.compile(
     r"\b(?:booked|purchased|reserved|made)\s+(?:directly\s+)?(?:through|via|on)\s+(?:the\s+)?"
@@ -41,11 +46,34 @@ _UNTIL = re.compile(
     r"november|december)\s+(?P<d>\d{1,2}),?\s+(?P<y>\d{4})",
     re.IGNORECASE,
 )
-_MONTHS = {m: i for i, m in enumerate(
-    ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november",
-     "december"], start=1)}
-_PERIODS = {"calendar year": "annual", "year": "annual", "cardmember year": "annual", "quarter": "quarterly",
-            "month": "monthly", "billing cycle": "monthly"}
+_MONTHS = {
+    m: i
+    for i, m in enumerate(
+        [
+            "january",
+            "february",
+            "march",
+            "april",
+            "may",
+            "june",
+            "july",
+            "august",
+            "september",
+            "october",
+            "november",
+            "december",
+        ],
+        start=1,
+    )
+}
+_PERIODS = {
+    "calendar year": "annual",
+    "year": "annual",
+    "cardmember year": "annual",
+    "quarter": "quarterly",
+    "month": "monthly",
+    "billing cycle": "monthly",
+}
 
 
 @dataclass
@@ -75,7 +103,7 @@ def parse_reward_statement(text: str) -> RewardRate | None:
         return None
     rate = Decimal(m.group("num"))
     unit = "pct" if m.group("pct") else "x"
-    rest = text[m.end():]
+    rest = text[m.end() :]
     cats = categories_in(rest) or categories_in(text)
     is_base = "other" in cats and len(cats) == 1
     cats = [c for c in cats if c != "other"] or (["other"] if is_base else [])

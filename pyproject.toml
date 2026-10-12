@@ -62,10 +62,12 @@ extend-exclude = ["legacy", "web"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "S", "SIM", "RUF"]
-ignore = ["S101", "RUF001", "RUF002", "RUF003", "S608"]
+# E501: the formatter owns line length; long literals (regexes, URLs, messages) stay readable on one line.
+ignore = ["S101", "RUF001", "RUF002", "RUF003", "S608", "E501", "UP046"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S", "B011"]
+"tests/**" = ["S", "B011", "RUF012"]
+"src/bankrec/ingest/pipeline.py" = ["S607"]
 
 [tool.mypy]
 python_version = "3.12"
@@ -74,6 +76,7 @@ mypy_path = "src"
 ignore_missing_imports = true
 warn_unused_ignores = true
 check_untyped_defs = true
+plugins = ["pydantic.mypy"]
 
 [tool.coverage.run]
 source = ["bankrec"]

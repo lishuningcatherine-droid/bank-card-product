@@ -11,7 +11,6 @@ import re
 from dataclasses import dataclass, field
 from enum import StrEnum
 
-from bankrec.parsers.money import _dollars_to_cents
 from bankrec.parsers.period import Period, parse_period
 from bankrec.parsers.placeholders import contains_placeholder
 
@@ -23,8 +22,15 @@ class Qualifier(StrEnum):
 
 
 VARIABILITY_PHRASES = [
-    r"earn\s+up\s+to", r"up\s+to", r"as\s+high\s+as", r"you\s+may\s+be\s+eligible\s+for", r"offers?\s+may\s+vary",
-    r"offers?\s+vary", r"may\s+vary", r"could\s+earn", r"potential(?:ly)?",
+    r"earn\s+up\s+to",
+    r"up\s+to",
+    r"as\s+high\s+as",
+    r"you\s+may\s+be\s+eligible\s+for",
+    r"offers?\s+may\s+vary",
+    r"offers?\s+vary",
+    r"may\s+vary",
+    r"could\s+earn",
+    r"potential(?:ly)?",
 ]
 FLOOR_PHRASES = [r"at\s+least", r"starting\s+at", r"a\s+minimum\s+of"]
 _VAR = re.compile(r"\b(?:" + "|".join(VARIABILITY_PHRASES) + r")\b", re.IGNORECASE)
@@ -38,19 +44,34 @@ _POINTS = re.compile(
 _CASH = re.compile(r"\$\s*(?P<n>\d{1,3}(?:,\d{3})+|\d+)(?:\.(?P<c>\d{2}))?")
 _NUMBER = re.compile(r"\$?\s*\d[\d,]*(?:\.\d+)?\s*%?")
 
-_REQ_SPEND = re.compile(r"(?:spend|make|making|purchases?\s+(?:totaling|of))\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)"
-                        r"(?:\.\d{2})?(?:\s+(?:or more\s+)?(?:on|in)\s+(?:eligible\s+|net\s+)?purchases)?",
-                        re.IGNORECASE)
-_REQ_DD = re.compile(r"(?:direct\s+deposits?|electronic\s+deposits?)\s+(?:totaling|of|that total)\s+"
-                     r"(?:at\s+least\s+|\$?\s*)?\$?\s*(?P<n>[\d,]+)", re.IGNORECASE)
-_REQ_NEW_MONEY = re.compile(r"(?:deposit|transfer)\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)\s+(?:or more\s+)?"
-                            r"(?:in\s+)?(?:new\s+money|new\s+funds|in\s+new\s+money)", re.IGNORECASE)
-_DD_COUNT = re.compile(r"(?P<n>\d|one|two|three|four|five)\s+(?:or more\s+)?(?:qualifying\s+)?direct\s+deposits",
-                       re.IGNORECASE)
-_WINDOW = re.compile(r"(?:within|in)\s+(?:the\s+)?(?:first\s+)?\d+\s*(?:days?|months?)|"
-                     r"(?:within|in)\s+(?:the\s+)?first\s+\w+\s+(?:days?|months?)", re.IGNORECASE)
-_HOLD = re.compile(r"(?:maintain|keep|hold)[^.]{0,80}?for\s+(?:at\s+least\s+)?(\d+|ninety|sixty|thirty)\s+"
-                   r"(days?|months?)", re.IGNORECASE)
+_REQ_SPEND = re.compile(
+    r"(?:spend|make|making|purchases?\s+(?:totaling|of))\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)"
+    r"(?:\.\d{2})?(?:\s+(?:or more\s+)?(?:on|in)\s+(?:eligible\s+|net\s+)?purchases)?",
+    re.IGNORECASE,
+)
+_REQ_DD = re.compile(
+    r"(?:direct\s+deposits?|electronic\s+deposits?)\s+(?:totaling|of|that total)\s+"
+    r"(?:at\s+least\s+|\$?\s*)?\$?\s*(?P<n>[\d,]+)",
+    re.IGNORECASE,
+)
+_REQ_NEW_MONEY = re.compile(
+    r"(?:deposit|transfer)\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)\s+(?:or more\s+)?"
+    r"(?:in\s+)?(?:new\s+money|new\s+funds|in\s+new\s+money)",
+    re.IGNORECASE,
+)
+_DD_COUNT = re.compile(
+    r"(?P<n>\d|one|two|three|four|five)\s+(?:or more\s+)?(?:qualifying\s+)?direct\s+deposits", re.IGNORECASE
+)
+_WINDOW = re.compile(
+    r"(?:within|in)\s+(?:the\s+)?(?:first\s+)?\d+\s*(?:days?|months?)|"
+    r"(?:within|in)\s+(?:the\s+)?first\s+\w+\s+(?:days?|months?)",
+    re.IGNORECASE,
+)
+_HOLD = re.compile(
+    r"(?:maintain|keep|hold)[^.]{0,80}?for\s+(?:at\s+least\s+)?(\d+|ninety|sixty|thirty)\s+"
+    r"(days?|months?)",
+    re.IGNORECASE,
+)
 _REQ_VARY = re.compile(r"(?:spend(?:ing)?|purchase)\s+requirements?\s+(?:may\s+)?vary", re.IGNORECASE)
 _WORDNUM = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "thirty": 30, "sixty": 60, "ninety": 90}
 
@@ -79,7 +100,9 @@ def _int(tok: str) -> int:
     return int(tok.replace(",", ""))
 
 
-def _reward_amount(block: str, requirement_spans: list[tuple[int, int]]) -> tuple[int, str, tuple[int, int]] | None:
+def _reward_amount(
+    block: str, requirement_spans: list[tuple[int, int]]
+) -> tuple[int, str, tuple[int, int]] | None:
     """First points/miles amount, else the first cash amount that is not part of a requirement."""
     pm = _POINTS.search(block)
     if pm:
@@ -97,7 +120,9 @@ def parse_offer_block(block: str, footnotes: str = "") -> ParsedOffer | None:
     """Parse a welcome-offer or bonus block. Returns None when no reward amount is present."""
     if contains_placeholder(block):
         return None
-    req_matches = [m for m in (_REQ_SPEND.search(block), _REQ_DD.search(block), _REQ_NEW_MONEY.search(block)) if m]
+    req_matches = [
+        m for m in (_REQ_SPEND.search(block), _REQ_DD.search(block), _REQ_NEW_MONEY.search(block)) if m
+    ]
     req_spans = [(m.start(), m.end()) for m in req_matches]
     amt = _reward_amount(block, req_spans)
     if amt is None:
@@ -111,8 +136,10 @@ def parse_offer_block(block: str, footnotes: str = "") -> ParsedOffer | None:
         tied_elsewhere = (
             nxt is not None
             and nxt.start() - vm.end() <= 40
-            and not (span[0] <= nxt.start() + (len(nxt.group(0)) - len(nxt.group(0).lstrip("$ "))) < span[1]
-                     or nxt.start() <= span[0] < nxt.end())
+            and not (
+                span[0] <= nxt.start() + (len(nxt.group(0)) - len(nxt.group(0).lstrip("$ "))) < span[1]
+                or nxt.start() <= span[0] < nxt.end()
+            )
         )
         if tied_elsewhere:
             continue  # e.g. "on up to $1,500 in purchases" (a cap) or "up to 5% cash back" (a rate)
@@ -123,7 +150,7 @@ def parse_offer_block(block: str, footnotes: str = "") -> ParsedOffer | None:
         if fm:
             qualifier, evidence = Qualifier.up_to, fm.group(0)
     if qualifier is Qualifier.exact:
-        fl = _FLOOR.search(block[max(0, span[0] - 20):span[0]].rstrip("$ "))
+        fl = _FLOOR.search(block[max(0, span[0] - 20) : span[0]].rstrip("$ "))
         if fl:
             qualifier, evidence = Qualifier.starting_at, fl.group(0).strip()
 
@@ -139,7 +166,9 @@ def parse_offer_block(block: str, footnotes: str = "") -> ParsedOffer | None:
     spend, dd, nm = (_REQ_SPEND.search(block), _REQ_DD.search(block), _REQ_NEW_MONEY.search(block))
     req = spend or dd or nm
     if req is not None:
-        po.requirement_type = "spend" if req is spend else "direct_deposit_total" if req is dd else "new_money_deposit"
+        po.requirement_type = (
+            "spend" if req is spend else "direct_deposit_total" if req is dd else "new_money_deposit"
+        )
         cents = _int(req.group("n")) * 100
         po.requirement_span = (req.start(), req.end())
         if _REQ_VARY.search(block) or _REQ_VARY.search(footnotes):

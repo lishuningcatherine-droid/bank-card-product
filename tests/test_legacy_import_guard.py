@@ -15,9 +15,7 @@ WEB_ROOT = REPO_ROOT / "web"
 WEB_EXTS = {".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"}
 WEB_SKIP = {"node_modules", ".next", "out"}
 
-_WEB_IMPORT = re.compile(
-    r"""(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+)['"]([^'"]+)['"]"""
-)
+_WEB_IMPORT = re.compile(r"""(?:from\s+|import\s*\(\s*|require\s*\(\s*|import\s+)['"]([^'"]+)['"]""")
 
 
 def python_violations(path: Path) -> list[str]:
@@ -57,14 +55,8 @@ def _web_files() -> list[Path]:
 
 
 def test_production_code_does_not_import_legacy() -> None:
-    violations = {
-        str(p.relative_to(REPO_ROOT)): v
-        for p in _python_files()
-        if (v := python_violations(p))
-    }
-    violations |= {
-        str(p.relative_to(REPO_ROOT)): v for p in _web_files() if (v := web_violations(p))
-    }
+    violations = {str(p.relative_to(REPO_ROOT)): v for p in _python_files() if (v := python_violations(p))}
+    violations |= {str(p.relative_to(REPO_ROOT)): v for p in _web_files() if (v := web_violations(p))}
     assert not violations, f"production code references legacy/: {violations}"
 
 

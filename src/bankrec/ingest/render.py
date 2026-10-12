@@ -23,7 +23,9 @@ MAX_EVIDENCE_BYTES = 200_000
 
 
 class Renderer:
-    def __init__(self, settings: Settings, browser: Any, robots: RobotsCache, limiter: HostRateLimiter) -> None:
+    def __init__(
+        self, settings: Settings, browser: Any, robots: RobotsCache, limiter: HostRateLimiter
+    ) -> None:
         self.settings, self.browser, self.robots, self.limiter = settings, browser, robots, limiter
 
     def render(self, source: SourceEntry, bank: BankConfig) -> FetchResult:
@@ -33,20 +35,28 @@ class Renderer:
         if blocked is not None:
             return FetchResult(url, url, None, "", b"", started, failure=blocked, detail="robots.txt")
         self.limiter.wait(urlsplit(url).netloc)
-        context = self.browser.new_context(storage_state=None, locale="en-US", timezone_id=bank.capture_timezone,
-                                           user_agent=self.settings.user_agent, viewport=VIEWPORT,
-                                           java_script_enabled=True)
+        context = self.browser.new_context(
+            storage_state=None,
+            locale="en-US",
+            timezone_id=bank.capture_timezone,
+            user_agent=self.settings.user_agent,
+            viewport=VIEWPORT,
+            java_script_enabled=True,
+        )
         cookies_at_start = len(context.cookies())
         evidence: list[dict[str, Any]] = []
         aborted: list[str] = []
 
         def on_route(route: Any) -> None:
             req = route.request
-            if req.resource_type in {"xhr", "fetch", "document"} and domain_allowed(req.url, bank.official_domains):
-                if self.robots.check(req.url) is not None:
-                    aborted.append(req.url)
-                    route.abort()
-                    return
+            if (
+                req.resource_type in {"xhr", "fetch", "document"}
+                and domain_allowed(req.url, bank.official_domains)
+                and self.robots.check(req.url) is not None
+            ):
+                aborted.append(req.url)
+                route.abort()
+                return
             route.continue_()
 
         def on_response(resp: Any) -> None:
@@ -54,9 +64,14 @@ class Renderer:
             if req.resource_type in {"xhr", "fetch"} and domain_allowed(resp.url, bank.official_domains):
                 try:
                     body = resp.body()[:MAX_EVIDENCE_BYTES]
-                    evidence.append({"url": resp.url, "status": resp.status,
-                                     "content_type": resp.headers.get("content-type", ""),
-                                     "body": body.decode("utf-8", errors="replace")})
+                    evidence.append(
+                        {
+                            "url": resp.url,
+                            "status": resp.status,
+                            "content_type": resp.headers.get("content-type", ""),
+                            "body": body.decode("utf-8", errors="replace"),
+                        }
+                    )
                 except Exception:  # noqa: S110  (evidence is best-effort)
                     pass
 
@@ -87,23 +102,50 @@ class Renderer:
         except Exception as e:
             context.close()
             msg = str(e)
-            f = Failure.TIMEOUT if "Timeout" in msg else (
-                Failure.ENV_NETWORK_BLOCKED if "ERR_TUNNEL" in msg or "ERR_PROXY" in msg or "ERR_NAME" in msg
-                else Failure.HTTP_ERROR)
+            f = (
+                Failure.TIMEOUT
+                if "Timeout" in msg
+                else (
+                    Failure.ENV_NETWORK_BLOCKED
+                    if "ERR_TUNNEL" in msg or "ERR_PROXY" in msg or "ERR_NAME" in msg
+                    else Failure.HTTP_ERROR
+                )
+            )
             return FetchResult(url, url, None, "", b"", started, failure=f, detail=msg[:300])
         context.close()
         now = datetime.now(UTC)
         conditions = {
-            "capture_context": "public_default", "method": "playwright", "context_fresh": True,
-            "cookies_at_start": cookies_at_start, "storage_state": None, "login": False, "locale": "en-US",
-            "timezone_id": bank.capture_timezone, "viewport": VIEWPORT, "user_agent": self.settings.user_agent,
-            "url_canonical": url, "url_final": final, "redirect_chain": chain,
-            "render_wait": {"strategy": waited}, "expanders_clicked": clicked, "aborted_robots_disallowed": aborted,
-            "captured_at": now.isoformat(), "browser": f"chromium {browser_version}",
+            "capture_context": "public_default",
+            "method": "playwright",
+            "context_fresh": True,
+            "cookies_at_start": cookies_at_start,
+            "storage_state": None,
+            "login": False,
+            "locale": "en-US",
+            "timezone_id": bank.capture_timezone,
+            "viewport": VIEWPORT,
+            "user_agent": self.settings.user_agent,
+            "url_canonical": url,
+            "url_final": final,
+            "redirect_chain": chain,
+            "render_wait": {"strategy": waited},
+            "expanders_clicked": clicked,
+            "aborted_robots_disallowed": aborted,
+            "captured_at": now.isoformat(),
+            "browser": f"chromium {browser_version}",
             "runner_label": self.settings.capture_runner_label,
         }
-        res = FetchResult(url, final, status, "text/html; charset=utf-8", html.encode("utf-8"), now, chain,
-                          capture_conditions=conditions, supporting_responses=evidence)
+        res = FetchResult(
+            url,
+            final,
+            status,
+            "text/html; charset=utf-8",
+            html.encode("utf-8"),
+            now,
+            chain,
+            capture_conditions=conditions,
+            supporting_responses=evidence,
+        )
         if not domain_allowed(final, bank.official_domains):
             res.failure, res.detail = Failure.REDIRECT_OFF_DOMAIN, f"redirected to {final}"
         elif looks_like_referral(final, bank.referral_url_patterns):

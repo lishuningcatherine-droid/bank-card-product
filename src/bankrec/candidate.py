@@ -18,26 +18,78 @@ from bankrec.model import (
 )
 
 CARD_FIELDS = [
-    "official_name", "product_family", "variant", "segment", "is_co_branded", "co_brand_partner", "is_student",
-    "is_secured", "network", "annual_fee_cents", "intro_annual_fee_cents", "intro_annual_fee_months",
-    "annual_fee_effective_date", "future_annual_fee_cents", "au_free_count", "au_fee_cents",
-    "purchase_apr_min_pct", "purchase_apr_max_pct", "purchase_apr_variable", "intro_purchase_apr_pct",
-    "intro_purchase_apr_months", "bt_apr_min_pct", "bt_apr_max_pct", "intro_bt_apr_pct", "intro_bt_apr_months",
-    "bt_fee_pct", "bt_fee_min_cents", "cash_apr_pct", "cash_fee_pct", "cash_fee_min_cents", "foreign_tx_fee_pct",
-    "secured_min_deposit_cents", "reward_currency", "reward_program", "base_rate", "credit_profile_guidance",
-    "eligibility_restrictions", "terms_url",
+    "official_name",
+    "product_family",
+    "variant",
+    "segment",
+    "is_co_branded",
+    "co_brand_partner",
+    "is_student",
+    "is_secured",
+    "network",
+    "annual_fee_cents",
+    "intro_annual_fee_cents",
+    "intro_annual_fee_months",
+    "annual_fee_effective_date",
+    "future_annual_fee_cents",
+    "au_free_count",
+    "au_fee_cents",
+    "purchase_apr_min_pct",
+    "purchase_apr_max_pct",
+    "purchase_apr_variable",
+    "intro_purchase_apr_pct",
+    "intro_purchase_apr_months",
+    "bt_apr_min_pct",
+    "bt_apr_max_pct",
+    "intro_bt_apr_pct",
+    "intro_bt_apr_months",
+    "bt_fee_pct",
+    "bt_fee_min_cents",
+    "cash_apr_pct",
+    "cash_fee_pct",
+    "cash_fee_min_cents",
+    "foreign_tx_fee_pct",
+    "secured_min_deposit_cents",
+    "reward_currency",
+    "reward_program",
+    "base_rate",
+    "credit_profile_guidance",
+    "eligibility_restrictions",
+    "terms_url",
 ]
 CHECKING_FIELDS = [
-    "official_name", "account_type", "monthly_fee_cents", "fee_waivers", "min_opening_deposit_cents",
-    "overdraft_summary", "apy_tiers", "eligible_states", "customer_eligibility", "access_model", "terms_url",
+    "official_name",
+    "account_type",
+    "monthly_fee_cents",
+    "fee_waivers",
+    "min_opening_deposit_cents",
+    "overdraft_summary",
+    "apy_tiers",
+    "eligible_states",
+    "customer_eligibility",
+    "access_model",
+    "terms_url",
 ]
 SAVINGS_FIELDS = [
-    "official_name", "apy_pct", "apy_tiers", "rate_type_note", "min_opening_deposit_cents", "min_balance_cents",
-    "monthly_fee_cents", "fee_waivers", "withdrawal_restrictions", "max_withdrawals_per_month", "eligible_states",
-    "customer_restrictions", "terms_url",
+    "official_name",
+    "apy_pct",
+    "apy_tiers",
+    "rate_type_note",
+    "min_opening_deposit_cents",
+    "min_balance_cents",
+    "monthly_fee_cents",
+    "fee_waivers",
+    "withdrawal_restrictions",
+    "max_withdrawals_per_month",
+    "eligible_states",
+    "customer_restrictions",
+    "terms_url",
 ]
-FIELDS_BY_TYPE = {ProductType.credit_card: CARD_FIELDS, ProductType.checking: CHECKING_FIELDS,
-                  ProductType.savings: SAVINGS_FIELDS}
+FIELDS_BY_TYPE = {
+    ProductType.credit_card: CARD_FIELDS,
+    ProductType.checking: CHECKING_FIELDS,
+    ProductType.savings: SAVINGS_FIELDS,
+}
 
 
 class ProductCandidate(BaseModel):
@@ -75,5 +127,8 @@ class ProductCandidate(BaseModel):
 
     @property
     def missing_fields(self) -> list[str]:
-        return sorted(k for k, v in self.fields.items()
-                      if v.value is None and v.null_reason is not NullReason.not_applicable)
+        return sorted(
+            k
+            for k, v in self.fields.items()
+            if v.value is None and v.null_reason is not NullReason.not_applicable
+        )

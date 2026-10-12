@@ -58,17 +58,23 @@ def survey_bank(f: Fetcher, bank: BankConfig) -> list[ProbeResult]:
     sitemaps = [str(s) for s in bank.discovery.sitemaps]
     if robots_url:
         status, body, fail, detail = _get(f, robots_url)
-        pr = ProbeResult(bank.bank_id, "robots", robots_url, now, status, fail.value if fail else None, detail)
+        pr = ProbeResult(
+            bank.bank_id, "robots", robots_url, now, status, fail.value if fail else None, detail
+        )
         if body:
             listed = re.findall(r"(?im)^\s*sitemap:\s*(\S+)", body.decode("utf-8", errors="replace"))
             pr.extra["sitemaps_listed"] = listed
-            pr.extra["disallow_count"] = len(re.findall(r"(?im)^\s*disallow:", body.decode("utf-8", "replace")))
+            pr.extra["disallow_count"] = len(
+                re.findall(r"(?im)^\s*disallow:", body.decode("utf-8", "replace"))
+            )
             sitemaps += [u for u in listed if u not in sitemaps and domain_allowed(u, bank.official_domains)]
         out.append(pr)
     for sm in sitemaps:
         blocked = f.robots.check(sm)
         if blocked is not None:
-            out.append(ProbeResult(bank.bank_id, "sitemap", sm, now, None, blocked.value, "robots or network"))
+            out.append(
+                ProbeResult(bank.bank_id, "sitemap", sm, now, None, blocked.value, "robots or network")
+            )
             continue
         status, body, fail, detail = _get(f, sm)
         pr = ProbeResult(bank.bank_id, "sitemap", sm, now, status, fail.value if fail else None, detail)
@@ -104,13 +110,27 @@ def discover(f: Fetcher, registry: Registry, bank_id: str, config_dir: Path, max
             for ptype, regexes in patterns.items():
                 if any(re.search(rx, cu) for rx in regexes):
                     found[cu] = ptype
-    entries = [{"bank_id": bank_id, "slug": re.sub(r"[^a-z0-9]+", "-", urlsplit(u).path.lower()).strip("-")[:80],
-                "product_type": t, "source_url": u, "source_kind": "product_detail", "parser_name": bank.adapter,
-                "enabled": False, "state": "discovered", "expected_entity": "TO CONFIRM",
-                "notes": f"discovered from sitemap on {datetime.now(UTC).date()}"} for u, t in sorted(found.items())]
+    entries = [
+        {
+            "bank_id": bank_id,
+            "slug": re.sub(r"[^a-z0-9]+", "-", urlsplit(u).path.lower()).strip("-")[:80],
+            "product_type": t,
+            "source_url": u,
+            "source_kind": "product_detail",
+            "parser_name": bank.adapter,
+            "enabled": False,
+            "state": "discovered",
+            "expected_entity": "TO CONFIRM",
+            "notes": f"discovered from sitemap on {datetime.now(UTC).date()}",
+        }
+        for u, t in sorted(found.items())
+    ]
     path = config_dir / "sources" / f"{bank_id}.discovered.yaml"
-    path.write_text("# Discovered URLs: review, set expected_entity, then move to the curated file to enable.\n"
-                    + yaml.safe_dump({"bank_id": bank_id, "sources": entries}, sort_keys=False), encoding="utf-8")
+    path.write_text(
+        "# Discovered URLs: review, set expected_entity, then move to the curated file to enable.\n"
+        + yaml.safe_dump({"bank_id": bank_id, "sources": entries}, sort_keys=False),
+        encoding="utf-8",
+    )
     return path
 
 

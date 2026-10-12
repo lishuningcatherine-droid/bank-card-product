@@ -65,8 +65,14 @@ class MergedProduct:
 def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> MergedProduct:
     ordered = sorted(cands, key=lambda cm: (-cm[1].priority, cm[1].source_id))
     primary, pmeta = ordered[0]
-    mp = MergedProduct(canonical_key, primary.bank_id, primary.product_type.value, primary, pmeta,
-                       offer_absent_note=primary.offer_absent_note)
+    mp = MergedProduct(
+        canonical_key,
+        primary.bank_id,
+        primary.product_type.value,
+        primary,
+        pmeta,
+        offer_absent_note=primary.offer_absent_note,
+    )
     for c, meta in ordered:
         if c.name:
             mp.aliases.add(c.name)
@@ -75,9 +81,15 @@ def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> Mer
             if cur is None or (not cur[0].present and s.present):
                 mp.fields[k] = (s, meta)
             elif s.present and cur[0].present and jsonable(s.value) != jsonable(cur[0].value):
-                mp.conflicts.append({"field": k, "values": [
-                    {"value": jsonable(cur[0].value), "source": cur[1].source_id, "url": cur[1].url},
-                    {"value": jsonable(s.value), "source": meta.source_id, "url": meta.url}]})
+                mp.conflicts.append(
+                    {
+                        "field": k,
+                        "values": [
+                            {"value": jsonable(cur[0].value), "source": cur[1].source_id, "url": cur[1].url},
+                            {"value": jsonable(s.value), "source": meta.source_id, "url": meta.url},
+                        ],
+                    }
+                )
         if not mp.reward_rates and c.reward_rates:
             mp.reward_rates = [(r, meta) for r in c.reward_rates]
         if not mp.benefits and c.benefits:

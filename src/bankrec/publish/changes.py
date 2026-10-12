@@ -14,7 +14,13 @@ from pydantic import BaseModel
 
 from bankrec.settings import CONFIG_DIR
 
-APR_FIELDS = ["purchase_apr_min_pct", "purchase_apr_max_pct", "bt_apr_min_pct", "bt_apr_max_pct", "cash_apr_pct"]
+APR_FIELDS = [
+    "purchase_apr_min_pct",
+    "purchase_apr_max_pct",
+    "bt_apr_min_pct",
+    "bt_apr_max_pct",
+    "cash_apr_pct",
+]
 
 
 @lru_cache(maxsize=1)
@@ -56,15 +62,17 @@ def classify_field(name: str, old: Any, new: Any, all_apr_deltas: dict[str, Deci
     if old is None or new is None:
         return "major", "value_added_or_removed"
     if name == "apy_pct":
-        d = abs(_dec(new) - _dec(old))  # type: ignore[operator]
+        d = abs(Decimal(str(new)) - Decimal(str(old)))
         lim = Decimal(str(pol["minor"]["apy_pct"]["max_abs_change_pp"]))
         return ("minor", "apy_within_threshold") if d <= lim else ("major", "apy_over_threshold")
     if name == "apy_tiers":
         lim = Decimal(str(pol["minor"]["apy_tiers"]["max_abs_change_pp"]))
         if len(old) == len(new) and all(
-                (a["min_balance_cents"], a["max_balance_cents"]) == (b["min_balance_cents"], b["max_balance_cents"])
-                and abs(Decimal(str(a["apy_pct"])) - Decimal(str(b["apy_pct"]))) <= lim for a, b in zip(old, new,
-                                                                                                         strict=True)):
+            (a["min_balance_cents"], a["max_balance_cents"])
+            == (b["min_balance_cents"], b["max_balance_cents"])
+            and abs(Decimal(str(a["apy_pct"])) - Decimal(str(b["apy_pct"]))) <= lim
+            for a, b in zip(old, new, strict=True)
+        ):
             return "minor", "apy_tiers_within_threshold"
         return "major", "apy_tiers_changed"
     if name in APR_FIELDS:
@@ -83,8 +91,12 @@ def classify_field(name: str, old: Any, new: Any, all_apr_deltas: dict[str, Deci
 def diff_product(old: dict[str, Any], new: dict[str, Any]) -> list[Change]:
     """``old``/``new`` are product snapshots: {"fields": {...}, "reward_rates": [...], "benefits": [...]}."""
     of, nf = old.get("fields", {}), new.get("fields", {})
-    apr_deltas = {k: _dec(nf.get(k)) - _dec(of.get(k)) for k in APR_FIELDS  # type: ignore[operator]
-                  if of.get(k) is not None and nf.get(k) is not None and of.get(k) != nf.get(k)}
+    # Every APR bound present on both sides must move by the same delta for a "uniform" (prime-rate) shift.
+    apr_deltas = {
+        k: Decimal(str(nf[k])) - Decimal(str(of[k]))
+        for k in APR_FIELDS
+        if of.get(k) is not None and nf.get(k) is not None
+    }
     if any(of.get(k) != nf.get(k) and (of.get(k) is None or nf.get(k) is None) for k in APR_FIELDS):
         apr_deltas["__added_or_removed__"] = Decimal("999")
     changes: list[Change] = []
@@ -102,8 +114,9 @@ def _canon(items: list[dict[str, Any]] | None) -> list[str]:
     return sorted(repr(sorted(i.items())) for i in items or [])
 
 
-def diff_offers(old: dict[str, dict[str, Any]], new: dict[str, dict[str, Any]], *, product_is_new: bool
-                ) -> list[Change]:
+def diff_offers(
+    old: dict[str, dict[str, Any]], new: dict[str, dict[str, Any]], *, product_is_new: bool
+) -> list[Change]:
     """Offers keyed by offer_key. Any appearance/disappearance/amount or requirement change is major."""
     changes: list[Change] = []
     for k in old.keys() - new.keys():
@@ -111,8 +124,11 @@ def diff_offers(old: dict[str, dict[str, Any]], new: dict[str, dict[str, Any]], 
     for k in new.keys() - old.keys():
         if product_is_new:
             continue
-        rule = "offer_changed" if any(o["offer_type"] == new[k]["offer_type"] for o in old.values()) else \
-            "offer_appeared"
+        rule = (
+            "offer_changed"
+            if any(o["offer_type"] == new[k]["offer_type"] for o in old.values())
+            else "offer_appeared"
+        )
         if policy().get("new_offer_on_existing_product", "review") != "review" and rule == "offer_appeared":
             changes.append(Change(f"offer:{new[k]['offer_type']}", None, new[k], "minor", rule))
         else:

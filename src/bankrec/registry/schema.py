@@ -72,7 +72,9 @@ class SourceEntry(BaseModel):
     render_ready_selector: str | None = None
     expand_selectors: list[str] = Field(default_factory=list)
     retrieved_by_user_on: str | None = None
-    fixture_path: str | None = None  # test_only banks only: served by the fixture transport instead of the network
+    fixture_path: str | None = (
+        None  # test_only banks only: served by the fixture transport instead of the network
+    )
 
     @property
     def source_id(self) -> str:

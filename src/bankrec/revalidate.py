@@ -18,13 +18,25 @@ log = logging.getLogger("bankrec.revalidate")
 MAX_TAGS = 200
 
 
-def dispatch(session: Session, settings: Settings, now: datetime, client: httpx.Client | None = None,
-             max_attempts: int = 10) -> dict[str, int]:
+def dispatch(
+    session: Session,
+    settings: Settings,
+    now: datetime,
+    client: httpx.Client | None = None,
+    max_attempts: int = 10,
+) -> dict[str, int]:
     stats = {"sent": 0, "failed": 0, "pending": 0}
-    rows = list(session.scalars(select(S.RevalidationOutbox).where(
-        S.RevalidationOutbox.sent_at.is_(None), S.RevalidationOutbox.attempts < max_attempts,
-        or_(S.RevalidationOutbox.not_before.is_(None), S.RevalidationOutbox.not_before <= now))
-        .order_by(S.RevalidationOutbox.id)))
+    rows = list(
+        session.scalars(
+            select(S.RevalidationOutbox)
+            .where(
+                S.RevalidationOutbox.sent_at.is_(None),
+                S.RevalidationOutbox.attempts < max_attempts,
+                or_(S.RevalidationOutbox.not_before.is_(None), S.RevalidationOutbox.not_before <= now),
+            )
+            .order_by(S.RevalidationOutbox.id)
+        )
+    )
     if not rows:
         return stats
     if not settings.revalidate_url or not settings.revalidate_secret:
@@ -34,8 +46,10 @@ def dispatch(session: Session, settings: Settings, now: datetime, client: httpx.
     c = client or httpx.Client(timeout=10)
     for row in rows:
         body = json.dumps({"tags": row.tags[:MAX_TAGS]}).encode()
-        headers = {"Content-Type": "application/json",
-                   "X-Bankrec-Signature": sign(settings.revalidate_secret, body)}
+        headers = {
+            "Content-Type": "application/json",
+            "X-Bankrec-Signature": sign(settings.revalidate_secret, body),
+        }
         row.attempts += 1
         try:
             r = c.post(settings.revalidate_url, content=body, headers=headers)

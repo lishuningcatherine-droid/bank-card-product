@@ -84,12 +84,15 @@ class Product(ProdBase):
     test_only: Mapped[bool] = mapped_column(Boolean, default=False)
     current_version: Mapped[int] = mapped_column(Integer, default=1)
 
-    card: Mapped[CreditCardDetails | None] = relationship(back_populates="product", uselist=False,
-                                                          cascade="all, delete-orphan")
-    checking: Mapped[CheckingAccountDetails | None] = relationship(back_populates="product", uselist=False,
-                                                                   cascade="all, delete-orphan")
-    savings: Mapped[SavingsAccountDetails | None] = relationship(back_populates="product", uselist=False,
-                                                                 cascade="all, delete-orphan")
+    card: Mapped[CreditCardDetails | None] = relationship(
+        back_populates="product", uselist=False, cascade="all, delete-orphan"
+    )
+    checking: Mapped[CheckingAccountDetails | None] = relationship(
+        back_populates="product", uselist=False, cascade="all, delete-orphan"
+    )
+    savings: Mapped[SavingsAccountDetails | None] = relationship(
+        back_populates="product", uselist=False, cascade="all, delete-orphan"
+    )
     reward_rates: Mapped[list[ProductRewardRate]] = relationship(cascade="all, delete-orphan")
     benefits: Mapped[list[ProductBenefit]] = relationship(cascade="all, delete-orphan")
     offers: Mapped[list[Offer]] = relationship(back_populates="product", cascade="all, delete-orphan")
@@ -106,7 +109,9 @@ class ProductAlias(ProdBase):
 class CreditCardDetails(ProdBase):
     __tablename__ = "credit_card_details"
     __table_args__ = (CheckConstraint("segment IN ('consumer','business')", name="segment"),)
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+    )
     product: Mapped[Product] = relationship(back_populates="card")
     segment: Mapped[str] = mapped_column(String(10))
     is_co_branded: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -146,7 +151,9 @@ class CreditCardDetails(ProdBase):
 
 class CheckingAccountDetails(ProdBase):
     __tablename__ = "checking_account_details"
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+    )
     product: Mapped[Product] = relationship(back_populates="checking")
     account_type: Mapped[str | None] = mapped_column(Text)
     monthly_fee_cents: Mapped[int | None] = mapped_column(BigInteger)
@@ -161,8 +168,12 @@ class CheckingAccountDetails(ProdBase):
 
 class SavingsAccountDetails(ProdBase):
     __tablename__ = "savings_account_details"
-    __table_args__ = (CheckConstraint("apy_pct IS NULL OR (apy_pct >= 0 AND apy_pct <= 15)", name="apy_range"),)
-    product_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("products.id", ondelete="CASCADE"), primary_key=True)
+    __table_args__ = (
+        CheckConstraint("apy_pct IS NULL OR (apy_pct >= 0 AND apy_pct <= 15)", name="apy_range"),
+    )
+    product_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("products.id", ondelete="CASCADE"), primary_key=True
+    )
     product: Mapped[Product] = relationship(back_populates="savings")
     apy_pct: Mapped[Decimal | None] = mapped_column(Rate)
     apy_tiers: Mapped[list[dict[str, Any]] | None] = mapped_column(J)
@@ -228,8 +239,12 @@ class Offer(ProdBase):
             name="requirement_qualifier_shape",
         ),
         CheckConstraint("audience IN ('public','targeted')", name="audience"),
-        CheckConstraint("status IN ('current','expired','uncertain','targeted','recheck_pending')", name="status"),
-        CheckConstraint("qualification_window_days IS NULL OR qualification_window_days > 0", name="window_pos"),
+        CheckConstraint(
+            "status IN ('current','expired','uncertain','targeted','recheck_pending')", name="status"
+        ),
+        CheckConstraint(
+            "qualification_window_days IS NULL OR qualification_window_days > 0", name="window_pos"
+        ),
         UniqueConstraint("offer_key", name="offer_key"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)

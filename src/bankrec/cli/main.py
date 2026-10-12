@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import sys
@@ -17,7 +18,9 @@ from bankrec.db.session import get_engine
 from bankrec.registry.loader import EmptyRegistryError, RegistryError, load_registry
 from bankrec.settings import REPO_ROOT, get_settings
 
-app = typer.Typer(no_args_is_help=True, help="Bank product recommendation platform — pipeline and review tools.")
+app = typer.Typer(
+    no_args_is_help=True, help="Bank product recommendation platform — pipeline and review tools."
+)
 review_app = typer.Typer(no_args_is_help=True, help="Review uncertain records (CLI-only workflow).")
 report_app = typer.Typer(no_args_is_help=True, help="Reports.")
 db_app = typer.Typer(no_args_is_help=True, help="Database management.")
@@ -25,8 +28,15 @@ schedule_app = typer.Typer(no_args_is_help=True, help="Scheduling helpers.")
 revalidate_app = typer.Typer(no_args_is_help=True, help="Next.js on-demand revalidation.")
 registry_app = typer.Typer(no_args_is_help=True, help="Source registry.")
 crosscheck_app = typer.Typer(no_args_is_help=True, help="Regulator cross-checks (CFPB).")
-for name, sub in [("review", review_app), ("report", report_app), ("db", db_app), ("schedule", schedule_app),
-                  ("revalidate", revalidate_app), ("registry", registry_app), ("crosscheck", crosscheck_app)]:
+for name, sub in [
+    ("review", review_app),
+    ("report", report_app),
+    ("db", db_app),
+    ("schedule", schedule_app),
+    ("revalidate", revalidate_app),
+    ("registry", registry_app),
+    ("crosscheck", crosscheck_app),
+]:
     app.add_typer(sub, name=name)
 
 
@@ -38,10 +48,12 @@ def _now() -> datetime:
     return datetime.now(UTC)
 
 
-def _registry(include_test: bool, require: bool = True):  # type: ignore[no-untyped-def]
+def _registry(include_test: bool, require: bool = True) -> Any:
     from bankrec.ingest.adapters import known_parsers
 
-    return load_registry(include_test_only=include_test, known_parsers=known_parsers(), require_sources=require)
+    return load_registry(
+        include_test_only=include_test, known_parsers=known_parsers(), require_sources=require
+    )
 
 
 def _reviewer(reviewer: str | None) -> str:
@@ -61,8 +73,16 @@ def registry_validate(include_test: bool = typer.Option(False, "--include-test")
     except RegistryError as e:
         typer.echo(str(e), err=True)
         raise typer.Exit(1) from e
-    typer.echo(json.dumps({"banks": sorted(reg.banks), "enabled_sources": len(reg.enabled()),
-                           "banks_without_sources": reg.banks_without_sources}, indent=1))
+    typer.echo(
+        json.dumps(
+            {
+                "banks": sorted(reg.banks),
+                "enabled_sources": len(reg.enabled()),
+                "banks_without_sources": reg.banks_without_sources,
+            },
+            indent=1,
+        )
+    )
 
 
 # --------------------------------------------------------------------------------------------- ingest
@@ -80,7 +100,7 @@ def ingest(
     trigger: Annotated[str, typer.Option(help="manual | cron | github")] = "manual",
 ) -> None:
     """Run the pipeline for enabled sources (optionally one tier/bank) and write reports."""
-    from bankrec.ingest.fetch import Fetcher, FetchResult, FixtureFetcher
+    from bankrec.ingest.fetch import Fetcher, FixtureFetcher
     from bankrec.ingest.pipeline import Pipeline
     from bankrec.logging_setup import configure
     from bankrec.reports.writer import write_reports
@@ -88,7 +108,10 @@ def ingest(
 
     configure()
     settings = get_settings()
-    if trigger in {"cron", "github"} and settings.scheduler != {"cron": "worker", "github": "github"}[trigger]:
+    if (
+        trigger in {"cron", "github"}
+        and settings.scheduler != {"cron": "worker", "github": "github"}[trigger]
+    ):
         typer.echo(f"skipped: BANKREC_SCHEDULER={settings.scheduler} does not select the {trigger} scheduler")
         raise typer.Exit(0)
     if include_test and settings.env == "prod":
@@ -127,20 +150,27 @@ def ingest(
             from bankrec.ingest.render import Renderer
 
             browser_ctx = sync_playwright().start()
-            kw = {"executable_path": settings.chromium_executable} if settings.chromium_executable else {}
-            browser = browser_ctx.chromium.launch(headless=True, **kw)
+            browser = browser_ctx.chromium.launch(headless=True, executable_path=settings.chromium_executable)
             renderer = Renderer(settings, browser, fetcher.robots, fetcher.limiter)
 
         class Router:
-            def fetch(self, src, bnk):  # type: ignore[no-untyped-def]
+            def fetch(self, src: Any, bnk: Any) -> Any:
                 return (fixture if src.fixture_path else fetcher).fetch(src, bnk)
 
             def close(self) -> None:
                 fetcher.close()
 
         with sessionmaker(bind=engine, expire_on_commit=False)() as s:
-            p = Pipeline(s, settings, reg, fetcher=Router(), renderer=renderer, trigger=trigger, tier=tier,
-                         repo_root=REPO_ROOT)
+            p = Pipeline(
+                s,
+                settings,
+                reg,
+                fetcher=Router(),
+                renderer=renderer,
+                trigger=trigger,
+                tier=tier,
+                repo_root=REPO_ROOT,
+            )
             result = p.run(sources, manual=manual_items)
             s.commit()
             out = write_reports(s, result, reg, settings.reports_dir, _now())
@@ -151,7 +181,9 @@ def ingest(
             s.commit()
         typer.echo(json.dumps({"run_id": result.run_id, "reports": str(out), **p.counts()}, indent=1))
         if reg.banks_without_sources and not include_test and not manual:
-            typer.echo(f"warning: banks without enabled sources: {', '.join(reg.banks_without_sources)}", err=True)
+            typer.echo(
+                f"warning: banks without enabled sources: {', '.join(reg.banks_without_sources)}", err=True
+            )
     finally:
         fetcher.close()
         if browser_ctx is not None:
@@ -185,9 +217,25 @@ def _manual_item(reg: Any, path: Path, source_url: str | None, captured_at: str 
     body = path.read_bytes()
     ctype = "application/pdf" if body[:5] == b"%PDF-" else "text/html; charset=utf-8"
     url = canonicalize(source_url, bank.meaningful_query_params)
-    return src, FetchResult(url, url, 200, ctype, body, when, capture_method="manual", capture_conditions={
-        "capture_context": "public_default", "method": "manual", "login": False, "url_canonical": url,
-        "url_final": url, "captured_at": when.isoformat(), "captured_at_basis": basis, "file": str(path)})
+    return src, FetchResult(
+        url,
+        url,
+        200,
+        ctype,
+        body,
+        when,
+        capture_method="manual",
+        capture_conditions={
+            "capture_context": "public_default",
+            "method": "manual",
+            "login": False,
+            "url_canonical": url,
+            "url_final": url,
+            "captured_at": when.isoformat(),
+            "captured_at_basis": basis,
+            "file": str(path),
+        },
+    )
 
 
 @app.command()
@@ -234,14 +282,18 @@ def discover(bank: str) -> None:
 
 # --------------------------------------------------------------------------------------------- review
 @review_app.command("list")
-def review_list(type: Annotated[str | None, typer.Option("--type")] = None,
-                bank: Annotated[str | None, typer.Option()] = None) -> None:
+def review_list(
+    type: Annotated[str | None, typer.Option("--type")] = None,
+    bank: Annotated[str | None, typer.Option()] = None,
+) -> None:
     from bankrec.review.service import list_items
 
     with _session() as s:
         for it in list_items(s, product_type=type, bank=bank):
-            typer.echo(f"{it.id:>5}  {it.item_kind:<18} {it.reason_code:<22} {it.bank_id or '-':<18} "
-                       f"{it.canonical_key or ''}")
+            typer.echo(
+                f"{it.id:>5}  {it.item_kind:<18} {it.reason_code:<22} {it.bank_id or '-':<18} "
+                f"{it.canonical_key or ''}"
+            )
 
 
 @review_app.command("show")
@@ -253,9 +305,12 @@ def review_show(item_id: int) -> None:
 
 
 @review_app.command("approve")
-def review_approve(item_id: int, note: Annotated[str, typer.Option(help="why this is correct")],
-                   reviewer: Annotated[str | None, typer.Option()] = None,
-                   include_test: bool = typer.Option(False, "--include-test")) -> None:
+def review_approve(
+    item_id: int,
+    note: Annotated[str, typer.Option(help="why this is correct")],
+    reviewer: Annotated[str | None, typer.Option()] = None,
+    include_test: bool = typer.Option(False, "--include-test"),
+) -> None:
     from bankrec.review.service import approve
 
     r = _reviewer(reviewer)
@@ -266,8 +321,11 @@ def review_approve(item_id: int, note: Annotated[str, typer.Option(help="why thi
 
 
 @review_app.command("reject")
-def review_reject(item_id: int, reason: Annotated[str, typer.Option()],
-                  reviewer: Annotated[str | None, typer.Option()] = None) -> None:
+def review_reject(
+    item_id: int,
+    reason: Annotated[str, typer.Option()],
+    reviewer: Annotated[str | None, typer.Option()] = None,
+) -> None:
     from bankrec.review.service import reject
 
     r = _reviewer(reviewer)
@@ -278,8 +336,12 @@ def review_reject(item_id: int, reason: Annotated[str, typer.Option()],
 
 
 @review_app.command("merge")
-def review_merge(a: str, b: str, note: Annotated[str | None, typer.Option()] = None,
-                 reviewer: Annotated[str | None, typer.Option()] = None) -> None:
+def review_merge(
+    a: str,
+    b: str,
+    note: Annotated[str | None, typer.Option()] = None,
+    reviewer: Annotated[str | None, typer.Option()] = None,
+) -> None:
     """Merge canonical product B into A (B becomes an alias; B is withdrawn, never deleted)."""
     from bankrec.review.service import merge_products
 
@@ -291,17 +353,19 @@ def review_merge(a: str, b: str, note: Annotated[str | None, typer.Option()] = N
 
 
 @review_app.command("edit")
-def review_edit(item_id: int, field: Annotated[str, typer.Option()], value: Annotated[str, typer.Option()],
-                evidence: Annotated[str, typer.Option(help="quoted text that exists in a stored snapshot")],
-                reviewer: Annotated[str | None, typer.Option()] = None) -> None:
+def review_edit(
+    item_id: int,
+    field: Annotated[str, typer.Option()],
+    value: Annotated[str, typer.Option()],
+    evidence: Annotated[str, typer.Option(help="quoted text that exists in a stored snapshot")],
+    reviewer: Annotated[str | None, typer.Option()] = None,
+) -> None:
     from bankrec.review.service import ReviewError, edit
 
     r = _reviewer(reviewer)
     parsed: Any = value
-    try:
+    with contextlib.suppress(json.JSONDecodeError):
         parsed = json.loads(value)
-    except json.JSONDecodeError:
-        pass
     with _session() as s:
         try:
             edit(s, item_id, field=field, value=parsed, evidence=evidence, reviewer=r, now=_now())
@@ -323,7 +387,9 @@ def report_stale() -> None:
     with _session() as s:
         for p in s.scalars(select(P.Product).where(P.Product.status == "published")):
             if is_stale(p.last_confirmed_at, "terms", now):
-                typer.echo(f"terms  {p.bank_id:<18} {p.official_name}  confirmed {p.last_confirmed_at:%Y-%m-%d}")
+                typer.echo(
+                    f"terms  {p.bank_id:<18} {p.official_name}  confirmed {p.last_confirmed_at:%Y-%m-%d}"
+                )
             if p.product_type == "savings" and is_stale(p.apy_confirmed_at, "apy", now):
                 typer.echo(f"apy    {p.bank_id:<18} {p.official_name}")
             for o in p.offers:
@@ -390,10 +456,13 @@ def revalidate_dispatch() -> None:
 
 # --------------------------------------------------------------------------------------------- crosscheck
 @crosscheck_app.command("tccp")
-def crosscheck_tccp(path: Path, release_id: Annotated[str, typer.Option()],
-                    as_of: Annotated[str | None, typer.Option()] = None,
-                    file_url: Annotated[str, typer.Option()] = "",
-                    include_test: bool = typer.Option(False, "--include-test")) -> None:
+def crosscheck_tccp(
+    path: Path,
+    release_id: Annotated[str, typer.Option()],
+    as_of: Annotated[str | None, typer.Option()] = None,
+    file_url: Annotated[str, typer.Option()] = "",
+    include_test: bool = typer.Option(False, "--include-test"),
+) -> None:
     """Cross-check a downloaded TCCP release file against published values (never publishes)."""
     from bankrec.crosscheck.cfpb import RegulatorSchemaError, parse_tccp_csv, run_crosscheck
 
@@ -404,9 +473,18 @@ def crosscheck_tccp(path: Path, release_id: Annotated[str, typer.Option()],
         typer.echo(f"SCHEMA_DRIFT: {e}", err=True)
         raise typer.Exit(1) from e
     with _session() as s:
-        summ = run_crosscheck(s, _registry(include_test, require=False), dataset="cfpb_tccp", release_id=release_id,
-                              as_of=date.fromisoformat(as_of) if as_of else None, file_url=file_url or str(path),
-                              data=data, rows=rows, run_id=f"crosscheck-{release_id}", now=_now())
+        summ = run_crosscheck(
+            s,
+            _registry(include_test, require=False),
+            dataset="cfpb_tccp",
+            release_id=release_id,
+            as_of=date.fromisoformat(as_of) if as_of else None,
+            file_url=file_url or str(path),
+            data=data,
+            rows=rows,
+            run_id=f"crosscheck-{release_id}",
+            now=_now(),
+        )
         s.commit()
     typer.echo(json.dumps(summ.__dict__, default=str))
 

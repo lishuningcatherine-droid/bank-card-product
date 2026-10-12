@@ -29,8 +29,13 @@ def today_et(now: datetime) -> date:
     return now.astimezone(ZoneInfo(config()["offer_expiry_timezone"])).date()
 
 
-def offer_state(status: str, expiration_date: date | None, last_confirmed_at: datetime | None, now: datetime,
-                audience: str = "public") -> str:
+def offer_state(
+    status: str,
+    expiration_date: date | None,
+    last_confirmed_at: datetime | None,
+    now: datetime,
+    audience: str = "public",
+) -> str:
     """current | expired | stale | uncertain | targeted | recheck_pending — evaluated at request time."""
     if expiration_date is not None and expiration_date < today_et(now):
         return "expired"
@@ -43,9 +48,17 @@ def offer_state(status: str, expiration_date: date | None, last_confirmed_at: da
     return "current"
 
 
-def product_label(*, published: bool, terms_confirmed_at: datetime | None, apy_confirmed_at: datetime | None,
-                  product_type: str, missing_key: list[str], recheck_pending: bool,
-                  provider_only_fields: list[str], now: datetime) -> tuple[str, list[str]]:
+def product_label(
+    *,
+    published: bool,
+    terms_confirmed_at: datetime | None,
+    apy_confirmed_at: datetime | None,
+    product_type: str,
+    missing_key: list[str],
+    recheck_pending: bool,
+    provider_only_fields: list[str],
+    now: datetime,
+) -> tuple[str, list[str]]:
     """User-facing label: "verified" | "partially_verified" (+ reasons). Under-review records are never served."""
     reasons: list[str] = []
     if not published:

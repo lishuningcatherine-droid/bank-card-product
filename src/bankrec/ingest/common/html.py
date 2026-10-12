@@ -9,15 +9,46 @@ from selectolax.lexbor import LexborHTMLParser as HTMLParser
 from selectolax.lexbor import LexborNode as Node
 
 _DROP = "script, style, noscript, template, svg, iframe"
-_BLOCK = {"p", "div", "li", "tr", "h1", "h2", "h3", "h4", "h5", "h6", "section", "article", "header", "footer",
-          "dt", "dd", "table", "ul", "ol", "br", "caption", "main", "nav", "aside", "summary", "details",
-          "button", "label", "form", "figure", "figcaption", "blockquote"}
+_BLOCK = {
+    "p",
+    "div",
+    "li",
+    "tr",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "section",
+    "article",
+    "header",
+    "footer",
+    "dt",
+    "dd",
+    "table",
+    "ul",
+    "ol",
+    "br",
+    "caption",
+    "main",
+    "nav",
+    "aside",
+    "summary",
+    "details",
+    "button",
+    "label",
+    "form",
+    "figure",
+    "figcaption",
+    "blockquote",
+}
 _HIDDEN_STYLE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.IGNORECASE)
 
 
 def _is_hidden(node: Node) -> bool:
     a = node.attributes
-    return ("hidden" in a or a.get("aria-hidden") == "true" or bool(_HIDDEN_STYLE.search(a.get("style") or "")))
+    return "hidden" in a or a.get("aria-hidden") == "true" or bool(_HIDDEN_STYLE.search(a.get("style") or ""))
 
 
 @dataclass
@@ -76,8 +107,14 @@ def parse_html(html: str) -> PageDoc:
     body = tree.body or tree.root
     text = render_text(body) if body is not None else ""
     h1s = [render_text(h).replace("\n", " ") for h in tree.css("h1") if not _is_hidden(h)]
-    return PageDoc(html=html, tree=tree, text=text, hidden_text=" ".join(hidden_parts),
-                   title=(title.text(strip=True) if title else ""), h1=[h for h in h1s if h])
+    return PageDoc(
+        html=html,
+        tree=tree,
+        text=text,
+        hidden_text=" ".join(hidden_parts),
+        title=(title.text(strip=True) if title else ""),
+        h1=[h for h in h1s if h],
+    )
 
 
 def table_rows(doc: PageDoc, css: str = "table tr") -> list[tuple[str, str]]:

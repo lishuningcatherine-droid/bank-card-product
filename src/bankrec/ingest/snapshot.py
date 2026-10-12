@@ -40,8 +40,16 @@ class StoredSnapshot:
     content_sha256: str
 
 
-def store(data_dir: Path, run_id: str, body: bytes, text: str, ext: str, *,
-          supporting: list[dict[str, object]] | None = None, extra_volatile: list[str] | None = None) -> StoredSnapshot:
+def store(
+    data_dir: Path,
+    run_id: str,
+    body: bytes,
+    text: str,
+    ext: str,
+    *,
+    supporting: list[dict[str, object]] | None = None,
+    extra_volatile: list[str] | None = None,
+) -> StoredSnapshot:
     raw_sha = sha256(body)
     d = data_dir / "raw" / run_id
     d.mkdir(parents=True, exist_ok=True)
@@ -53,4 +61,6 @@ def store(data_dir: Path, run_id: str, body: bytes, text: str, ext: str, *,
         text_path.write_text(text, encoding="utf-8")
     if supporting:
         (d / f"{raw_sha}.xhr.json").write_text(json.dumps(supporting, indent=1), encoding="utf-8")
-    return StoredSnapshot(f"{run_id}/{raw_sha}", raw_path, text_path, raw_sha, content_hash(text, extra_volatile))
+    return StoredSnapshot(
+        f"{run_id}/{raw_sha}", raw_path, text_path, raw_sha, content_hash(text, extra_volatile)
+    )

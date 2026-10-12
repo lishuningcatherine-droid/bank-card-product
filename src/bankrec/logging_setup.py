@@ -12,8 +12,12 @@ _STD = set(logging.LogRecord("", 0, "", 0, "", (), None).__dict__) | {"message",
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
-        out = {"ts": datetime.now(UTC).isoformat(), "level": record.levelname, "logger": record.name,
-               "msg": record.getMessage()}
+        out: dict[str, object] = {
+            "ts": datetime.now(UTC).isoformat(),
+            "level": record.levelname,
+            "logger": record.name,
+            "msg": record.getMessage(),
+        }
         out.update({k: v for k, v in record.__dict__.items() if k not in _STD and not k.startswith("_")})
         if record.exc_info:
             out["exc_type"] = record.exc_info[0].__name__ if record.exc_info[0] else None

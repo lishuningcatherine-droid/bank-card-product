@@ -44,8 +44,12 @@ class FetchResult:
 
 
 class HostRateLimiter:
-    def __init__(self, min_interval_s: float, clock: Callable[[], float] = time.monotonic,
-                 sleep: Callable[[float], None] = time.sleep) -> None:
+    def __init__(
+        self,
+        min_interval_s: float,
+        clock: Callable[[], float] = time.monotonic,
+        sleep: Callable[[float], None] = time.sleep,
+    ) -> None:
         self.min_interval = min_interval_s
         self.clock, self.sleep = clock, sleep
         self._last: dict[str, float] = {}
@@ -88,9 +92,9 @@ class RobotsCache:
         except httpx.HTTPError:
             return Failure.ENV_NETWORK_BLOCKED
         if r.status_code in (401, 403):
-            rp.disallow_all = True
+            rp.parse(["User-agent: *", "Disallow: /"])
         elif r.status_code >= 400:
-            rp.allow_all = True  # no robots.txt: standard semantics
+            rp.parse([])  # no robots.txt: standard semantics (everything allowed)
         else:
             rp.parse(r.text.splitlines())
         return rp
@@ -110,15 +114,25 @@ def _classify_exception(e: Exception) -> Failure:
 class Fetcher:
     """Plain HTTP retrieval with robots, rate limiting and backoff. One instance per run."""
 
-    def __init__(self, settings: Settings, *, transport: httpx.BaseTransport | None = None,
-                 sleep: Callable[[float], None] = time.sleep, max_attempts: int = 3) -> None:
+    def __init__(
+        self,
+        settings: Settings,
+        *,
+        transport: httpx.BaseTransport | None = None,
+        sleep: Callable[[float], None] = time.sleep,
+        max_attempts: int = 3,
+    ) -> None:
         self.settings = settings
         self.limiter = HostRateLimiter(settings.min_host_interval_s, sleep=sleep)
         self.sleep = sleep
         self.max_attempts = max_attempts
         # A fresh client per run with no persistent cookie jar between pages (cookies are cleared per request).
-        self.client = httpx.Client(headers={"User-Agent": settings.user_agent, "Accept-Language": "en-US,en;q=0.9"},
-                                   follow_redirects=True, timeout=30.0, transport=transport)
+        self.client = httpx.Client(
+            headers={"User-Agent": settings.user_agent, "Accept-Language": "en-US,en;q=0.9"},
+            follow_redirects=True,
+            timeout=30.0,
+            transport=transport,
+        )
         self.robots = RobotsCache(self.client, self.limiter, settings.user_agent)
 
     def close(self) -> None:
@@ -129,9 +143,18 @@ class Fetcher:
         now = datetime.now(UTC)
         blocked = self.robots.check(url)
         if blocked is not None:
-            return FetchResult(url, url, None, "", b"", now, failure=blocked,
-                               detail="robots.txt disallows this path" if blocked is Failure.ROBOTS_DISALLOWED
-                               else "robots.txt unreachable")
+            return FetchResult(
+                url,
+                url,
+                None,
+                "",
+                b"",
+                now,
+                failure=blocked,
+                detail="robots.txt disallows this path"
+                if blocked is Failure.ROBOTS_DISALLOWED
+                else "robots.txt unreachable",
+            )
         host = urlsplit(url).netloc
         attempt, delay = 0, max(self.settings.min_host_interval_s, 1.0)
         while True:
@@ -146,8 +169,17 @@ class Fetcher:
                     self.sleep(delay + random.uniform(0, 1))  # noqa: S311
                     delay *= 2
                     continue
-                return FetchResult(url, url, None, "", b"", datetime.now(UTC), failure=f, detail=str(e)[:300],
-                                   attempts=attempt)
+                return FetchResult(
+                    url,
+                    url,
+                    None,
+                    "",
+                    b"",
+                    datetime.now(UTC),
+                    failure=f,
+                    detail=str(e)[:300],
+                    attempts=attempt,
+                )
             if r.status_code in (429, 500, 502, 503, 504) and attempt < self.max_attempts:
                 ra = r.headers.get("Retry-After")
                 wait = float(ra) if ra and ra.isdigit() else delay
@@ -156,18 +188,33 @@ class Fetcher:
                 continue
             chain = [str(h.url) for h in r.history]
             final = str(r.url)
-            res = FetchResult(url, final, r.status_code, r.headers.get("content-type", ""), r.content,
-                              datetime.now(UTC), chain, attempts=attempt,
-                              capture_conditions={"capture_context": "public_default", "method": "http",
-                                                  "cookies_at_start": 0, "login": False,
-                                                  "user_agent": self.settings.user_agent, "url_canonical": url,
-                                                  "url_final": final, "redirect_chain": chain,
-                                                  "captured_at": datetime.now(UTC).isoformat(),
-                                                  "runner_label": self.settings.capture_runner_label})
+            res = FetchResult(
+                url,
+                final,
+                r.status_code,
+                r.headers.get("content-type", ""),
+                r.content,
+                datetime.now(UTC),
+                chain,
+                attempts=attempt,
+                capture_conditions={
+                    "capture_context": "public_default",
+                    "method": "http",
+                    "cookies_at_start": 0,
+                    "login": False,
+                    "user_agent": self.settings.user_agent,
+                    "url_canonical": url,
+                    "url_final": final,
+                    "redirect_chain": chain,
+                    "captured_at": datetime.now(UTC).isoformat(),
+                    "runner_label": self.settings.capture_runner_label,
+                },
+            )
             if not domain_allowed(final, bank.official_domains):
                 res.failure, res.detail = Failure.REDIRECT_OFF_DOMAIN, f"redirected to {final}"
-            elif looks_like_referral(final, bank.referral_url_patterns) or canonicalize(
-                    final, bank.meaningful_query_params) != final.split("#")[0] and chain:
+            elif looks_like_referral(final, bank.referral_url_patterns) or (
+                canonicalize(final, bank.meaningful_query_params) != final.split("#")[0] and chain
+            ):
                 res.capture_conditions["capture_anomaly"] = "redirected_to_referral_or_tracking_url"
             return res
 
@@ -183,15 +230,42 @@ class FixtureFetcher:
 
     def fetch(self, source: SourceEntry, bank: BankConfig) -> FetchResult:
         if not bank.test_only or not source.fixture_path:
-            return FetchResult(str(source.source_url), str(source.source_url), None, "", b"", datetime.now(UTC),
-                               failure=Failure.ENV_NETWORK_BLOCKED, detail="fixture fetcher used for a non-test source")
+            return FetchResult(
+                str(source.source_url),
+                str(source.source_url),
+                None,
+                "",
+                b"",
+                datetime.now(UTC),
+                failure=Failure.ENV_NETWORK_BLOCKED,
+                detail="fixture fetcher used for a non-test source",
+            )
         url = canonicalize(str(source.source_url), bank.meaningful_query_params)
         path = self.root / source.fixture_path
         body = path.read_bytes()
         ctype = "application/pdf" if path.suffix == ".pdf" else "text/html; charset=utf-8"
         now = datetime.now(UTC)
-        return FetchResult(url, url, 200, ctype, body, now, capture_method="fixture", capture_conditions={
-            "capture_context": "public_default", "method": "fixture", "context_fresh": True, "cookies_at_start": 0,
-            "storage_state": None, "login": False, "locale": "en-US", "timezone_id": bank.capture_timezone,
-            "url_canonical": url, "url_final": url, "captured_at": now.isoformat(),
-            "runner_label": self.settings.capture_runner_label, "fixture_path": source.fixture_path})
+        return FetchResult(
+            url,
+            url,
+            200,
+            ctype,
+            body,
+            now,
+            capture_method="fixture",
+            capture_conditions={
+                "capture_context": "public_default",
+                "method": "fixture",
+                "context_fresh": True,
+                "cookies_at_start": 0,
+                "storage_state": None,
+                "login": False,
+                "locale": "en-US",
+                "timezone_id": bank.capture_timezone,
+                "url_canonical": url,
+                "url_final": url,
+                "captured_at": now.isoformat(),
+                "runner_label": self.settings.capture_runner_label,
+                "fixture_path": source.fixture_path,
+            },
+        )

@@ -12,8 +12,11 @@ from bankrec.ingest.adapters.base import BankAdapter
 def adapter_names() -> set[str]:
     import bankrec.ingest.adapters as pkg
 
-    return {m.name for m in pkgutil.iter_modules(pkg.__path__) if not m.name.startswith("_")
-            and m.name not in {"base", "regulators"}}
+    return {
+        m.name
+        for m in pkgutil.iter_modules(pkg.__path__)
+        if not m.name.startswith("_") and m.name not in {"base", "regulators"}
+    }
 
 
 @cache

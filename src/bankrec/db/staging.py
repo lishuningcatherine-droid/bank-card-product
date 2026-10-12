@@ -6,7 +6,18 @@ import uuid
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import JSON, Boolean, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    ForeignKey,
+    Integer,
+    Numeric,
+    String,
+    Text,
+    UniqueConstraint,
+)
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -141,8 +152,9 @@ class ExtractionCandidate(StagingBase):
 class FieldProvenanceStaging(StagingBase):
     __tablename__ = "field_provenance"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
-    candidate_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("extraction_candidates.id", ondelete="CASCADE"),
-                                                    index=True)
+    candidate_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("extraction_candidates.id", ondelete="CASCADE"), index=True
+    )
     field_path: Mapped[str] = mapped_column(Text)
     value: Mapped[Any] = mapped_column(J, nullable=True)
     null_reason: Mapped[str | None] = mapped_column(String(20))
@@ -160,8 +172,9 @@ class FieldProvenanceStaging(StagingBase):
 class ValidationResult(StagingBase):
     __tablename__ = "validation_results"
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
-    candidate_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("extraction_candidates.id", ondelete="CASCADE"),
-                                                    index=True)
+    candidate_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("extraction_candidates.id", ondelete="CASCADE"), index=True
+    )
     rule_id: Mapped[str] = mapped_column(String(30))
     severity: Mapped[str] = mapped_column(String(10))
     outcome: Mapped[str] = mapped_column(String(10))
@@ -197,14 +210,18 @@ class DuplicateCandidate(StagingBase):
 class ManualReviewItem(StagingBase):
     __tablename__ = "manual_review_queue"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    item_kind: Mapped[str] = mapped_column(String(20))  # product | offer | duplicate | regulator_conflict | ...
+    item_kind: Mapped[str] = mapped_column(
+        String(20)
+    )  # product | offer | duplicate | regulator_conflict | ...
     reason_code: Mapped[str] = mapped_column(String(30))
     bank_id: Mapped[str | None] = mapped_column(String(64))
     product_type: Mapped[str | None] = mapped_column(String(20))
     canonical_key: Mapped[str | None] = mapped_column(Text)
     candidate_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
     context: Mapped[dict[str, Any]] = mapped_column(J, default=dict)
-    state: Mapped[str] = mapped_column(String(12), default="open")  # open | approved | rejected | merged | edited
+    state: Mapped[str] = mapped_column(
+        String(12), default="open"
+    )  # open | approved | rejected | merged | edited
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     run_id: Mapped[str | None] = mapped_column(Text)
 

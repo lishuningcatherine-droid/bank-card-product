@@ -28,15 +28,69 @@ from bankrec.parsers.period import parse_period
 from bankrec.parsers.placeholders import contains_placeholder, is_placeholder
 from bankrec.parsers.rewards import _MONTHS, parse_reward_statement
 
-US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY",
-             "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
-             "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"]
+US_STATES = [
+    "AL",
+    "AK",
+    "AZ",
+    "AR",
+    "CA",
+    "CO",
+    "CT",
+    "DE",
+    "DC",
+    "FL",
+    "GA",
+    "HI",
+    "ID",
+    "IL",
+    "IN",
+    "IA",
+    "KS",
+    "KY",
+    "LA",
+    "ME",
+    "MD",
+    "MA",
+    "MI",
+    "MN",
+    "MS",
+    "MO",
+    "MT",
+    "NE",
+    "NV",
+    "NH",
+    "NJ",
+    "NM",
+    "NY",
+    "NC",
+    "ND",
+    "OH",
+    "OK",
+    "OR",
+    "PA",
+    "RI",
+    "SC",
+    "SD",
+    "TN",
+    "TX",
+    "UT",
+    "VT",
+    "VA",
+    "WA",
+    "WV",
+    "WI",
+    "WY",
+]
 
 # Labels used by U.S. issuers in pricing tables (Schumer box) and account summaries.
 LABELS: dict[str, list[str]] = {
     "annual_fee": [r"annual (?:membership )?fee"],
-    "purchase_apr": [r"(?:apr|annual percentage rate) for purchases", r"purchase apr", r"regular apr",
-                     r"ongoing apr"],
+    "purchase_apr": [
+        r"(?:apr|annual percentage rate) for purchases",
+        r"purchase apr",
+        r"regular apr",
+        r"ongoing apr",
+    ],
     "bt_apr": [r"balance transfer apr", r"apr for balance transfers"],
     "cash_apr": [r"cash advance apr", r"apr for cash advances"],
     "bt_fee": [r"balance transfers?(?: fee)?$", r"balance transfer fee"],
@@ -87,6 +141,7 @@ def placeholder_or_missing(ctx: ExtractionContext, raw: str | None) -> Sourced[A
 
 # ----------------------------------------------------------------------------------------------- credit cards
 
+
 def card_fees_and_rates(doc: PageDoc, ctx: ExtractionContext) -> dict[str, Sourced[Any]]:
     out: dict[str, Sourced[Any]] = {}
     af = labelled(doc, "annual_fee")
@@ -102,21 +157,30 @@ def card_fees_and_rates(doc: PageDoc, ctx: ExtractionContext) -> dict[str, Sourc
             if sched.intro_cents is not None:
                 out["intro_annual_fee_cents"] = ctx.field(sched.intro_cents, af[1], method=af[2])
                 p = parse_period(sched.intro_text or "") if sched.intro_text else None
-                months = (p.months if p else None) or (12 if sched.intro_text and "first year" in sched.intro_text
-                                                       else None)
+                months = (p.months if p else None) or (
+                    12 if sched.intro_text and "first year" in sched.intro_text else None
+                )
                 out["intro_annual_fee_months"] = ctx.field(months, af[1], method=af[2])
             else:
                 out["intro_annual_fee_cents"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
                 out["intro_annual_fee_months"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
-    sched_line = first_line(doc, r"(?:beginning|starting|effective)\s+\w+\s+\d{1,2},?\s+\d{4}.{0,60}annual fee"
-                                 r".{0,30}\$\d")
+    sched_line = first_line(
+        doc,
+        r"(?:beginning|starting|effective)\s+\w+\s+\d{1,2},?\s+\d{4}.{0,60}annual fee"
+        r".{0,30}\$\d",
+    )
     if sched_line:
-        dm = re.search(r"(january|february|march|april|may|june|july|august|september|october|november|december)\s+"
-                       r"(\d{1,2}),?\s+(\d{4})", sched_line, re.IGNORECASE)
+        dm = re.search(
+            r"(january|february|march|april|may|june|july|august|september|october|november|december)\s+"
+            r"(\d{1,2}),?\s+(\d{4})",
+            sched_line,
+            re.IGNORECASE,
+        )
         amounts = find_amounts(sched_line)
         if dm and amounts:
             out["annual_fee_effective_date"] = ctx.field(
-                date(int(dm.group(3)), _MONTHS[dm.group(1).lower()], int(dm.group(2))), sched_line)
+                date(int(dm.group(3)), _MONTHS[dm.group(1).lower()], int(dm.group(2))), sched_line
+            )
             out["future_annual_fee_cents"] = ctx.field(amounts[-1].cents, sched_line)
 
     pa = labelled(doc, "purchase_apr")
@@ -158,8 +222,10 @@ def card_fees_and_rates(doc: PageDoc, ctx: ExtractionContext) -> dict[str, Sourc
         rng = parse_percent_range(ca[0])
         if rng:
             out["cash_apr_pct"] = ctx.field(rng.high, ca[1], method=ca[2])
-    for key, pct_name, min_name in (("bt_fee", "bt_fee_pct", "bt_fee_min_cents"),
-                                    ("cash_fee", "cash_fee_pct", "cash_fee_min_cents")):
+    for key, pct_name, min_name in (
+        ("bt_fee", "bt_fee_pct", "bt_fee_min_cents"),
+        ("cash_fee", "cash_fee_pct", "cash_fee_min_cents"),
+    ):
         fee = labelled(doc, key)
         if fee and re.search(r"\d", fee[0]) and not contains_placeholder(fee[0]):
             pct = parse_percent(fee[0])
@@ -177,8 +243,11 @@ def card_fees_and_rates(doc: PageDoc, ctx: ExtractionContext) -> dict[str, Sourc
             out["foreign_tx_fee_pct"] = ctx.field(Decimal("0"), ftf[1], method=ftf[2])
         else:
             pct = parse_percent(ftf[0])
-            out["foreign_tx_fee_pct"] = (ctx.field(pct, ftf[1], method=ftf[2]) if pct is not None
-                                         else placeholder_or_missing(ctx, ftf[0]))
+            out["foreign_tx_fee_pct"] = (
+                ctx.field(pct, ftf[1], method=ftf[2])
+                if pct is not None
+                else placeholder_or_missing(ctx, ftf[0])
+            )
     dep = first_line(doc, r"(?:minimum\s+)?security\s+deposit")
     if dep:
         amt = parse_money(dep)
@@ -207,8 +276,12 @@ def _after_intro(text: str) -> str:
 def _intro_apr(text: str | None) -> tuple[Decimal, int] | None:
     if not text:
         return None
-    m = re.search(r"(\d{1,2}(?:\.\d+)?)%\s+intro(?:ductory)?\s+apr[^.]{0,60}?(?:for|on purchases for|on balance "
-                  r"transfers for)\s+(?:the\s+)?(?:first\s+)?(\d{1,2})\s+(months|billing cycles)", text, re.IGNORECASE)
+    m = re.search(
+        r"(\d{1,2}(?:\.\d+)?)%\s+intro(?:ductory)?\s+apr[^.]{0,60}?(?:for|on purchases for|on balance "
+        r"transfers for)\s+(?:the\s+)?(?:first\s+)?(\d{1,2})\s+(months|billing cycles)",
+        text,
+        re.IGNORECASE,
+    )
     if not m:
         return None
     return Decimal(m.group(1)), int(m.group(2))
@@ -221,11 +294,21 @@ def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sour
         if rr is None:
             continue
         for cat in rr.categories:
-            rec = RewardRateRec(category=cat, rate=rr.rate, rate_unit=rr.rate_unit, cap_cents=rr.cap_cents,  # type: ignore[arg-type]
-                                cap_period=rr.cap_period, cap_combined=rr.cap_combined,
-                                cap_group=(st if rr.cap_combined else None), post_cap_rate=rr.post_cap_rate,
-                                is_rotating=rr.is_rotating, requires_activation=rr.requires_activation,
-                                portal_only=rr.portal_only, ends_on=rr.ends_on, text=rr.text)
+            rec = RewardRateRec(
+                category=cat,
+                rate=rr.rate,
+                rate_unit=rr.rate_unit,
+                cap_cents=rr.cap_cents,
+                cap_period=rr.cap_period,
+                cap_combined=rr.cap_combined,
+                cap_group=(st if rr.cap_combined else None),
+                post_cap_rate=rr.post_cap_rate,
+                is_rotating=rr.is_rotating,
+                requires_activation=rr.requires_activation,
+                portal_only=rr.portal_only,
+                ends_on=rr.ends_on,
+                text=rr.text,
+            )
             out.append(ctx.field(rec, st, method="free_text", name=f"reward:{cat}"))
     return [s for s in out if s.present]
 
@@ -262,28 +345,53 @@ def credits(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[B
             period = "monthly"
         elif per_word.startswith("quarter") or re.search(r"\beach quarter\b", st, re.IGNORECASE):
             period = "quarterly"
-        elif per_word.startswith("semi") or re.search(r"\bsemi-?annual|twice a year|every six months\b", st, re.I):
+        elif per_word.startswith("semi") or re.search(
+            r"\bsemi-?annual|twice a year|every six months\b", st, re.I
+        ):
             period = "semiannual"
         elif per_word in {"annual", "annually", "yearly"} or re.search(
-                r"\b(?:each|every|per|a)\s+(?:calendar\s+|cardmember\s+)?year\b|\bannual(?:ly)?\b", st, re.I):
+            r"\b(?:each|every|per|a)\s+(?:calendar\s+|cardmember\s+)?year\b|\bannual(?:ly)?\b", st, re.I
+        ):
             period = "annual"
         my = re.search(r"every\s+(\d|four|five)\s+years", st, re.IGNORECASE)
         if my:
-            period, years = "multi_year", {"four": 4, "five": 5}.get(my.group(1).lower(), None) or int(my.group(1))
-        restriction = re.search(r"\b(?:at|with|for|on)\s+((?:select\s+|eligible\s+)?[A-Z][\w&'.®-]*(?:\s+[A-Z][\w&'"
-                                r".®-]*){0,4})", st)
+            period, years = (
+                "multi_year",
+                {"four": 4, "five": 5}.get(my.group(1).lower()) or int(my.group(1)),
+            )
+        restriction = re.search(
+            r"\b(?:at|with|for|on)\s+((?:select\s+|eligible\s+)?[A-Z][\w&'.®-]*(?:\s+[A-Z][\w&'"
+            r".®-]*){0,4})",
+            st,
+        )
         btype = "statement_credit"
-        for word, t in (("travel", "travel"), ("hotel", "hotel"), ("airline", "airline"), ("dining", "dining"),
-                        ("grocer", "grocery"), ("gas", "gas"), ("stream", "entertainment"),
-                        ("entertainment", "entertainment"), ("transit", "transit"), ("rideshare", "transit"),
-                        ("uber", "transit")):
+        for word, t in (
+            ("travel", "travel"),
+            ("hotel", "hotel"),
+            ("airline", "airline"),
+            ("dining", "dining"),
+            ("grocer", "grocery"),
+            ("gas", "gas"),
+            ("stream", "entertainment"),
+            ("entertainment", "entertainment"),
+            ("transit", "transit"),
+            ("rideshare", "transit"),
+            ("uber", "transit"),
+        ):
             if word in st.lower():
                 btype = t
                 break
-        rec = BenefitRec(benefit_type=btype, name=st.strip()[:120], monetizable=period is not None,
-                         amount_cents=int(m.group("amt").replace(",", "")) * 100, period=period, period_years=years,
-                         merchant_restriction=restriction.group(1) if restriction else None,
-                         enrollment_required=bool(re.search(r"\benroll(?:ment)?\b", st, re.IGNORECASE)), text=st)
+        rec = BenefitRec(
+            benefit_type=btype,
+            name=st.strip()[:120],
+            monetizable=period is not None,
+            amount_cents=int(m.group("amt").replace(",", "")) * 100,
+            period=period,
+            period_years=years,
+            merchant_restriction=restriction.group(1) if restriction else None,
+            enrollment_required=bool(re.search(r"\benroll(?:ment)?\b", st, re.IGNORECASE)),
+            text=st,
+        )
         out.append(ctx.field(rec, st, method="free_text", name="credit"))
     return [s for s in out if s.present]
 
@@ -292,10 +400,20 @@ def named_benefits(statements: Iterable[str], ctx: ExtractionContext) -> list[So
     out: list[Sourced[BenefitRec]] = []
     for st in statements:
         btype = "other"
-        for word, t in (("lounge", "travel"), ("travel", "travel"), ("hotel", "hotel"), ("bag", "airline"),
-                        ("boarding", "airline"), ("airline", "airline"), ("dining", "dining"),
-                        ("rental car", "travel"), ("insurance", "travel"), ("ticket", "entertainment"),
-                        ("presale", "entertainment"), ("transit", "transit")):
+        for word, t in (
+            ("lounge", "travel"),
+            ("travel", "travel"),
+            ("hotel", "hotel"),
+            ("bag", "airline"),
+            ("boarding", "airline"),
+            ("airline", "airline"),
+            ("dining", "dining"),
+            ("rental car", "travel"),
+            ("insurance", "travel"),
+            ("ticket", "entertainment"),
+            ("presale", "entertainment"),
+            ("transit", "transit"),
+        ):
             if word in st.lower():
                 btype = t
                 break
@@ -304,9 +422,17 @@ def named_benefits(statements: Iterable[str], ctx: ExtractionContext) -> list[So
     return [s for s in out if s.present]
 
 
-def offer(block: str, footnotes: str, ctx: ExtractionContext, *, offer_type: str, offer_url: str,
-          terms_url: str | None = None, tiers: list[str] | None = None, note: str | None = None
-          ) -> Sourced[OfferRec] | None:
+def offer(
+    block: str,
+    footnotes: str,
+    ctx: ExtractionContext,
+    *,
+    offer_type: str,
+    offer_url: str,
+    terms_url: str | None = None,
+    tiers: list[str] | None = None,
+    note: str | None = None,
+) -> Sourced[OfferRec] | None:
     po = parse_offer_block(block, footnotes)
     if po is None:
         return None
@@ -314,8 +440,14 @@ def offer(block: str, footnotes: str, ctx: ExtractionContext, *, offer_type: str
     for t in tiers or []:
         tp = parse_offer_block(t)
         if tp and tp.qualifier is Qualifier.exact and tp.amount_max is not None:
-            tier_recs.append(OfferTier(amount=tp.amount_max, requirement_min_cents=tp.requirement_min_cents,
-                                       requirement_max_cents=tp.requirement_max_cents, text=t))
+            tier_recs.append(
+                OfferTier(
+                    amount=tp.amount_max,
+                    requirement_min_cents=tp.requirement_min_cents,
+                    requirement_max_cents=tp.requirement_max_cents,
+                    text=t,
+                )
+            )
             # A headline without its own requirement/window inherits them from the explicit tiers.
             if po.requirement_type is None:
                 po.requirement_type = tp.requirement_type
@@ -330,33 +462,56 @@ def offer(block: str, footnotes: str, ctx: ExtractionContext, *, offer_type: str
         else:
             window_months = po.window.months
             window_days = po.window.days
-    exp = re.search(r"(?:expires?|ends?|offer (?:ends|expires))\s+(?:on\s+)?(january|february|march|april|may|june|"
-                    r"july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})",
-                    block + " " + footnotes, re.IGNORECASE)
-    open_by = re.search(r"open\s+(?:a\s+new\s+\w+\s+account\s+)?by\s+(january|february|march|april|may|june|july|"
-                        r"august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})",
-                        block + " " + footnotes, re.IGNORECASE)
+    exp = re.search(
+        r"(?:expires?|ends?|offer (?:ends|expires))\s+(?:on\s+)?(january|february|march|april|may|june|"
+        r"july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})",
+        block + " " + footnotes,
+        re.IGNORECASE,
+    )
+    open_by = re.search(
+        r"open\s+(?:a\s+new\s+\w+\s+account\s+)?by\s+(january|february|march|april|may|june|july|"
+        r"august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})",
+        block + " " + footnotes,
+        re.IGNORECASE,
+    )
     promo = re.search(r"(?:promo(?:tion)?|offer|bonus)\s+code\s+([A-Z0-9]{4,20})\b", block + " " + footnotes)
-    restrictions = [s.strip() for s in re.split(r"(?<=[.])\s+", footnotes)
-                    if re.search(r"not (?:available|eligible)|once per|lifetime|within the (?:last|past)|new "
-                                 r"(?:card ?members|customers)", s, re.IGNORECASE)]
+    restrictions = [
+        s.strip()
+        for s in re.split(r"(?<=[.])\s+", footnotes)
+        if re.search(
+            r"not (?:available|eligible)|once per|lifetime|within the (?:last|past)|new "
+            r"(?:card ?members|customers)",
+            s,
+            re.IGNORECASE,
+        )
+    ]
     try:
         rec = OfferRec(
-            offer_type=offer_type,  # type: ignore[arg-type]
-            reward_unit=po.reward_unit,  # type: ignore[arg-type]
-            amount_qualifier=po.qualifier.value,  # type: ignore[arg-type]
-            amount_min=po.amount_min, amount_max=po.amount_max,
+            offer_type=offer_type,
+            reward_unit=po.reward_unit,
+            amount_qualifier=po.qualifier.value,
+            amount_min=po.amount_min,
+            amount_max=po.amount_max,
             requirement_type=po.requirement_type,
-            requirement_qualifier=po.requirement_qualifier.value if po.requirement_qualifier else None,  # type: ignore[arg-type]
-            requirement_min_cents=po.requirement_min_cents, requirement_max_cents=po.requirement_max_cents,
+            requirement_qualifier=po.requirement_qualifier.value if po.requirement_qualifier else None,
+            requirement_min_cents=po.requirement_min_cents,
+            requirement_max_cents=po.requirement_max_cents,
             required_dd_count=po.required_dd_count,
-            qualification_window_days=window_days, qualification_window_months=window_months,
+            qualification_window_days=window_days,
+            qualification_window_months=window_months,
             qualification_window_text=po.window_text,
             holding_period_days=po.holding.days if po.holding else None,
-            expiration_date=_d(exp), open_by_date=_d(open_by), promo_code=promo.group(1) if promo else None,
-            audience="public", eligibility_restrictions=" ".join(restrictions) or None,
-            offer_url=offer_url, terms_url=terms_url, verbatim_text=(block + (" " + footnotes if footnotes else "")).strip(),
-            qualifier_evidence=po.qualifier_evidence, note=note, tiers=tier_recs,
+            expiration_date=_d(exp),
+            open_by_date=_d(open_by),
+            promo_code=promo.group(1) if promo else None,
+            audience="public",
+            eligibility_restrictions=" ".join(restrictions) or None,
+            offer_url=offer_url,
+            terms_url=terms_url,
+            verbatim_text=(block + (" " + footnotes if footnotes else "")).strip(),
+            qualifier_evidence=po.qualifier_evidence,
+            note=note,
+            tiers=tier_recs,
         )
     except ValueError:
         return None
@@ -371,11 +526,15 @@ def _d(m: re.Match[str] | None) -> date | None:
 
 # ----------------------------------------------------------------------------------------------- deposit accounts
 
+
 def monthly_fee(doc: PageDoc, ctx: ExtractionContext) -> Sourced[Any]:
     lab = labelled(doc, "monthly_fee")
     if lab is None:
-        line = first_line(doc, r"\b(?:no monthly (?:maintenance |service )?fees?|\$\d+(?:\.\d\d)?\s+monthly "
-                               r"(?:maintenance |service )?fee)")
+        line = first_line(
+            doc,
+            r"\b(?:no monthly (?:maintenance |service )?fees?|\$\d+(?:\.\d\d)?\s+monthly "
+            r"(?:maintenance |service )?fee)",
+        )
         lab = (line, line, "free_text") if line else None
     if lab is None:
         return ctx.field(None, None)
@@ -399,8 +558,11 @@ def fee_waivers(statements: Iterable[str], ctx: ExtractionContext) -> Sourced[li
             kind = "min_daily_balance"
         elif re.search(r"\blinked\b|\brelationship\b", low):
             kind = "linked_account"
-        elif m := re.search(r"under (?:the )?age (?:of )?(\d{2})|(?:age|ages)\s+(\d{2})\s*(?:-|to|through)\s*(\d{2})|"
-                            r"(\d{2}) (?:years|or older|and older)", low):
+        elif m := re.search(
+            r"under (?:the )?age (?:of )?(\d{2})|(?:age|ages)\s+(\d{2})\s*(?:-|to|through)\s*(\d{2})|"
+            r"(\d{2}) (?:years|or older|and older)",
+            low,
+        ):
             kind = "age"
             if m.group(1):
                 age_max = int(m.group(1)) - 1
@@ -411,9 +573,21 @@ def fee_waivers(statements: Iterable[str], ctx: ExtractionContext) -> Sourced[li
         elif "student" in low:
             kind = "student"
         if kind:
-            period = "monthly" if re.search(r"\b(?:each|per|every)\s+(?:monthly\s+)?(?:statement|month)", low) else None
-            waivers.append(FeeWaiver(kind=kind, amount_cents=amt if kind not in {"linked_account", "age", "student"}  # type: ignore[arg-type]
-                                     else None, age_max=age_max, age_min=age_min, period=period, text=st))
+            period = (
+                "monthly"
+                if re.search(r"\b(?:each|per|every)\s+(?:monthly\s+)?(?:statement|month)", low)
+                else None
+            )
+            waivers.append(
+                FeeWaiver(
+                    kind=kind,
+                    amount_cents=amt if kind not in {"linked_account", "age", "student"} else None,
+                    age_max=age_max,
+                    age_min=age_min,
+                    period=period,
+                    text=st,
+                )
+            )
             evid.append(st)
     if not waivers:
         return ctx.field(None, None)
@@ -427,7 +601,9 @@ def fee_waivers(statements: Iterable[str], ctx: ExtractionContext) -> Sourced[li
 def apy_value(doc: PageDoc, ctx: ExtractionContext) -> Sourced[Any]:
     lab = labelled(doc, "apy")
     if lab is None:
-        line = first_line(doc, r"\d+(?:\.\d+)?%\s*(?:annual percentage yield|apy)|apy[^.\n]{0,30}(?:nan|--|\$|%)")
+        line = first_line(
+            doc, r"\d+(?:\.\d+)?%\s*(?:annual percentage yield|apy)|apy[^.\n]{0,30}(?:nan|--|\$|%)"
+        )
         lab = (line, line, "free_text") if line else None
     if lab is None:
         return ctx.field(None, None)
@@ -455,12 +631,17 @@ def apy_tiers(doc: PageDoc, ctx: ExtractionContext, css: str = "table.apy-tiers 
         first = first or val
     if not tiers:
         return ctx.field(None, None)
-    return ctx.field(sorted(tiers, key=lambda t: t.min_balance_cents), first, method="table_cell", name="apy_tiers")
+    return ctx.field(
+        sorted(tiers, key=lambda t: t.min_balance_cents), first, method="table_cell", name="apy_tiers"
+    )
 
 
 def states(text: str, ctx: ExtractionContext) -> Sourced[Any]:
-    m = re.search(r"(?i:available (?:only )?(?:to residents of|in)(?: the following states)?|offered in)[:\s]+"
-                  r"((?:[A-Z]{2}(?:,\s*|\s+and\s+|\s+))+[A-Z]{2})", text)
+    m = re.search(
+        r"(?i:available (?:only )?(?:to residents of|in)(?: the following states)?|offered in)[:\s]+"
+        r"((?:[A-Z]{2}(?:,\s*|\s+and\s+|\s+))+[A-Z]{2})",
+        text,
+    )
     if not m:
         return ctx.field(None, None)
     found = [s for s in re.findall(r"\b[A-Z]{2}\b", m.group(1)) if s in US_STATES]
@@ -468,8 +649,11 @@ def states(text: str, ctx: ExtractionContext) -> Sourced[Any]:
 
 
 def withdrawal_limit(doc: PageDoc, ctx: ExtractionContext) -> tuple[Sourced[Any], Sourced[Any]]:
-    line = first_line(doc, r"(?:limit(?:ed)? (?:of|to)|up to)\s+(\d+|six)\s+(?:\w+\s+)?withdrawals|withdrawal"
-                           r" (?:limit|restriction)")
+    line = first_line(
+        doc,
+        r"(?:limit(?:ed)? (?:of|to)|up to)\s+(\d+|six)\s+(?:\w+\s+)?withdrawals|withdrawal"
+        r" (?:limit|restriction)",
+    )
     if not line:
         return ctx.field(None, None), ctx.field(None, None)
     m = re.search(r"(\d+|six)\s+(?:\w+\s+)?withdrawals", line, re.IGNORECASE)
@@ -479,11 +663,13 @@ def withdrawal_limit(doc: PageDoc, ctx: ExtractionContext) -> tuple[Sourced[Any]
 
 def min_amount(doc: PageDoc, ctx: ExtractionContext, key: str) -> Sourced[Any]:
     lab = labelled(doc, key)
-    if lab is None:
-        if key == "min_opening":
-            line = first_line(doc, r"(?:\$\d[\d,]*|no minimum)\s+(?:minimum\s+)?(?:opening\s+)?deposit|"
-                                   r"(?:\$\d[\d,]*|no minimum (?:deposit )?)to open")
-            lab = (line, line, "free_text") if line else None
+    if lab is None and key == "min_opening":
+        line = first_line(
+            doc,
+            r"(?:\$\d[\d,]*|no minimum)\s+(?:minimum\s+)?(?:opening\s+)?deposit|"
+            r"(?:\$\d[\d,]*|no minimum (?:deposit )?)to open",
+        )
+        lab = (line, line, "free_text") if line else None
     if lab is None:
         return ctx.field(None, None)
     if re.search(r"\bno minimum\b|\bnone\b|\$0\b", lab[0], re.IGNORECASE):

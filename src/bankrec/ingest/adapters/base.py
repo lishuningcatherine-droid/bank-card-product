@@ -21,7 +21,6 @@ from bankrec.model import (
     PageType,
     ProductType,
     ProvenanceClass,
-    Sourced,
 )
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.settings import CONFIG_DIR
@@ -53,8 +52,12 @@ def co_brands() -> dict[str, list[str]]:
     return yaml.safe_load((CONFIG_DIR / "co_brands.yaml").read_text(encoding="utf-8"))
 
 
-NETWORKS = [("American Express", r"\bAmerican Express\b"), ("Visa", r"\bVisa\b"),
-            ("Mastercard", r"\bMaster[Cc]ard\b"), ("Discover", r"\bDiscover\b(?! more)")]
+NETWORKS = [
+    ("American Express", r"\bAmerican Express\b"),
+    ("Visa", r"\bVisa\b"),
+    ("Mastercard", r"\bMaster[Cc]ard\b"),
+    ("Discover", r"\bDiscover\b(?! more)"),
+]
 
 
 class DeclarativeAdapter:
@@ -66,8 +69,11 @@ class DeclarativeAdapter:
 
     def __init__(self, rules: dict[str, Any] | None = None) -> None:
         path = self.rules_dir / f"{self.bank_id}.rules.yaml"
-        self.rules: dict[str, Any] = rules if rules is not None else (
-            yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}) or {}
+        self.rules: dict[str, Any] = (
+            rules
+            if rules is not None
+            else (yaml.safe_load(path.read_text(encoding="utf-8")) if path.exists() else {}) or {}
+        )
 
     # ------------------------------------------------------------------ hooks (override in bank modules)
     def statements(self, page: ClassifiedPage, key: str, fallback: str | None) -> list[str]:
@@ -76,8 +82,11 @@ class DeclarativeAdapter:
             return [page.doc.node_text(n).replace("\n", " ") for n in page.doc.select(sel)]
         if fallback is None:
             return []
-        return X.lines(page.doc, fallback) if page.doc is not None else [
-            ln for ln in page.text.split("\n") if re.search(fallback, ln, re.IGNORECASE)]
+        return (
+            X.lines(page.doc, fallback)
+            if page.doc is not None
+            else [ln for ln in page.text.split("\n") if re.search(fallback, ln, re.IGNORECASE)]
+        )
 
     def product_name(self, page: ClassifiedPage) -> str | None:
         sel = self.rules.get("name_selector", "h1")
@@ -102,14 +111,26 @@ class DeclarativeAdapter:
         if page.source.product_type is None:
             return []
         conf = PRIORITY.get(page.page_type, 0) / 100.0
-        prov = (ProvenanceClass.manual_capture if page.capture_method == "manual" else
-                ProvenanceClass.official_pdf if page.page_type is PageType.pdf_terms else ProvenanceClass.official_page)
+        prov = (
+            ProvenanceClass.manual_capture
+            if page.capture_method == "manual"
+            else ProvenanceClass.official_pdf
+            if page.page_type is PageType.pdf_terms
+            else ProvenanceClass.official_page
+        )
         ctx = ExtractionContext(page.text, source_confidence=conf, provenance_class=prov)
-        c = ProductCandidate(bank_id=page.bank.bank_id, product_type=page.source.product_type,
-                             source_id=page.source.source_id, url=page.url, page_type=page.page_type,
-                             parser_name=type(self).__module__.rsplit(".", 1)[-1], parser_version=self.parser_version,
-                             retrieved_at=page.retrieved_at, capture_method=page.capture_method,
-                             snapshot_id=page.snapshot_id)
+        c = ProductCandidate(
+            bank_id=page.bank.bank_id,
+            product_type=page.source.product_type,
+            source_id=page.source.source_id,
+            url=page.url,
+            page_type=page.page_type,
+            parser_name=type(self).__module__.rsplit(".", 1)[-1],
+            parser_version=self.parser_version,
+            retrieved_at=page.retrieved_at,
+            capture_method=page.capture_method,
+            snapshot_id=page.snapshot_id,
+        )
         name = self.product_name(page) if page.doc is not None else page.source.expected_entity
         c.fields["official_name"] = ctx.field(name, name, method="table_cell", name="official_name")
         if page.doc is not None:
@@ -123,8 +144,10 @@ class DeclarativeAdapter:
         if terms and page.doc is not None:
             for n in page.doc.select(terms):
                 href = n.attributes.get("href")
-                if href and href.startswith("https://"):
-                    c.fields["terms_url"] = Sourced(value=href, span_text=href, confidence=1.0, method="table_cell")
+                label = page.doc.node_text(n).replace("\n", " ").strip()
+                if href and href.startswith("https://") and label:
+                    # value comes from the link's href in the raw HTML; the visible link text is the located span
+                    c.fields["terms_url"] = ctx.field(href, label, method="table_cell", name="terms_url")
                     break
         c.fields.setdefault("terms_url", ctx.field(None, None))
         c.refused_fields = ctx.refused
@@ -143,7 +166,9 @@ class DeclarativeAdapter:
         secured = re.search(r"\bsecured\b", name, re.IGNORECASE)
         c.fields["is_secured"] = ctx.field(bool(secured), name)
         if not secured:
-            c.fields["secured_min_deposit_cents"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+            c.fields["secured_min_deposit_cents"] = ctx.field(
+                None, None, null_reason=NullReason.not_applicable
+            )
         partner = None
         brand_map = {k: list(v) for k, v in co_brands().items()}
         for k, v in (self.rules.get("co_brands") or {}).items():
@@ -156,8 +181,11 @@ class DeclarativeAdapter:
             if partner:
                 break
         c.fields["is_co_branded"] = ctx.field(partner is not None, name)
-        c.fields["co_brand_partner"] = (ctx.field(partner[0], name) if partner
-                                        else ctx.field(None, None, null_reason=NullReason.not_applicable))
+        c.fields["co_brand_partner"] = (
+            ctx.field(partner[0], name)
+            if partner
+            else ctx.field(None, None, null_reason=NullReason.not_applicable)
+        )
         found = [(n, m) for n, p in NETWORKS if (m := re.search(p, page.text))]
         if self.rules.get("network"):
             n = self.rules["network"]
@@ -166,30 +194,44 @@ class DeclarativeAdapter:
             c.fields["network"] = ctx.field(found[0][0], found[0][1].group(0))
         elif len(found) > 1:
             c.fields["network"] = ctx.field(None, None, null_reason=NullReason.ambiguous)
-        reward_lines = self.statements(page, "reward",
-                                       r"\d(?:\.\d+)?\s*(?:%|[xX]\b|\s+(?:points|miles)\s+per)\s*.*"
-                                       r"(?:cash back|back|points|miles|on\b)")
+        reward_lines = self.statements(
+            page,
+            "reward",
+            r"\d(?:\.\d+)?\s*(?:%|[xX]\b|\s+(?:points|miles)\s+per)\s*.*"
+            r"(?:cash back|back|points|miles|on\b)",
+        )
         rates = X.reward_rates(reward_lines, ctx)
         c.reward_rates = rates
         currency, _ = X.reward_currency(rates, " ".join(reward_lines))
-        c.fields["reward_currency"] = (ctx.field(currency, reward_lines[0]) if currency and reward_lines
-                                       else ctx.field(None, None))
+        c.fields["reward_currency"] = (
+            ctx.field(currency, reward_lines[0]) if currency and reward_lines else ctx.field(None, None)
+        )
         base = [r for r in rates if r.value and r.value.category == "other"]
-        c.fields["base_rate"] = (ctx.field(base[0].value.rate, base[0].span_text) if base and base[0].value
-                                 else ctx.field(None, None))
+        c.fields["base_rate"] = (
+            ctx.field(base[0].value.rate, base[0].span_text)
+            if base and base[0].value
+            else ctx.field(None, None)
+        )
         prog = self.rules.get("reward_program_pattern")
         if prog and (m := re.search(prog, page.text)):
             c.fields["reward_program"] = ctx.field(m.group(0), m.group(0))
-        credit_lines = self.statements(page, "credit", r"\$\d[\d,]*\s+(?:\w+\s+){0,5}?(?:statement\s+)?credit")
+        credit_lines = self.statements(
+            page, "credit", r"\$\d[\d,]*\s+(?:\w+\s+){0,5}?(?:statement\s+)?credit"
+        )
         c.benefits = X.credits(credit_lines, ctx)
         c.benefits += X.named_benefits(self.statements(page, "benefit", None), ctx)
         guide = X.first_line(doc, r"^(?:recommended credit|credit (?:level|needed|score|profile))\s*[:\-]")
-        c.fields["credit_profile_guidance"] = (ctx.field(guide.split(":", 1)[-1].strip(), guide) if guide
-                                               else ctx.field(None, None))
-        elig = X.lines(doc, r"not available to|once per (?:lifetime|card ?member)|if you have (?:received|had)|"
-                            r"within the (?:last|past) \d+ months")
-        c.fields["eligibility_restrictions"] = (ctx.field(" ".join(elig), elig[0]) if elig
-                                                else ctx.field(None, None))
+        c.fields["credit_profile_guidance"] = (
+            ctx.field(guide.split(":", 1)[-1].strip(), guide) if guide else ctx.field(None, None)
+        )
+        elig = X.lines(
+            doc,
+            r"not available to|once per (?:lifetime|card ?member)|if you have (?:received|had)|"
+            r"within the (?:last|past) \d+ months",
+        )
+        c.fields["eligibility_restrictions"] = (
+            ctx.field(" ".join(elig), elig[0]) if elig else ctx.field(None, None)
+        )
         self._offers(page, ctx, c, "card_welcome")
         self.card_extras(page, ctx, c)
 
@@ -197,8 +239,12 @@ class DeclarativeAdapter:
         doc = page.doc
         assert doc is not None
         c.fields["monthly_fee_cents"] = X.monthly_fee(doc, ctx)
-        waiver_lines = self.statements(page, "waiver", r"(?:avoid|waive)|balance of \$|deposits? totaling|"
-                                                       r"linked|under (?:the )?age")
+        waiver_lines = self.statements(
+            page,
+            "waiver",
+            r"(?:avoid|waive)|balance of \$|deposits? totaling|"
+            r"linked|under (?:the )?age",
+        )
         c.fields["fee_waivers"] = X.fee_waivers(waiver_lines, ctx)
         if c.fields["monthly_fee_cents"].value == 0:
             c.fields["fee_waivers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
@@ -206,26 +252,39 @@ class DeclarativeAdapter:
         od = X.labelled(doc, "overdraft")
         c.fields["overdraft_summary"] = ctx.field(od[0], od[1]) if od else ctx.field(None, None)
         tiers = X.apy_tiers(doc, ctx, self.rules.get("apy_tier_selector", "table.apy-tiers tr"))
-        c.fields["apy_tiers"] = tiers if tiers.present else ctx.field(None, None, null_reason=NullReason.not_applicable)
+        c.fields["apy_tiers"] = (
+            tiers if tiers.present else ctx.field(None, None, null_reason=NullReason.not_applicable)
+        )
         c.fields["eligible_states"] = X.states(page.text, ctx)
         access = self.rules.get("access_model")
         if access:
-            c.fields["access_model"] = ctx.field(access["value"], access["evidence"]) if isinstance(access, dict) \
+            c.fields["access_model"] = (
+                ctx.field(access["value"], access["evidence"])
+                if isinstance(access, dict)
                 else ctx.field(None, None)
+            )
         acct = X.first_line(doc, r"^account type\s*:")
-        c.fields["account_type"] = ctx.field(acct.split(":", 1)[1].strip(), acct) if acct else ctx.field(None, None)
+        c.fields["account_type"] = (
+            ctx.field(acct.split(":", 1)[1].strip(), acct) if acct else ctx.field(None, None)
+        )
         elig = X.first_line(doc, r"^(?:eligibility|who can open)\s*:")
-        c.fields["customer_eligibility"] = (ctx.field(elig.split(":", 1)[1].strip(), elig) if elig
-                                            else ctx.field(None, None))
+        c.fields["customer_eligibility"] = (
+            ctx.field(elig.split(":", 1)[1].strip(), elig) if elig else ctx.field(None, None)
+        )
         self._offers(page, ctx, c, "checking_bonus")
 
     def _savings(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         doc = page.doc
         assert doc is not None
-        c.fields["apy_tiers"] = X.apy_tiers(doc, ctx, self.rules.get("apy_tier_selector", "table.apy-tiers tr"))
+        c.fields["apy_tiers"] = X.apy_tiers(
+            doc, ctx, self.rules.get("apy_tier_selector", "table.apy-tiers tr")
+        )
         # Tiered accounts: the tier table governs; a single headline APY would be misleading.
-        apy = (ctx.field(None, None, null_reason=NullReason.not_applicable) if c.fields["apy_tiers"].present
-               else X.apy_value(doc, ctx))
+        apy = (
+            ctx.field(None, None, null_reason=NullReason.not_applicable)
+            if c.fields["apy_tiers"].present
+            else X.apy_value(doc, ctx)
+        )
         c.fields["apy_pct"] = apy
         if not c.fields["apy_tiers"].present and apy.present:
             c.fields["apy_tiers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
@@ -235,23 +294,41 @@ class DeclarativeAdapter:
         c.fields["min_balance_cents"] = X.min_amount(doc, ctx, "min_balance")
         c.fields["monthly_fee_cents"] = X.monthly_fee(doc, ctx)
         waiver_lines = self.statements(page, "waiver", r"(?:avoid|waive)")
-        c.fields["fee_waivers"] = (X.fee_waivers(waiver_lines, ctx) if c.fields["monthly_fee_cents"].value
-                                   else ctx.field(None, None, null_reason=NullReason.not_applicable))
+        c.fields["fee_waivers"] = (
+            X.fee_waivers(waiver_lines, ctx)
+            if c.fields["monthly_fee_cents"].value
+            else ctx.field(None, None, null_reason=NullReason.not_applicable)
+        )
         wr, wn = X.withdrawal_limit(doc, ctx)
         c.fields["withdrawal_restrictions"], c.fields["max_withdrawals_per_month"] = wr, wn
         c.fields["eligible_states"] = X.states(page.text, ctx)
         cr = X.first_line(doc, r"^(?:eligibility|who can open)\s*:")
-        c.fields["customer_restrictions"] = ctx.field(cr.split(":", 1)[1].strip(), cr) if cr else ctx.field(None, None)
+        c.fields["customer_restrictions"] = (
+            ctx.field(cr.split(":", 1)[1].strip(), cr) if cr else ctx.field(None, None)
+        )
         self._offers(page, ctx, c, "savings_bonus")
 
-    def _offers(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate, offer_type: str) -> None:
-        blocks = self.statements(page, "offer", r"(?:bonus|welcome offer|earn \$\d|earn up to)[^\n]*"
-                                                r"(?:after|when|with|\d)")
+    def _offers(
+        self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate, offer_type: str
+    ) -> None:
+        blocks = self.statements(
+            page,
+            "offer",
+            r"(?:bonus|welcome offer|earn \$\d|earn up to)[^\n]*"
+            r"(?:after|when|with|\d)",
+        )
         foot = " ".join(self.statements(page, "offer_footnote", r"^[*†‡]"))
         tiers = self.statements(page, "offer_tier", None)
         for b in blocks[:3]:
-            o = X.offer(b, foot, ctx, offer_type=offer_type, offer_url=page.url, tiers=tiers,
-                        note=self.offer_note(page))
+            o = X.offer(
+                b,
+                foot,
+                ctx,
+                offer_type=offer_type,
+                offer_url=page.url,
+                tiers=tiers,
+                note=self.offer_note(page),
+            )
             if o is not None:
                 c.offers.append(o)
         if not c.offers:

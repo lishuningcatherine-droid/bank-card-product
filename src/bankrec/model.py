@@ -69,8 +69,11 @@ class PageType(StrEnum):
 
 
 EXTRACTABLE_PAGE_TYPES = {
-    PageType.official_product_detail, PageType.official_offer_detail, PageType.official_comparison_page,
-    PageType.terms_page, PageType.pdf_terms,
+    PageType.official_product_detail,
+    PageType.official_offer_detail,
+    PageType.official_comparison_page,
+    PageType.terms_page,
+    PageType.pdf_terms,
 }
 
 #: Source priority (higher wins). Regulator data never publishes.
@@ -123,15 +126,24 @@ class ProvenanceError(ValueError):
     pass
 
 
-METHOD_CONFIDENCE = {"table_cell": 1.0, "label_regex": 0.9, "free_text": 0.75, "manual_review": 1.0,
-                     "provider": 0.8}
+METHOD_CONFIDENCE = {
+    "table_cell": 1.0,
+    "label_regex": 0.9,
+    "free_text": 0.75,
+    "manual_review": 1.0,
+    "provider": 0.8,
+}
 
 
 class ExtractionContext:
     """Holds the snapshot text an adapter extracts from and enforces the provenance guard."""
 
-    def __init__(self, text: str, source_confidence: float = 1.0,
-                 provenance_class: ProvenanceClass = ProvenanceClass.official_page) -> None:
+    def __init__(
+        self,
+        text: str,
+        source_confidence: float = 1.0,
+        provenance_class: ProvenanceClass = ProvenanceClass.official_page,
+    ) -> None:
         self.text = text
         self._norm = norm_ws(text).lower()
         self.source_confidence = source_confidence
@@ -145,8 +157,15 @@ class ExtractionContext:
         i = self._norm.find(needle)
         return (i, i + len(needle)) if i >= 0 else None
 
-    def field(self, value: T | None, span_text: str | None, *, method: str = "label_regex",
-              null_reason: NullReason = NullReason.not_found, name: str = "") -> Sourced[T]:
+    def field(
+        self,
+        value: T | None,
+        span_text: str | None,
+        *,
+        method: str = "label_regex",
+        null_reason: NullReason = NullReason.not_found,
+        name: str = "",
+    ) -> Sourced[T]:
         if value is None:
             return Sourced(value=None, null_reason=null_reason)
         if not span_text:
@@ -156,17 +175,32 @@ class ExtractionContext:
         if loc is None:
             self.refused.append((name, span_text[:80]))
             return Sourced(value=None, null_reason=NullReason.not_found)
-        return Sourced(value=value, span_text=norm_ws(span_text), span_start=loc[0], span_end=loc[1],
-                       confidence=round(METHOD_CONFIDENCE.get(method, 0.75) * self.source_confidence, 4),
-                       provenance_class=self.provenance_class, method=method)
+        return Sourced(
+            value=value,
+            span_text=norm_ws(span_text),
+            span_start=loc[0],
+            span_end=loc[1],
+            confidence=round(METHOD_CONFIDENCE.get(method, 0.75) * self.source_confidence, 4),
+            provenance_class=self.provenance_class,
+            method=method,
+        )
 
 
 # ---------------------------------------------------------------- structured sub-values
 
+
 class FeeWaiver(BaseModel):
     model_config = ConfigDict(frozen=True, extra="forbid")
-    kind: Literal["min_daily_balance", "min_avg_balance", "direct_deposit_total", "electronic_deposit_total",
-                  "linked_account", "age", "student", "other"]
+    kind: Literal[
+        "min_daily_balance",
+        "min_avg_balance",
+        "direct_deposit_total",
+        "electronic_deposit_total",
+        "linked_account",
+        "age",
+        "student",
+        "other",
+    ]
     amount_cents: int | None = None
     age_max: int | None = None
     age_min: int | None = None

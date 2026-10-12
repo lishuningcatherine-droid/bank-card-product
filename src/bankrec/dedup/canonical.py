@@ -21,16 +21,32 @@ def norm_name(name: str, bank_display_name: str | None = None) -> str:
     return re.sub(r"\s+", " ", s).strip()
 
 
-def canonical_key(bank_id: str, product_type: str, segment: str | None, name: str, variant: str | None = None,
-                  bank_display_name: str | None = None) -> str:
+def canonical_key(
+    bank_id: str,
+    product_type: str,
+    segment: str | None,
+    name: str,
+    variant: str | None = None,
+    bank_display_name: str | None = None,
+) -> str:
     seg = segment or ("consumer" if product_type == "credit_card" else "personal")
     var = norm_name(variant) if variant else "-"
     return f"{bank_id}:{product_type}:{seg}:{norm_name(name, bank_display_name)}:{var}"
 
 
 def offer_key(product_key: str, o: dict[str, Any]) -> str:
-    parts = [product_key, o.get("offer_type"), o.get("amount_qualifier"), o.get("amount_min"), o.get("amount_max"),
-             o.get("reward_unit"), o.get("requirement_type"), o.get("requirement_min_cents"),
-             o.get("requirement_max_cents"), o.get("qualification_window_days"), o.get("audience"),
-             tuple(t.get("amount") for t in o.get("tiers") or [])]
+    parts = [
+        product_key,
+        o.get("offer_type"),
+        o.get("amount_qualifier"),
+        o.get("amount_min"),
+        o.get("amount_max"),
+        o.get("reward_unit"),
+        o.get("requirement_type"),
+        o.get("requirement_min_cents"),
+        o.get("requirement_max_cents"),
+        o.get("qualification_window_days"),
+        o.get("audience"),
+        tuple(t.get("amount") for t in o.get("tiers") or []),
+    ]
     return hashlib.sha1(repr(parts).encode()).hexdigest()[:20]  # noqa: S324 (identity hash, not security)

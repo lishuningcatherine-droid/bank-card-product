@@ -21,7 +21,8 @@ def vocabulary(path: Path | None = None) -> dict[str, dict[str, object]]:
 def _patterns() -> list[tuple[re.Pattern[str], str]]:
     pairs: list[tuple[str, str]] = []
     for code, spec in vocabulary().items():
-        for syn in spec["synonyms"]:  # type: ignore[union-attr]
+        synonyms: list[str] = list(spec["synonyms"])  # type: ignore[call-overload]
+        for syn in synonyms:
             pairs.append((str(syn), code))
     pairs.sort(key=lambda p: len(p[0]), reverse=True)
     return [(re.compile(r"(?<![\w])" + re.escape(s) + r"(?![\w])", re.IGNORECASE), c) for s, c in pairs]

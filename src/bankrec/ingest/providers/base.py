@@ -59,8 +59,10 @@ def check_gate(cfg: ProviderConfig) -> None:
         return
     lic = cfg.license
     if lic.status != "confirmed" or not lic.confirmed_by or not lic.confirmed_on:
-        raise ProviderGateError(f"provider {cfg.provider_id!r} is enabled but its license is not confirmed "
-                                "(status: confirmed, confirmed_by and confirmed_on are all required)")
+        raise ProviderGateError(
+            f"provider {cfg.provider_id!r} is enabled but its license is not confirmed "
+            "(status: confirmed, confirmed_by and confirmed_on are all required)"
+        )
 
 
 def load_providers(config_dir: Path = CONFIG_DIR, *, include_test_only: bool = False) -> list[ProviderConfig]:

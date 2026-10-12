@@ -8,7 +8,9 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 FIX = REPO / "tests" / "fixtures"
-TEST_DB = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec_test")
+TEST_DB = os.environ.get(
+    "TEST_DATABASE_URL", "postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec_test"
+)
 
 
 @pytest.fixture(scope="session")
@@ -39,8 +41,15 @@ def engine(db_url: str):  # type: ignore[no-untyped-def]
 
     eng = create_engine(db_url)
     with eng.begin() as c:
-        tables = c.execute(text(
-            "select schemaname||'.'||tablename from pg_tables where schemaname in ('staging','prod')")).scalars().all()
+        tables = (
+            c.execute(
+                text(
+                    "select schemaname||'.'||tablename from pg_tables where schemaname in ('staging','prod')"
+                )
+            )
+            .scalars()
+            .all()
+        )
         c.execute(text("TRUNCATE " + ", ".join(tables) + " RESTART IDENTITY CASCADE"))
     yield eng
     eng.dispose()
@@ -60,5 +69,9 @@ def session(engine):  # type: ignore[no-untyped-def]
 def settings(tmp_path: Path):  # type: ignore[no-untyped-def]
     from bankrec.settings import Settings
 
-    return Settings(BANKREC_ENV="test", BANKREC_DATA_DIR=tmp_path / "data", BANKREC_REPORTS_DIR=tmp_path / "reports",
-                    BANKREC_MIN_HOST_INTERVAL_S=0)
+    return Settings(
+        BANKREC_ENV="test",
+        BANKREC_DATA_DIR=tmp_path / "data",
+        BANKREC_REPORTS_DIR=tmp_path / "reports",
+        BANKREC_MIN_HOST_INTERVAL_S=0,
+    )

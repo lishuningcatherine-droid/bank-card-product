@@ -13,9 +13,13 @@ _ZERO_PHRASES = re.compile(
     r"no fee|none)\b",
     re.IGNORECASE,
 )
-_AMOUNT = re.compile(r"\$\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?(?!\d)(\s*(?:k|thousand)\b)?", re.IGNORECASE)
-_MARKETING = re.compile(r"\b(?:more than|over|worth|value of)\s+\$[\d,]+(?:\.\d+)?\s+(?:in|of)\s+(?:annual\s+)?value",
-                        re.IGNORECASE)
+_AMOUNT = re.compile(
+    r"\$\s*(\d{1,3}(?:,\d{3})+|\d+)(?:\.(\d{1,2}))?(?!\d)(\s*(?:k|thousand)\b)?", re.IGNORECASE
+)
+_MARKETING = re.compile(
+    r"\b(?:more than|over|worth|value of)\s+\$[\d,]+(?:\.\d+)?\s+(?:in|of)\s+(?:annual\s+)?value",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)

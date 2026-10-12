@@ -30,9 +30,14 @@ class Registry:
     banks_without_sources: list[str] = field(default_factory=list)
 
     def enabled(self, tier: str | None = None, bank: str | None = None) -> list[SourceEntry]:
-        return [s for s in self.sources
-                if s.enabled and s.state == "curated" and (tier is None or s.tier == tier)
-                and (bank is None or s.bank_id == bank)]
+        return [
+            s
+            for s in self.sources
+            if s.enabled
+            and s.state == "curated"
+            and (tier is None or s.tier == tier)
+            and (bank is None or s.bank_id == bank)
+        ]
 
     def bank(self, bank_id: str) -> BankConfig:
         return self.banks[bank_id]
@@ -48,8 +53,13 @@ def _read_yaml(path: Path) -> object:
     return data
 
 
-def load_registry(config_dir: Path = CONFIG_DIR, *, include_test_only: bool = False,
-                  known_parsers: set[str] | None = None, require_sources: bool = True) -> Registry:
+def load_registry(
+    config_dir: Path = CONFIG_DIR,
+    *,
+    include_test_only: bool = False,
+    known_parsers: set[str] | None = None,
+    require_sources: bool = True,
+) -> Registry:
     banks_dir, sources_dir = config_dir / "banks", config_dir / "sources"
     banks: dict[str, BankConfig] = {}
     for p in sorted(banks_dir.glob("*.yaml")):
@@ -125,5 +135,6 @@ def load_registry(config_dir: Path = CONFIG_DIR, *, include_test_only: bool = Fa
     if require_sources and not reg.enabled():
         raise EmptyRegistryError(
             "registry has no enabled sources; refusing a silent zero-record run. Banks without sources: "
-            + ", ".join(reg.banks_without_sources))
+            + ", ".join(reg.banks_without_sources)
+        )
     return reg

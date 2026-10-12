@@ -19,10 +19,14 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="", extra="ignore")
 
     env: Literal["dev", "test", "prod"] = Field("dev", alias="BANKREC_ENV")
-    database_url: str = Field("postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec", alias="DATABASE_URL")
+    database_url: str = Field(
+        "postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec", alias="DATABASE_URL"
+    )
     api_database_url: str | None = Field(None, alias="API_DATABASE_URL")  # read-only role over prod
     contact_email: str = Field("contact@example.invalid", alias="BANKREC_CONTACT_EMAIL")
-    project_url: str = Field("https://github.com/lishuningcatherine-droid/bank-card-product", alias="BANKREC_PROJECT_URL")
+    project_url: str = Field(
+        "https://github.com/lishuningcatherine-droid/bank-card-product", alias="BANKREC_PROJECT_URL"
+    )
     web_origin: str = Field("http://localhost:3000", alias="WEB_ORIGIN")
     revalidate_url: str | None = Field(None, alias="REVALIDATE_URL")
     revalidate_secret: str | None = Field(None, alias="REVALIDATE_SECRET")

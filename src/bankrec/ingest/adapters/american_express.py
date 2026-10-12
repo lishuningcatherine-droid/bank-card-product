@@ -44,7 +44,8 @@ class Adapter(DeclarativeAdapter):
                 answer = lines[i + 1]
                 sched = parse_fee_schedule(answer)
                 if sched.ongoing_cents is not None:
-                    c.fields["annual_fee_cents"] = ctx.field(sched.ongoing_cents, answer, method="label_regex",
-                                                             name="annual_fee_faq")
+                    c.fields["annual_fee_cents"] = ctx.field(
+                        sched.ongoing_cents, answer, method="label_regex", name="annual_fee_faq"
+                    )
                     c.notes.append("annual fee taken from FAQ answer")
                 return
