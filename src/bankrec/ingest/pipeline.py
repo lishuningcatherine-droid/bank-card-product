@@ -199,6 +199,7 @@ class Pipeline:
             self._process(src, fr)
         self._resolve_and_publish()
         self._assert_terminal(sources + [m[0] for m in manual or []])
+        self._write_summary()
         self.result.finished_at = self.now()
         run.finished_at, run.status = self.result.finished_at, "completed"
         run.stage_counts = self.counts()
@@ -210,6 +211,31 @@ class Pipeline:
         for o in self.result.sources:
             c[o.terminal] += 1
         return {"sources": dict(c), "products": len(self.result.products)}
+
+    def _write_summary(self) -> None:
+        """Public-safe per bank × type summary for GET /sources (the API cannot read staging)."""
+        by: dict[tuple[str, str], dict[str, int]] = defaultdict(lambda: defaultdict(int))
+        for o in self.result.sources:
+            if o.source.product_type:
+                by[(o.source.bank_id, o.source.product_type.value)][o.terminal] += 1
+        for b in self.reg.banks.values():
+            if b.role != "bank":
+                continue
+            for t in ("credit_card", "checking", "savings"):
+                row = self.s.get(P.SourceSummary, (b.bank_id, t)) or P.SourceSummary(
+                    bank_id=b.bank_id, product_type=t
+                )
+                srcs = [
+                    s
+                    for s in self.reg.enabled(bank=b.bank_id)
+                    if s.product_type and s.product_type.value == t
+                ]
+                row.sources_enabled = len(srcs)
+                row.requires_render = sum(1 for s in srcs if s.requires_render)
+                if (b.bank_id, t) in by:
+                    row.last_run_at = self.now()
+                    row.status_counts = dict(by[(b.bank_id, t)])
+                self.s.merge(row)
 
     def _mirror_registry(self) -> None:
         for src in self.reg.sources:

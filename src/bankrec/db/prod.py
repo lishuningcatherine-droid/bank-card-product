@@ -334,3 +334,16 @@ class FieldProvenance(ProdBase):
     provenance_class: Mapped[str] = mapped_column(String(24))
     retrieved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class SourceSummary(ProdBase):
+    """Public-safe per-bank × product-type pipeline summary, written at the end of each run (for GET /sources).
+    No URLs of failed pages, no parser internals."""
+
+    __tablename__ = "source_summary"
+    bank_id: Mapped[str] = mapped_column(String(64), primary_key=True)
+    product_type: Mapped[str] = mapped_column(String(20), primary_key=True)
+    last_run_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    sources_enabled: Mapped[int] = mapped_column(Integer, default=0)
+    requires_render: Mapped[int] = mapped_column(Integer, default=0)
+    status_counts: Mapped[dict[str, Any]] = mapped_column(J, default=dict)

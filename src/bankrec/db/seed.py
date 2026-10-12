@@ -26,6 +26,7 @@ ORDER = [
     P.ProductVersion,
     P.OfferVersion,
     P.FieldProvenance,
+    P.SourceSummary,
 ]
 
 
