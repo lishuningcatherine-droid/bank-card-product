@@ -25,3 +25,5 @@ web/test-results/
 data/raw/*
 !data/raw/README.md
 reports/*/
+web/next-env.d.ts
+web/tsconfig.tsbuildinfo

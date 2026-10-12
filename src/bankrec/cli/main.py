@@ -28,6 +28,7 @@ schedule_app = typer.Typer(no_args_is_help=True, help="Scheduling helpers.")
 revalidate_app = typer.Typer(no_args_is_help=True, help="Next.js on-demand revalidation.")
 registry_app = typer.Typer(no_args_is_help=True, help="Source registry.")
 crosscheck_app = typer.Typer(no_args_is_help=True, help="Regulator cross-checks (CFPB).")
+api_app = typer.Typer(no_args_is_help=True, help="API utilities.")
 for name, sub in [
     ("review", review_app),
     ("report", report_app),
@@ -36,6 +37,7 @@ for name, sub in [
     ("revalidate", revalidate_app),
     ("registry", registry_app),
     ("crosscheck", crosscheck_app),
+    ("api", api_app),
 ]:
     app.add_typer(sub, name=name)
 
@@ -487,6 +489,26 @@ def crosscheck_tccp(
         )
         s.commit()
     typer.echo(json.dumps(summ.__dict__, default=str))
+
+
+@api_app.command("openapi")
+def api_openapi(path: Path = Path("docs/openapi.json")) -> None:
+    """Write the published OpenAPI spec (the web app generates its TypeScript types from it)."""
+    from bankrec.api.app import create_app
+
+    spec = create_app().openapi()
+    path.write_text(json.dumps(spec, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+    typer.echo(f"wrote {path}")
+
+
+@api_app.command("serve")
+def api_serve(host: str = "127.0.0.1", port: int = 8000) -> None:
+    import uvicorn
+
+    from bankrec.logging_setup import configure
+
+    configure()
+    uvicorn.run("bankrec.api.app:app", host=host, port=port, access_log=False, server_header=False)
 
 
 def main() -> None:  # pragma: no cover

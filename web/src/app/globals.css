@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* Design tokens: see docs/DESIGN_SYSTEM.md. The default Tailwind palette is disabled; only these colors exist. */
+@theme {
+  --color-*: initial;
+  --color-navy-900: #0b1f3a;
+  --color-navy-700: #1d3a66;
+  --color-navy-50: #eef2f8;
+  --color-ink-900: #0f172a;
+  --color-ink-700: #334155;
+  --color-ink-500: #64748b;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-border-strong: #64748b;
+  --color-focus: #2563eb;
+  --color-positive: #047857;
+  --color-positive-bg: #ecfdf5;
+  --color-warning: #92400e;
+  --color-warning-bg: #fffbeb;
+  --color-expired: #b91c1c;
+  --color-expired-bg: #fef2f2;
+  --color-unverified: #475569;
+  --color-unverified-bg: #f1f5f9;
+  --color-recheck: #9a3412;
+  --color-recheck-bg: #fff7ed;
+  --color-info: #1e40af;
+  --color-info-bg: #eff6ff;
+  --color-white: #ffffff;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 1px 3px rgb(15 23 42 / 0.04);
+  --shadow-raised: 0 4px 12px rgb(15 23 42 / 0.1);
+}
+
+@layer base {
+  html {
+    color: var(--color-ink-700);
+    background: var(--color-surface);
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+  h1, h2, h3, h4 { color: var(--color-ink-900); font-weight: 600; }
+  a { color: var(--color-navy-700); text-underline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; border-radius: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  }
+}
+
+@utility tabular { font-variant-numeric: tabular-nums; }
+@utility sr-only-focusable {
+  &:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+}

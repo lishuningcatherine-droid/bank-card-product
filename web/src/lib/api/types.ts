@@ -1,0 +1,16 @@
+import type { components } from "./types.gen";
+
+type S = components["schemas"];
+export type Product = S["ProductView"];
+export type Offer = S["OfferView"];
+export type Page = S["Page"];
+export type RecommendResponse = S["RecommendResponse"];
+export type Result = S["Result"];
+export type CardRequest = S["CardRequest"];
+export type CheckingRequest = S["CheckingRequest"];
+export type SavingsRequest = S["SavingsRequest"];
+export type RecommendRequest = CardRequest | CheckingRequest | SavingsRequest;
+export type CompareResponse = S["CompareResponse"];
+export type HistoryEntry = S["HistoryEntry"];
+export type SourcesResponse = S["SourcesResponse"];
+export type ProductType = Product["product_type"];
