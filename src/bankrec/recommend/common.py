@@ -1,0 +1,102 @@
+"""Shared scoring helpers."""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from decimal import Decimal
+
+from bankrec.recommend.models import Component, OfferView, ProductView
+
+DISCLAIMER = (
+    "Not financial advice. Product terms change; confirm all details on the official bank website before applying. "
+    "Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, and "
+    "rankings are not paid."
+)
+
+LABELS = {
+    "ongoing": "Ongoing annual value",
+    "first_year": "First-year value",
+    "category_match": "Fit with your spending",
+    "goal_match": "Fit with your goal",
+    "foreign_fee_fit": "Foreign transaction fee",
+    "travel_benefit_fit": "Travel benefits",
+    "credit_profile_fit": "Issuer credit guidance",
+    "completeness": "Data completeness",
+    "possible_offer_signal": "Possible welcome offer (not in dollar values)",
+    "net_value": "Net value",
+    "achievability_margin": "Bonus requirement margin",
+    "qualification_time": "Time to qualify",
+    "holding_requirement": "Holding requirement",
+    "balance_burden": "Minimum balance burden",
+    "branch_fit": "Branch / online fit",
+    "apy": "APY",
+    "bonus": "Bonus",
+    "liquidity_fit": "Access to your money",
+    "fee_fit": "Fees",
+}
+
+
+def usd(cents: int | Decimal) -> str:
+    c = int(cents)
+    sign = "-" if c < 0 else ""
+    c = abs(c)
+    return f"{sign}${c // 100:,}" + (f".{c % 100:02d}" if c % 100 else "")
+
+
+def minmax(values: Sequence[float]) -> list[float]:
+    if not values:
+        return []
+    lo, hi = min(values), max(values)
+    if hi == lo:
+        return [1.0 if hi > 0 else 0.0 for _ in values]
+    return [max(0.0, (v - lo) / (hi - lo)) for v in values]
+
+
+def clip(v: float) -> float:
+    return max(0.0, min(1.0, v))
+
+
+def components(raw: dict[str, float], weights: dict[str, float]) -> tuple[float, list[Component]]:
+    total_w = sum(weights[k] for k in raw if k in weights) or 1.0
+    comps = []
+    score = 0.0
+    for k, n in raw.items():
+        w = weights.get(k, 0.0)
+        contribution = 100.0 * w * clip(n) / total_w
+        score += contribution
+        comps.append(
+            Component(
+                key=k,
+                label=LABELS.get(k, k),
+                weight=round(w, 4),
+                normalized=round(clip(n), 4),
+                contribution=round(contribution, 2),
+            )
+        )
+    comps.sort(key=lambda c: -c.contribution)
+    return round(score, 2), comps
+
+
+def eligible_offers(p: ProductView) -> list[OfferView]:
+    """Current, public, fresh, not expired, not recheck-pending — evaluated at request time by the repository."""
+    return [o for o in p.offers if o.state == "current"]
+
+
+def window_months(o: OfferView, default: int = 3) -> float:
+    if o.qualification_window_months:
+        return float(o.qualification_window_months)
+    if o.qualification_window_days:
+        return o.qualification_window_days / 30.0
+    return float(default)
+
+
+def worst_case_requirement(o: OfferView) -> int | None:
+    """Requirement used for achievability: the stated max when it varies, else the exact amount."""
+    if o.requirement_qualifier == "up_to":
+        return o.requirement_max_cents
+    return o.requirement_min_cents if o.requirement_min_cents is not None else o.requirement_max_cents
+
+
+def completeness(p: ProductView) -> float:
+    total = len(p.details) or 1
+    return clip(1 - len(p.missing_fields) / total)

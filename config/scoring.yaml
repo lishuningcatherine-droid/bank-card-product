@@ -1,0 +1,59 @@
+# Deterministic scoring (DESIGN §12, brief §11). Weights are relative; scores are normalized to 0–100.
+# Served verbatim (sanitized) by GET /api/v1/methodology.
+bonus_importance_multiplier: {low: 0.25, medium: 1.0, high: 2.0}
+credit_card:
+  weights:
+    ongoing: 0.30
+    first_year: 0.15
+    category_match: 0.15
+    goal_match: 0.20
+    foreign_fee_fit: 0.05
+    travel_benefit_fit: 0.05
+    credit_profile_fit: 0.05
+    completeness: 0.05
+  possible_offer_signal:
+    weight: 0.03            # small, non-monetary; only for "up to" offers
+    min_bonus_importance: high
+  assumptions:
+    rotating_spend_share: 0.25   # share of annual spend assumed to fall in a quarter's rotating categories (opt-in only)
+    first_months_for_bonus: 3    # used when an offer states no window
+  # User spend categories → reward categories that apply to them. Narrower card categories (airline, hotel,
+  # streaming, ev_charging) are NOT applied to broad user categories: we do not know that split.
+  category_map:
+    groceries: [groceries]
+    dining: [dining]
+    travel: [travel]
+    gas: [gas]
+    entertainment: [entertainment]
+    transit: [transit]
+    online_shopping: [online_shopping]
+    other: []
+checking:
+  weights:
+    net_value: 0.35
+    achievability_margin: 0.15
+    qualification_time: 0.10
+    holding_requirement: 0.10
+    balance_burden: 0.10
+    branch_fit: 0.10
+    completeness: 0.10
+  assumptions:
+    deposits_per_month: 1         # minimum assumed number of direct deposits per month
+savings:
+  weights:
+    net_value: 0.40
+    apy: 0.20
+    bonus: 0.10
+    liquidity_fit: 0.15
+    fee_fit: 0.10
+    completeness: 0.05
+  apy_vs_bonus_multiplier:
+    apy: {apy: 1.5, bonus: 0.5}
+    balanced: {apy: 1.0, bonus: 1.0}
+    bonus: {apy: 0.5, bonus: 1.5}
+  deposit_ranges_dollars:          # broad ranges only; the midpoint is used (lower bound for the open range)
+    lt_1k: [0, 1000]
+    1k_5k: [1000, 5000]
+    5k_25k: [5000, 25000]
+    25k_100k: [25000, 100000]
+    100k_plus: [100000, null]
