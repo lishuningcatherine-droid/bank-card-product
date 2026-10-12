@@ -23,6 +23,7 @@ Contents
 18. Migration plan and phase deliverables
 19. Deviations from §3 of the brief
 20. Blockers and open questions
+21. Amendment 1 — Freshness, change detection, and multi-source layer
 
 ---
 
@@ -393,11 +394,18 @@ The URL is never part of identity.
 
 ## 11. Freshness
 
-`config/freshness.yaml`: `offer_days: 14`, `apy_days: 7`, `terms_days: 60`. `freshness.evaluate(record, now)` returns
-`fresh | stale | expired` per facet. An offer whose `expiration_date < today (America/New_York)` is `expired` at request time,
-whatever its stored status. `bankrec report stale` lists everything past its window. Scheduling: a cron in the worker
-image (`0 9 * * 1,4`, twice weekly, so APY stays inside 7 days) and `.github/workflows/scheduled-ingest.yml` as an
-alternative, uploading reports as artifacts. The UI says "Last verified <date>" and never says "real-time".
+Superseded in detail by **§21 (Amendment 1)**. Two separate settings live in `config/freshness.yaml`:
+
+- **Check cadence** (`schedule`): how often a source is re-fetched. APY sources every 12 h, offer sources every 24 h,
+  product terms weekly, CFPB datasets on new release.
+- **Staleness window** (`stale_after`): how long a value may go without being *re-confirmed* on its official source
+  before it is treated as stale. Offers 14 d, APY 7 d, terms 60 d, as in the brief.
+
+`freshness.evaluate(record, now)` returns `fresh | stale | expired` per facet. It measures from `last_confirmed_at`
+(the last check that found the value still present), not from the last change. An offer whose
+`expiration_date < today (America/New_York)` is `expired` at request time, whatever its stored status.
+`bankrec report stale` lists everything past its window. No UI or API text uses the words "real-time", "realtime",
+or "live rates" (enforced by a test).
 
 ## 12. Recommendation formulas
 
@@ -584,4 +592,242 @@ Phase 4 → 8 commits, one or more per phase, in priority order: pipeline correc
    I will not substitute any data in the meantime.
 2. **Legacy files are absent.** If they exist elsewhere, add them under `legacy/` (untrusted, hints only).
 3. **Branch:** keep pushing to `claude/blissful-feynman-qua5w1`, or also create and push `v2-rebuild`?
-4. **Contact address for the User-Agent:** it is read from `BANKREC_CONTACT_EMAIL`. I won't hard-code your email; please confirm what to put in `.env.example` (a placeholder by default).
+4. **CFPB domain also blocked:** `consumerfinance.gov` is refused by the same egress policy, so the CFPB adapters (§21.7) can be
+   built and tested only on synthetic, CFPB-format fixtures until it is allowed.
+5. **Contact address for the User-Agent:** it is read from `BANKREC_CONTACT_EMAIL`. I won't hard-code your email; please confirm what to put in `.env.example` (a placeholder by default).
+
+---
+
+## 21. Amendment 1 — Freshness, change detection, and multi-source layer
+
+This section implements your follow-up request (items 1–8). It does not loosen §2: every new source type uses the
+same fetcher (robots.txt, ≥3 s per host, honest User-Agent, no proxies, CAPTCHA or bot-protection workarounds,
+logins, or browser spoofing). A blocked fetch is recorded and routed to manual capture, exactly as before.
+
+### 21.1 Tiered scheduling (item 1)
+
+`config/freshness.yaml`:
+```yaml
+tiers:
+  apy:     {schedule: "0 */12 * * *", stale_after_days: 7}
+  offer:   {schedule: "15 6 * * *",   stale_after_days: 14}
+  terms:   {schedule: "30 7 * * 1",   stale_after_days: 60}
+  regulator_release: {schedule: "45 8 * * *", mode: on_release}   # cheap daily "is there a new release?" probe
+timezone: UTC
+```
+- Each source in `config/sources/*.yaml` gets `refresh_tier: apy | offer | terms | regulator_release`. If it is omitted,
+  the tier is derived: savings `product_detail` → `apy`, `offer_detail` → `offer`, `regulator_dataset` → `regulator_release`,
+  and anything else → `terms`. A page carrying several facets (for example a savings page with an APY and a bonus) uses
+  its most frequent tier.
+- `bankrec ingest --tier <tier>` runs only the sources in that tier. The full pipeline (§4) runs for each of them.
+- **Worker:** the `worker` image runs [supercronic](https://github.com/aptible/supercronic) (cron for containers: logs to
+  stdout, runs as a non-root user) with one crontab line per tier, generated from `freshness.yaml` at container start.
+- **GitHub Actions alternative:** `.github/workflows/scheduled-ingest.yml` has one `schedule:` entry per tier and calls
+  `bankrec ingest --tier …`, uploading `reports/<run_id>` as an artifact. GitHub can delay scheduled runs, which is
+  acceptable at these cadences.
+- **Only one scheduler at a time.** `BANKREC_SCHEDULER=worker|github|off` decides which scheduler acts. Each run also
+  takes a Postgres advisory lock per tier, so overlapping runs from both schedulers or from manual triggers can't
+  collide. A run that can't get the lock exits 0 with "skipped: tier already running".
+
+### 21.2 Change detection (item 2)
+
+Per check, two hashes are stored:
+- `raw_sha256`: the bytes as received (for the audit trail).
+- `content_sha256`: the hash of the **normalized visible text**: boilerplate stripped, whitespace collapsed, and
+  known volatile tokens removed by per-bank rules (session IDs, nonces, timestamps, rotating promo banners). Change
+  decisions use this hash. Hashing raw HTML alone would report a change on almost every fetch, because pages embed nonces.
+
+New table `staging.page_checks` (`id, run_id, source_page_id, checked_at, outcome, http_status, raw_sha256,
+content_sha256, parser_version, result`), where `result ∈ unchanged | changed | reparsed | failed`.
+
+Decision per check:
+
+| Condition | Action |
+|---|---|
+| Retrieval or classification failed | `failed` → failure handling (§21.6 if the source used to work) |
+| `content_sha256` and `parser_version` both equal the last successful parse | `unchanged`: write the `page_checks` row, then set `source_pages.last_checked_at` and **`last_confirmed_at`** on every published field whose provenance points to this source. No new snapshot file, candidate, or version. |
+| Same content, **new parser version** | `reparsed`: re-parse the stored snapshot (a parser fix or regression shows up without waiting for the page to change) |
+| Content changed | `changed`: save a new snapshot → classify → extract → normalize → validate → **diff against the current published version** (§21.3) |
+
+Freshness (§11) is measured from `last_confirmed_at`. A product's displayed "checked" time is the **oldest**
+`last_confirmed_at` among the sources backing its required fields. That is conservative: one stale source makes the whole product read as older.
+
+### 21.3 Publish policy for changes (item 3)
+
+The diff runs field by field on normalized values. Each changed field is classified using `config/change_policy.yaml`:
+
+```yaml
+minor:                                   # auto-publish if the new candidate is `valid`
+  savings.apy_pct:          {max_abs_change_pp: 0.50}
+  savings.apy_tiers:        {max_abs_change_pp: 0.50, same_tier_boundaries: true}
+  card.variable_apr_bounds: {uniform_shift_max_pp: 0.50}   # every variable APR bound moved by the same delta (prime-rate move)
+  "*.terms_url":            {}                             # official URL change on the same domain
+major:                                   # always to review; old value stays live with "recheck pending"
+  - "offer.reward_amount"
+  - "offer.requirement_*"
+  - "offer.qualification_window_days"
+  - "offer.holding_period_days"
+  - "offer.disappeared"                  # a published offer is no longer found on its source page
+  - "offer.appeared"                     # new offer on an existing product (conservative default — see §21.10 Q2)
+  - "*.fee*"                             # annual, monthly, foreign-tx, BT, cash-advance fees; fee waivers
+  - "card.reward_rates"                  # any rate, cap, cap period, category, activation, or portal flag
+  - "card.base_rate"
+  - "*.apr*"                             # any APR change that is not the uniform shift above
+default: major                           # any field not listed is major
+```
+
+- **All changes minor and the candidate `valid`:** publish a new `product_versions` / `offer_versions` row with a structured
+  `change_summary` (`[{field, old, new, class:"minor"}]`), close the old version, and set `last_changed_at` and
+  `last_confirmed_at`, then trigger revalidation (§21.4).
+- **Any major change:** the whole candidate goes to `manual_review_queue` (`reason_code=major_change`) with the diff, both
+  snapshots, and spans. The published record stays live, flagged `recheck_pending=true, recheck_reason=major_change`.
+  Its `last_confirmed_at` **stops advancing for the changed fields**, because the page no longer confirms them, so
+  the record goes stale on its own if review stalls.
+- **Recommendations while recheck is pending:** a recheck-pending offer contributes no promotional value, and a product with a
+  recheck-pending fee, APR, or reward field is labeled **Partially verified** and leaves recommendations. Browse and detail pages
+  show the old value with "Recheck pending — this changed on the bank's site and we're confirming it." This is my default;
+  see §21.10 Q1.
+- `bankrec review approve` publishes the new version. `bankrec review reject` keeps the old one, records the reason, and, if the reason is
+  `extraction_error`, opens a parser alert (§21.6).
+- Every classification is logged in `staging.change_events` (`product_id|offer_id, field_path, old, new, class, rule_id, run_id,
+  decision ∈ auto_published|queued|approved|rejected`) and listed in `reports/<run_id>/changes.{csv,md}`.
+
+### 21.4 On-demand revalidation (item 4)
+
+- **Frontend fetch tags.** Server components fetch the API with `next: { tags: [...] }`. Product pages use `product:<id>`; listings use
+  `listing:<type>` and `listing:all`; the sources page uses `sources`; methodology uses `methodology`. Time-based `revalidate`
+  stays at 3600 s as a fallback.
+- **Endpoint.** `POST /api/internal/revalidate` is a Next.js route handler that calls `revalidateTag(tag)` for each tag. The request
+  must carry `X-Bankrec-Signature: t=<unix>,v1=<hex HMAC-SHA256(secret, t + "." + body)>`, and the endpoint rejects a bad
+  signature, a timestamp more than 300 s off, a body over 4 KB, more than 200 tags, or tags that don't match
+  `^(product:[0-9a-f-]{36}|listing:(credit_card|checking|savings|all)|bank:[a-z0-9_]+|sources|methodology)$`. It compares with a
+  constant-time function, never logs the body, and returns `404` (not `401`) on any failure so the route isn't discoverable.
+  Replays are harmless, since revalidation is idempotent, and the timestamp window bounds them. The route is not cached and can
+  additionally be blocked at the reverse proxy for anything except the worker and API network.
+- **Outbox.** The publisher and the review CLI write `staging.revalidation_outbox` (`tags[], created_at, attempts, sent_at, last_error`)
+  in the **same transaction** as the publish. A dispatcher in the worker (and at the end of every CLI publish) sends
+  pending rows with retry and backoff. A crash between the DB commit and the HTTP call can't lose a revalidation.
+- **Time-driven changes.** An offer that expires at midnight ET changes what a page should show without any publish, so the
+  worker enqueues `product:<id>` and its listing tags at each offer's `expiration_date` 00:05 ET and whenever a record crosses its
+  staleness window. As a second layer, the `OfferBlock` and the "Checked X hours ago" text are computed **in the browser** from
+  ISO timestamps embedded in the page. A cached page therefore can't show an expired offer as current or a stale relative time.
+- **Deployment caveat.** Tag revalidation applies to the Next.js instance's cache. On Vercel it is global. When self-hosting more
+  than one web replica, a shared `cacheHandler` (for example Redis) is required, otherwise only one replica is refreshed. The
+  reference `docker-compose.prod.yml` runs one web replica and documents this.
+- Secret: `REVALIDATE_SECRET` (≥32 random bytes) in both the web and worker env (`.env.example` shows a placeholder).
+
+### 21.5 UI (item 5)
+
+- Every product card and detail page shows **"Checked <relative time>"** (`<time datetime=…>`; the server renders the absolute
+  date and the browser upgrades it to "Checked 5 hours ago") and **"Changed on <date>"** (the most recent version with a field
+  change; this is omitted when there has been no change since the product was first published, in which case the page shows "Tracked since <date>").
+- The detail page has a **Change history** section: a reverse-chronological list of public versions with field-level diffs
+  ("Annual fee: $95 → $0 · Changed on Mar 3, 2027 · Source ↗"). It shows only published values. Reviewer names, notes, rejected
+  candidates, and span text are never shown. The data comes from the new endpoint `GET /api/v1/products/{id}/history` (paginated).
+- Labels: "Recheck pending", "Offer not recently verified", "Expired offer", "Partially verified — missing: …".
+- **Wording guard:** a test scans `web/src`, the API's response strings, and docs meant for users for `/real[- ]?time|live (rates|data)/i` and fails on any match.
+
+### 21.6 Parser-failure alerts and downgrade (item 6)
+
+- **Source health** is tracked on `source_pages`: `last_successful_parse_at`, `consecutive_failures`, and
+  `health ∈ healthy | degraded | failing`.
+- A **regression** is a source with at least one successful parse that now (a) raises a parser error, (b) classifies as a
+  non-product page type, or (c) yields a candidate missing a required field that the last successful parse found.
+- **On regression:**
+  1. Write a structured log event `parser_regression` (bank, source_id, URL, parser_version, failure kind, last good run). There is no page content in it.
+  2. Add a row to `reports/<run_id>/parser_regressions.{csv,md}` and to `summary.md`.
+  3. If `ALERT_WEBHOOK_URL` is set, send a webhook: JSON `{event, bank_id, source_id, url, failure_kind, first_seen, run_id}`,
+     signed with `ALERT_WEBHOOK_SECRET` the same way as §21.4. It is off by default. Alerts are deduplicated in `staging.alerts`,
+     so one alert opens per source per incident, not one per run, and a "resolved" event is sent on the next good parse.
+  4. Every published product and offer with a field whose provenance is that source gets `recheck_pending=true,
+     recheck_reason=parser_failure`, which makes it **Partially verified** and excludes it from recommendations. The revalidation tags are enqueued.
+  5. The flag clears automatically on the next successful parse that confirms the values, or through `bankrec review approve`.
+- A **retrieval** failure (blocked, timeout) is not a parser regression. It goes to the retrieval-failure report and manual capture, and
+  the stale window handles the downgrade if it continues.
+
+### 21.7 CFPB as a cross-validation source (item 7)
+
+New `source_kind: regulator_dataset`, with two adapters in `ingest/adapters/regulators/`:
+
+| Dataset | Content (to confirm against the downloaded files' own data dictionaries) | Adapter |
+|---|---|---|
+| CFPB Terms of Credit Card Plans (TCCP) survey | Periodic survey of issuers' card plan terms (APRs, fees) as of a survey date | `cfpb_tccp`: tabular (CSV/XLSX) loader keyed by the column names in the release's own dictionary; refuses to load if expected columns are missing |
+| CFPB Credit Card Agreements database | Quarterly issuer-submitted agreement documents (PDF) | `cfpb_agreements`: pdfplumber extraction of pricing tables where an agreement includes them; span-tracked like any other PDF |
+
+- **Registry.** `config/sources/cfpb.yaml` under a pseudo-bank `config/banks/cfpb.yaml` (`role: regulator`, official domain
+  `consumerfinance.gov`). The exact dataset landing-page URLs will be entered **only after I can retrieve and confirm them**.
+  `consumerfinance.gov` is currently blocked from this session too (connection refused by the egress policy).
+- **Release detection ("on new release").** The daily probe makes a conditional GET (`If-None-Match` / `If-Modified-Since`) on the
+  dataset's landing page, extracts the list of release file links, and compares them with `staging.regulator_releases`
+  (`dataset, release_id, as_of_date, file_url, sha256, retrieved_at`). Downloads happen only for new release IDs. A failed probe is a normal retrieval failure.
+- **Storage.** `staging.regulator_records` (`release_id, issuer_name, plan_name, fields jsonb, row_ref | page+span`). These records
+  **never** produce products, offers, or published values, and never appear in `prod`.
+- **Matching.** Issuer names map to banks through an explicit `cfpb_issuer_names` list in each bank config. Plan names are matched
+  to canonical products by exact canonical key or aliases. Fuzzy matches go to review (`regulator_match` items) and are never auto-accepted.
+  Confirmed matches are kept in `staging.regulator_matches`.
+- **Cross-check rule `X-REGULATOR`.** This compares normalized APR ranges and fees between the matched regulator record and the published
+  official value, with tolerances in `config/validation.yaml`. Regulator data lags, so a difference is **explained** (no review
+  item) when the product's own version history shows the official value changed after the regulator's as-of date and the old official
+  value equals the regulator value. Any other difference creates a `regulator_conflict` review item with both values, both sources,
+  and the as-of date. By default it does **not** downgrade the official record (`regulator_conflict_downgrades: false`), because the official page is the
+  higher-priority and newer source. See §21.10 Q3.
+- **Exposure.** The public API never serves regulator values. `/methodology` and `/sources` name CFPB as a cross-check source and give the latest
+  release date checked. Internal reports list matches, conflicts, and unmatched plans.
+- These are U.S. government publications, but the same fetcher rules still apply.
+
+### 21.8 `licensed_data_provider` source type (item 8) — designed, not integrated
+
+- `source_kind: licensed_data_provider`. Providers are plugins implementing:
+  ```python
+  class LicensedProvider(Protocol):
+      provider_id: ClassVar[str]
+      def fetch_since(self, cursor: str | None) -> Iterator[ProviderRecord]: ...   # via the provider's documented API/export only
+  ```
+- `config/providers/<provider_id>.yaml` contains a mandatory `license` block:
+  `{status: unconfirmed|confirmed, confirmed_by, confirmed_on, agreement_ref, display_permitted, attribution_text,
+  redistribution_permitted, retention_days}`. The registry loader **refuses to enable** a provider unless `status: confirmed`,
+  `confirmed_by`, and `confirmed_on` are all present. No provider ships enabled. Only a fake `example_provider` (`test_only: true`) exists, for tests.
+- **Priority ladder** (higher wins; ties → conflict → review):
+  official product_detail > official offer_detail > official terms PDF > manual capture of an official page > official comparison
+  > **licensed_data_provider** > regulator_dataset (cross-check only, never publishes).
+- **Provenance labels.** `provenance_class ∈ official_page | official_pdf | manual_capture | licensed_provider | regulator_dataset` on every
+  provenance row. A field whose only source is a provider (a) is shown only if `display_permitted`, (b) carries the label
+  "From <provider attribution> (licensed data), as of <date>", (c) caps the product at **Partially verified**, so it never
+  enters recommendations on provider data alone, and (d) loses to any official value; a disagreement creates a review item.
+- Provider credentials come from env vars named in the provider config. They are never committed or logged.
+
+### 21.9 Schema additions (summary)
+
+| Schema.table | Change |
+|---|---|
+| `staging.source_registry` | + `refresh_tier`, `release_detector`, `provider_id` |
+| `staging.source_pages` | + `last_checked_at`, `last_changed_at`, `last_successful_parse_at`, `last_content_sha256`, `last_parser_version`, `consecutive_failures`, `health` |
+| `staging.page_checks` | new (§21.2) |
+| `staging.change_events` | new (§21.3) |
+| `staging.revalidation_outbox` | new (§21.4) |
+| `staging.alerts` | new (§21.6) |
+| `staging.regulator_releases`, `regulator_records`, `regulator_matches` | new (§21.7) |
+| `staging.provider_records` | new (§21.8) |
+| `staging.page_snapshots` | + `content_sha256`; `field_provenance` + `provenance_class` |
+| `prod.products`, `prod.offers` | + `last_confirmed_at`, `last_changed_at`, `recheck_pending`, `recheck_reason` |
+| `prod.product_versions`, `prod.offer_versions` | `change_summary` becomes structured jsonb `[{field, old, new, class}]` |
+| `prod.prod_field_provenance` | + `provenance_class`, `last_confirmed_at` |
+
+New API: `GET /api/v1/products/{id}/history`. Product responses gain `last_checked_at`, `last_changed_at`, `recheck_pending`, and a `field_labels` map for provider-sourced fields.
+
+### 21.10 Tests added for this amendment
+Tier derivation and crontab generation from `freshness.yaml`; advisory-lock skip; content hashing that ignores volatile tokens
+(the same page with different nonces → unchanged); the unchanged path updates only `checked_at`/`confirmed_at` (row counts asserted);
+parser-version change triggers a re-parse; minor APY change auto-publishes a new version; every major class goes to review with the old value
+live and recheck-pending; recheck-pending exclusion from recommendations; outbox written in the same transaction (rollback test);
+signature verification (valid, bad signature, skew, oversized, bad tag → 404); expiry-time revalidation enqueueing; client-side
+expiry rendering; history endpoint shows only published diffs; the "real-time" wording guard; regression detection (all three kinds),
+alert dedup and resolve, webhook signing, downgrade and auto-clear; TCCP and agreements adapters on **clearly synthetic regulator-format
+fixtures** until real releases can be downloaded; `X-REGULATOR` conflict vs explained-by-history; the regulator never reaches `prod`
+(schema-level test); the provider loader refuses unconfirmed licenses; provider-only fields cap at Partially verified; priority-ladder conflicts.
+
+### 21.11 Decisions for you (defaults are applied unless you say otherwise)
+- **Q1.** While a major change awaits review, the old value stays visible with "Recheck pending" but is **excluded from recommendations**. (Alternative: keep it recommendable until it goes stale.)
+- **Q2.** A **new** offer appearing on an existing product is treated as major and reviewed. (Alternative: auto-publish it if `valid`, as for first publication.)
+- **Q3.** A CFPB conflict does **not** downgrade the official record. (Alternative: downgrade to Partially verified until it is reviewed.)
+- **Q4.** Minor-change thresholds: APY ±0.50 pp, and uniform variable-APR shifts ±0.50 pp. These are editable in `config/change_policy.yaml`.
