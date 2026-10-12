@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Next.js
+node_modules/
+web/.next/
+web/out/
+web/playwright-report/
+web/test-results/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Pipeline outputs (generated, not committed)
+data/raw/*
+!data/raw/README.md
+reports/*/
