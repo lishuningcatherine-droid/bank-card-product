@@ -24,6 +24,7 @@ Contents
 19. Deviations from §3 of the brief
 20. Blockers and open questions
 21. Amendment 1 — Freshness, change detection, and multi-source layer
+22. Amendment 2 — Anonymous public-offer capture and offer amount qualifiers
 
 ---
 
@@ -831,3 +832,159 @@ fixtures** until real releases can be downloaded; `X-REGULATOR` conflict vs expl
 - **Q2.** A **new** offer appearing on an existing product is treated as major and reviewed. (Alternative: auto-publish it if `valid`, as for first publication.)
 - **Q3.** A CFPB conflict does **not** downgrade the official record. (Alternative: downgrade to Partially verified until it is reviewed.)
 - **Q4.** Minor-change thresholds: APY ±0.50 pp, and uniform variable-APR shifts ±0.50 pp. These are editable in `config/change_policy.yaml`.
+
+---
+
+## 22. Amendment 2 — Anonymous public-offer capture and offer amount qualifiers
+
+### 22.1 Capture as an anonymous visitor (item 1)
+
+Every offer-bearing source (`offer_detail`, or a `product_detail` whose bank config marks it `has_offers: true`) is fetched
+with Playwright. The registry loader forces `requires_render: true` for these sources.
+
+**Per page:**
+```python
+context = browser.new_context(
+    storage_state=None,                 # fresh context: no cookies, no localStorage, no login
+    locale="en-US",
+    timezone_id=bank.capture_timezone,  # default "America/New_York"
+    user_agent=settings.user_agent,     # the honest project UA (§2); no spoofing or stealth plugins
+    viewport={"width": 1280, "height": 900},
+)
+assert await context.cookies() == []    # checked and recorded, not assumed
+page = await context.new_page()
+await page.goto(canonical_url, wait_until="networkidle")
+await page.wait_for_selector(source.render_ready_selector, timeout=...)  # if configured
+html = await page.content()
+await context.close()                   # never reused for another page
+```
+- **No interaction that changes identity or state.** The browser never logs in, never accepts cookie banners, and never
+  types into any form. The only interaction allowed is clicking disclosure expanders that a source declares in
+  `expand_selectors` (for example "See offer details"). Each click is recorded.
+- **Canonical URL only.** `canonicalize(url)` lowercases the host, drops the fragment, and **keeps only** the query parameters
+  listed in the bank config's `meaningful_query_params` (default: none). Everything else is dropped: `utm_*`, `gclid`, `fbclid`,
+  `msclkid`, `cid`, `ref`, `referral*`, affiliate and campaign codes. The registry loader **rejects** a `source_url` that contains
+  non-allowlisted parameters or matches the bank's `referral_url_patterns`, so these fail loudly instead of being cleaned silently.
+  If a redirect ends on a URL with tracking or referral parameters, or a path matching a referral pattern, the snapshot is
+  marked `capture_anomaly=redirected_to_referral` and the candidate goes to review.
+- **The result is the "public default offer"**: `offers.capture_context = public_default`. No other capture context exists
+  in v2. Referral, targeted, and logged-in offers are never fetched.
+- **Location.** Offers can differ by visitor location. The design does **not** spoof location or use proxies. The runner's
+  location label comes from config (`CAPTURE_RUNNER_LABEL`, for example "github-actions" or "worker-us-east"), is recorded, and is shown in internal reports.
+- **Variation between visits (A/B tests).** If the parsed offer alternates between two values across consecutive captures
+  inside the offer freshness window, the offer becomes `status=uncertain` with `variation=observed`. It shows as "Offer varies
+  between visits — check the bank's site", contributes $0, and goes to review rather than flapping between versions.
+- **Capture metadata** in `page_snapshots.capture_conditions` (jsonb, also in reports):
+  `{capture_context:"public_default", context_fresh:true, cookies_at_start:0, storage_state:null, login:false,
+  locale:"en-US", timezone_id, viewport, user_agent, url_canonical, url_final, redirect_chain, render_wait:{strategy,
+  selector, waited_ms}, expanders_clicked:[…], captured_at, browser:"chromium <version>", runner_label}`.
+  A snapshot without this block can't be used to extract offers (rule `R-CAPTURE`).
+- Plain-HTTP fetches (non-offer sources) also use a fresh `httpx` client with no persistent cookie jar for each request.
+
+### 22.2 Offer amount qualifiers (item 2)
+
+**Schema (`prod.offers` and staging candidates):**
+
+| Column | Type | Notes |
+|---|---|---|
+| `amount_qualifier` | enum `exact \| up_to \| starting_at` | |
+| `amount_min` | bigint, nullable | in `reward_unit` (cents, points, or miles) |
+| `amount_max` | bigint, nullable only for `starting_at` | |
+| `requirement_qualifier` | enum `exact \| up_to \| starting_at`, nullable when there is no requirement | |
+| `requirement_min_cents`, `requirement_max_cents` | bigint, nullable | same rules |
+| `qualifier_evidence` | text | the phrase that set the qualifier, with its span in provenance |
+
+CHECK constraints (also enforced in Pydantic):
+- `exact` ⇒ `amount_min = amount_max`, both not null
+- `up_to` ⇒ `amount_min IS NULL`, `amount_max IS NOT NULL`
+- `starting_at` ⇒ `amount_min IS NOT NULL`, `amount_max IS NULL`
+
+The legacy single `reward_amount` column is dropped from the design in favor of these columns.
+
+**Tiered offers** (common for checking bonuses, e.g. "$300 with $2,000 in deposits, $500 with $5,000") go in a child table,
+`offer_tiers` (`offer_id, tier_no, amount, requirement_min_cents, …`), where each tier is `exact`. They are stored this way only
+when the page lists every tier explicitly. A headline "up to $500" with no tier table stays `up_to`.
+
+**Parser (`parsers/offer_amount.py`).** It works on the **offer block** (the sentence containing the amount, plus any footnote
+marker on it and that footnote's text), never the whole page.
+- Variability phrases → `up_to`: `up to`, `as high as`, `earn up to`, `you may be eligible for`, `offer may vary`, `offers vary`,
+  `may vary`, `could earn`, `potential`, plus a per-bank extension list in config. Matching is case-insensitive, tolerant of
+  whitespace and line breaks, and checks footnotes too.
+- Floor phrases → `starting_at`: `at least`, `starting at`, `a minimum of`, only when attached to the **reward amount** (not the spend
+  requirement, e.g. "spend at least $4,000" sets nothing on the amount).
+- When `up_to` is set, `amount_max` is the stated number and `amount_min` is NULL.
+- **Fail-safe:** if any variability phrase appears in the offer block or its footnotes and can't be confidently tied to a different
+  number, the qualifier is `up_to`. `exact` requires that **no** variability phrase is present. An `exact` value whose span or
+  footnotes contain a variability phrase is rejected by rule `V-QUALIFIER`, which is a hard error, not a warning.
+- Requirement qualifiers use the same logic on the requirement phrase ("spend requirement may vary" → requirement `up_to` with the
+  stated max, or a NULL max and `null_reason=ambiguous` if no number is given).
+- A change of qualifier (e.g. exact → up_to) is a **major** change (§21.3).
+
+### 22.3 Scoring (item 3)
+
+Applies to all three product types.
+
+| Qualifier | Counted in first-year / net value | Shown as |
+|---|---|---|
+| `exact` | full amount, if the requirement is achievable (§12) | the offer |
+| `up_to` | **$0** | separate field `possible_welcome_offer`: "Possible welcome offer: up to X (your offer is shown during application and may be lower)" |
+| `starting_at` | **floor (`amount_min`)**, if achievable — see Q5 | "At least X" |
+| tiered | highest tier whose requirement is achievable | the qualifying tier, with the others listed |
+| `uncertain` / variation observed | $0 | "Offer varies between visits" |
+
+- Achievability uses the **worst case** when the requirement varies: `requirement_max` if known; if it is unknown, the offer is treated as not achievable.
+- **Optional score signal** (`config/scoring.yaml`):
+  ```yaml
+  possible_offer_signal:
+    weight: 0.03            # small; max 3 points of 100
+    min_bonus_importance: high
+  ```
+  When the user rates the welcome bonus at or above `min_bonus_importance` and the card has an `up_to` public offer, the component
+  n = 1 (requirement known and achievable at its max) / 0.5 (requirement unknown) / 0 (not achievable). It never changes any
+  dollar value. The explanation shows it as its own labeled line: "Small ranking boost: advertises a possible welcome offer
+  (not included in dollar estimates)."
+- Results always keep `first_year_value` free of any `up_to` amount. A test asserts this across all three engines.
+
+### 22.4 UI (item 4)
+
+- A single component, `OfferAmount`, formats offer amounts. `exact` → "60,000 points". `up_to` → "**Up to** 80,000 points" plus an info
+  toggletip. `starting_at` → "At least 60,000 points".
+- The toggletip is a `<button aria-label="About this offer amount" aria-expanded>`. It opens on click or tap and on Enter/Space,
+  closes on Esc or blur, and links the panel with `aria-describedby`. Text: "The bank says this offer can vary. The amount you're
+  offered is shown during your application and may be lower than this maximum."
+- No dollar conversion is shown next to an `up_to` amount, so the maximum is never presented as a value you will get.
+- Results page: a "Possible welcome offer" row sits **below** the value split, visually separate from first-year value.
+- **Guard:** a test fails if any file other than `OfferAmount.tsx` reads `amount_max`. E2E asserts that every rendered up_to amount
+  is preceded by "Up to".
+
+### 22.5 Tests (item 5)
+
+All fixtures are **synthetic Example Bank pages** (real bank and CFPB domains are blocked from this session). They are clearly
+fictional and stored in `tests/fixtures/example_bank/offers/`:
+
+| Fixture | Expected |
+|---|---|
+| `exact_points.html` ("Earn 60,000 bonus points after you spend $4,000 in the first 3 months") | exact, min=max=60000, requirement exact 400000¢ / 90 days |
+| `up_to_points.html` ("Earn up to 80,000 bonus points…") | up_to, min NULL, max 80000 |
+| `as_high_as_cash.html` ("Bonus as high as $300") | up_to, max 30000¢ |
+| `may_be_eligible.html` ("You may be eligible for 75,000 miles") | up_to, max 75000 |
+| `footnote_may_vary.html` (exact-looking headline with a footnote "*Offer may vary") | up_to (fail-safe) |
+| `starting_at.html` ("Earn at least 50,000 points") | starting_at, min 50000, max NULL |
+| `tiered_checking.html` (two explicit tiers) | 2 exact tiers |
+| `negatives.html` ("up to 5% cash back", "spend at least $4,000") | no qualifier side effects on the offer amount |
+
+Further tests:
+- Hypothesis: random surrounding text and whitespace around the variability phrases never yields `exact`.
+- DB CHECK-constraint tests.
+- `V-QUALIFIER` rejection.
+- Scoring: `up_to` → first-year contribution 0 (cards, checking, savings); `possible_welcome_offer` populated; signal component only at
+  high importance and labeled; `starting_at` counts the floor.
+- Vitest/RTL: `OfferAmount` wording, toggletip keyboard behavior, and no `$` next to `up_to`.
+- E2E: the results wording, plus axe on the toggletip.
+- Capture-condition tests against a **local fixture server**: (a) a server sets a cookie on page 1, and page 2's request arrives without it;
+  (b) the page echoes `navigator.language` and `Intl…timeZone` into the DOM, and the snapshot shows `en-US` / `America/New_York`;
+  (c) tracking parameters are stripped (property-based); (d) the registry rejects referral or tracking URLs; (e) a redirect to a referral URL sets the anomaly flag.
+
+### 22.6 Decisions for you (defaults are applied unless you say otherwise)
+- **Q5.** A `starting_at` offer counts its stated floor in first-year value. (Alternative: treat it like `up_to` and count $0.)
+- **Q6.** The `possible_offer_signal` applies only when bonus importance is `high`, with a weight of 0.03.
