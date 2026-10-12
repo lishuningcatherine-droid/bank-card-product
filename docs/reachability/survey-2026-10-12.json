@@ -1,0 +1,123 @@
+[
+ {
+  "bank_id": "american_express",
+  "kind": "robots",
+  "url": "https://www.americanexpress.com/robots.txt",
+  "at": "2026-10-12T23:07:19.378238+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "403 Forbidden",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "american_express",
+  "kind": "sitemap",
+  "url": "https://www.americanexpress.com/index-sitemap.xml",
+  "at": "2026-10-12T23:07:19.378238+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "robots or network",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "bank_of_america",
+  "kind": "robots",
+  "url": "https://www.bankofamerica.com/robots.txt",
+  "at": "2026-10-12T23:07:22.644671+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "403 Forbidden",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "bank_of_america",
+  "kind": "sitemap",
+  "url": "https://www.bankofamerica.com/content/sitemap_index.xml",
+  "at": "2026-10-12T23:07:22.644671+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "robots or network",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "capital_one",
+  "kind": "robots",
+  "url": "https://www.capitalone.com/robots.txt",
+  "at": "2026-10-12T23:07:25.890065+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "403 Forbidden",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "capital_one",
+  "kind": "sitemap",
+  "url": "https://www.capitalone.com/sitemap.xml",
+  "at": "2026-10-12T23:07:25.890065+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "robots or network",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "cfpb",
+  "kind": "robots",
+  "url": "https://www.consumerfinance.gov/robots.txt",
+  "at": "2026-10-12T23:07:29.167110+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "403 Forbidden",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "chase",
+  "kind": "robots",
+  "url": "https://www.chase.com/robots.txt",
+  "at": "2026-10-12T23:07:29.409470+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "403 Forbidden",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "chase",
+  "kind": "sitemap",
+  "url": "https://creditcards.chase.com/sitemap.xml",
+  "at": "2026-10-12T23:07:29.409470+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "robots or network",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "chase",
+  "kind": "sitemap",
+  "url": "https://www.chase.com/sitemap.xml",
+  "at": "2026-10-12T23:07:29.409470+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "robots or network",
+  "urls_found": 0,
+  "extra": {}
+ },
+ {
+  "bank_id": "us_bank",
+  "kind": "robots",
+  "url": "https://www.usbank.com/robots.txt",
+  "at": "2026-10-12T23:07:32.702108+00:00",
+  "status": null,
+  "failure": "ENV_NETWORK_BLOCKED",
+  "detail": "403 Forbidden",
+  "urls_found": 0,
+  "extra": {}
+ }
+]

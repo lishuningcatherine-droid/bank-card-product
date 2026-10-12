@@ -1,0 +1,9 @@
+# FAKE provider used only by tests to prove the license gate and labeling. Not a real company or dataset.
+provider_id: example_provider
+display_name: "Example Data Co. (test fake)"
+enabled: false
+test_only: true
+credentials_env: []
+license:
+  status: unconfirmed
+  display_permitted: false
