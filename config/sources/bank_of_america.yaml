@@ -1,5 +1,292 @@
-# No product URLs yet: none could be retrieved or confirmed from the build environment
-# (egress policy refused the domain; see docs/REACHABILITY.md). Add only URLs confirmed on the
-# official site. Discovered URLs go to bank_of_america.discovered.yaml with enabled: false.
+# Bank of America consumer card product pages from www.bankofamerica.com/credit-cards/spa-assets/sitemap.xml
+# (/credit-cards/products/...), retrieved 2026-10-13. The static HTML holds only the page shell; every source is
+# rendered in a fresh context and waits for the rates table (.rates-table-body). Fixtures: tests/fixtures/bank_of_america.
+# Not listed: the cash-back category-choices pages under /products/cash-back-credit-card/ (explanatory pages).
 bank_id: bank_of_america
-sources: []
+sources:
+- bank_id: bank_of_america
+  slug: air-france-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/air-france-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Air France KLM Visa Signature® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: alaska-airlines-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/alaska-airlines-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Atmos™ Rewards Ascent Visa Signature®
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: allegiant-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/allegiant-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Allways Rewards Visa® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: bankamericard-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/bankamericard-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: BankAmericard® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: cash-back-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/cash-back-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Customized Cash Rewards Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: cash-back-secured-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/cash-back-secured-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Customized Cash Rewards Secured Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: low-interest-student-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/low-interest-student-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: BankAmericard® Credit Card for Students
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: norwegian-cruise-lines-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/norwegian-cruise-lines-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Norwegian Cruise Line® World Mastercard®
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: premium-rewards-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/premium-rewards-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Premium Rewards® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: royal-one-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/royal-one-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Royal ONE™ Visa Signature® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: royal-one-plus-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/royal-one-plus-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Royal ONE Plus™ Visa Signature® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: secured-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/secured-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: BankAmericard® Secured Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: student-cash-back-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/student-cash-back-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Customized Cash Rewards Credit Card for Students
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: student-rewards-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/student-rewards-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Travel Rewards Credit Card for Students
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: susan-komen-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/susan-komen-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Susan G. Komen® Customized Cash Rewards Visa® credit card from Bank of America
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: travel-rewards-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/travel-rewards-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Travel Rewards Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: travel-rewards-secured-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/travel-rewards-secured-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Travel Rewards Secured Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: unlimited-cash-back-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/unlimited-cash-back-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Unlimited Cash Rewards Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: unlimited-cash-back-secured-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/unlimited-cash-back-secured-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Unlimited Cash Rewards Secured Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: unlimited-cash-back-student-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/unlimited-cash-back-student-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Unlimited Cash Rewards Credit Card for Students
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: premium-rewards-elite-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/premium-rewards-elite-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America® Premium Rewards® Elite Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: alaska-airlines-infinite-credit-card
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/products/alaska-airlines-infinite-credit-card/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Atmos™ Rewards Summit Visa Infinite® Credit Card
+  has_offers: true
+  render_ready_selector: .rates-table-body
+  notes: 'rendered: the static HTML holds no product details'

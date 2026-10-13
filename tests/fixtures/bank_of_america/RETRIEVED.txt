@@ -1,0 +1,13 @@
+# Verbatim official pages from www.bankofamerica.com, 2026-10-13.
+# *.rendered.html: the DOM after rendering (page.content()) in a fresh Playwright Chromium context: no cookies, no
+#   login, en-US, America/New_York, viewport 1280x900, the project User-Agent, robots.txt-disallowed requests
+#   aborted, wait until networkidle. Not modified.
+# static-*.html: raw HTTP response bytes (plain GET, no cookies, no JS), unmodified.
+# columns: file | url | method | http_status | retrieved_at_utc
+credit-cards-products-unlimited-cash-back-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/unlimited-cash-back-credit-card/ | playwright | 200 | 2026-10-13T09:37:03Z
+credit-cards-products-cash-back-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/cash-back-credit-card/ | playwright | 200 | 2026-10-13T09:36:14Z
+credit-cards-products-premium-rewards-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/premium-rewards-credit-card/ | playwright | 200 | 2026-10-13T09:36:28Z
+credit-cards-products-travel-rewards-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/travel-rewards-credit-card/ | playwright | 200 | 2026-10-13T09:36:54Z
+credit-cards-products-air-france-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/air-france-credit-card/ | playwright | 200 | 2026-10-13T09:35:59Z
+credit-cards-products-secured-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/secured-credit-card/ | playwright | 200 | 2026-10-13T09:36:39Z
+static-unlimited-cash-back-credit-card.html | https://www.bankofamerica.com/credit-cards/products/unlimited-cash-back-credit-card/ | http | 200 | 2026-10-13T09:34:47Z

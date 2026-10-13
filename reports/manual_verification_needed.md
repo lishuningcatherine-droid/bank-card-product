@@ -50,6 +50,12 @@ fetched to test this**, so check the first manual capture with `bankrec review l
 | Welcome offers shown only by the page script | every Capital One card page | Same API. Offers stated in the static HTML are captured; others are not. A manual capture of the rendered page records them. |
 | Foreign transaction fee (Partially verified cards) | Spark Cash, Spark Cash Plus, Spark 1.5% Cash Select, Venture Business, Venture X Business, VentureOne Business, Platinum, QuicksilverOne, SavorOne | Not stated on the product page. Capital One's pricing pages were not located in the sitemaps; confirm the official terms URL. |
 
-## Bank of America, U.S. Bank, American Express, CFPB
+## Bank of America
+
+| What | URL | Reason |
+|---|---|---|
+| Foreign transaction fee of 17 cards (cash-back, BankAmericard, secured, Premium Rewards Elite, Atmos, Allways, Royal ONE, Susan G. Komen) | each card's "View complete list of rates and fees" link, e.g. https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082058&productoffercode=6E&locale=en_US (Unlimited Cash Rewards) | The terms page renders empty in an anonymous browser context; the fee is not on the product page. Save the terms page from a normal browser (or the PDF it offers) and ingest it manually; register the URL first. |
+
+## U.S. Bank, American Express, CFPB
 
 In progress (see `docs/REACHABILITY.md`).

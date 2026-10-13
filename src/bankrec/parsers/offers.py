@@ -37,7 +37,7 @@ _VAR = re.compile(r"\b(?:" + "|".join(VARIABILITY_PHRASES) + r")\b", re.IGNORECA
 _FLOOR = re.compile(r"\b(?:" + "|".join(FLOOR_PHRASES) + r")\s*$", re.IGNORECASE)
 
 _POINTS = re.compile(
-    r"(?P<n>\d{1,3}(?:,\d{3})+|\d{4,7})\s*(?:bonus\s+)?(?:(?:membership\s+rewards®?|ultimate\s+rewards®?|"
+    r"(?P<n>\d{1,3}(?:,\d{3})+|\d{4,7})\s*(?:online\s+)?(?:bonus\s+)?(?:(?:membership\s+rewards®?|ultimate\s+rewards®?|"
     r"venture|miles?\s+rewards)\s+)?(?P<u>points?|miles?|avios)\b",
     re.IGNORECASE,
 )

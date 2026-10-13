@@ -20,4 +20,4 @@ categories:
   wholesale_clubs: {label: Wholesale clubs, synonyms: ["wholesale clubs"]}
   home_improvement: {label: Home improvement, synonyms: ["home improvement stores", "home improvement"]}
   rotating: {label: Rotating bonus categories, synonyms: ["bonus categories", "quarterly categories", "rotating categories"]}
-  other: {label: Everything else, synonyms: ["all other purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase"]}
+  other: {label: Everything else, synonyms: ["all other purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase", "everyday purchases"]}

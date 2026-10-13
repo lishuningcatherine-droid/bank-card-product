@@ -22,7 +22,7 @@ from decimal import Decimal
 from typing import Any
 
 from bankrec.candidate import ProductCandidate
-from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter, co_brands
+from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter, lowest_rate_per_category
 from bankrec.ingest.common import extract as X
 from bankrec.model import ExtractionContext, NullReason, PageType, RewardRateRec, Sourced
 from bankrec.parsers.money import parse_fee_schedule, parse_money
@@ -240,27 +240,7 @@ class Adapter(DeclarativeAdapter):
                 break
         else:
             c.fields["network"] = ctx.field(None, None)
-        # Earn on the co-brand partner ("2X points on Southwest Airlines purchases", "6X at hotels participating
-        # in Marriott Bonvoy") is partner-specific: airline/hotel for travel partners, dropped for retailers.
-        partner = c.value("co_brand_partner")
-        if partner:
-            kind = next((k for k, v in co_brands().items() if partner in v), None)
-            words = self.rules.get("partner_words", {}).get(partner, [partner])
-            rates = []
-            for r in c.reward_rates:
-                v = r.value
-                if v is None:
-                    continue
-                # Travel partners: only the partner's own purchases count (an airline card's flights, a hotel
-                # card's stays). Retail partners' merchants are not in the category vocabulary, so the generic
-                # categories in the same sentence ("gas stations and most Disney locations") stand.
-                mentions = any(re.search(rf"\b{re.escape(w)}\b", v.text, re.I) for w in words)
-                if v.category != "other" and mentions and kind in ("airline", "hotel"):
-                    if v.category not in (kind, "travel"):
-                        continue
-                    r = r.model_copy(update={"value": v.model_copy(update={"category": kind})})
-                rates.append(r)
-            c.reward_rates = rates
+        self.partner_rates(c)
         # The same rate is often stated twice (summary and detail); the capped statement is the precise one.
         best: dict[tuple[Any, ...], Sourced[RewardRateRec]] = {}
         for r in c.reward_rates:
@@ -271,15 +251,7 @@ class Adapter(DeclarativeAdapter):
             cur = best[k].value if k in best else None
             if cur is None or (cur.cap_cents is None and v.cap_cents is not None):
                 best[k] = r
-        # Two different rates for one category (e.g. summary vs. detail wording): keep the lower one.
-        low: dict[str, Sourced[RewardRateRec]] = {}
-        for r in best.values():
-            v = r.value
-            assert v is not None
-            lv = low[v.category].value if v.category in low else None
-            if lv is None or v.rate < lv.rate:
-                low[v.category] = r
-        c.reward_rates = list(low.values())
+        c.reward_rates = lowest_rate_per_category(list(best.values()))
         base = [r for r in c.reward_rates if r.value and r.value.category == "other"]
         if len({r.value.rate for r in base if r.value}) > 1:
             c.fields["base_rate"] = ctx.field(None, None, null_reason=NullReason.conflict)

@@ -21,6 +21,7 @@ from bankrec.model import (
     PageType,
     ProductType,
     ProvenanceClass,
+    RewardRateRec,
     Sourced,
 )
 from bankrec.registry.schema import BankConfig, SourceEntry
@@ -51,6 +52,20 @@ class BankAdapter(Protocol):
 @lru_cache(maxsize=1)
 def co_brands() -> dict[str, list[str]]:
     return yaml.safe_load((CONFIG_DIR / "co_brands.yaml").read_text(encoding="utf-8"))
+
+
+def lowest_rate_per_category(rates: list[Sourced[RewardRateRec]]) -> list[Sourced[RewardRateRec]]:
+    """One rate per category. The same rate is often stated twice (summary and detail); when the page shows two
+    different rates for one category, the lower one is kept (never overstate)."""
+    low: dict[str, Sourced[RewardRateRec]] = {}
+    for r in rates:
+        v = r.value
+        if v is None:
+            continue
+        lv = low[v.category].value if v.category in low else None
+        if lv is None or v.rate < lv.rate or (v.rate == lv.rate and lv.cap_cents is None and v.cap_cents):
+            low[v.category] = r
+    return list(low.values())
 
 
 NETWORKS = [
@@ -106,6 +121,32 @@ class DeclarativeAdapter:
 
     def card_extras(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         """Bank-specific additions (e.g. annual fee stated only in an FAQ answer)."""
+
+    def partner_rates(self, c: ProductCandidate) -> None:
+        """Earn on the co-brand partner itself ("2X points on Southwest Airlines purchases", "6X at hotels
+        participating in Marriott Bonvoy"): for airline/hotel partners it counts as ``airline`` / ``hotel`` (which
+        the recommender does not apply to broad user categories), and a rate naming the partner under some other
+        category is dropped. Retail partners' merchants are not in the vocabulary, so generic categories in the same
+        sentence ("gas stations and most Disney locations") stand. ``partner_words`` in the rules lists the words
+        that identify the partner (default: the partner name)."""
+        partner = c.value("co_brand_partner")
+        if not partner:
+            return
+        kind = next((k for k, v in co_brands().items() if partner in v), None)
+        if kind not in ("airline", "hotel"):
+            return
+        words = (self.rules.get("partner_words") or {}).get(partner, [partner])
+        rates = []
+        for r in c.reward_rates:
+            v = r.value
+            if v is None:
+                continue
+            if v.category != "other" and any(re.search(rf"\b{re.escape(w)}\b", v.text, re.I) for w in words):
+                if v.category not in (kind, "travel"):
+                    continue
+                r = r.model_copy(update={"value": v.model_copy(update={"category": kind})})
+            rates.append(r)
+        c.reward_rates = rates
 
     def fees_and_rates(self, page: ClassifiedPage, ctx: ExtractionContext) -> dict[str, Sourced[Any]]:
         """Card fees and APRs. The default reads pricing tables and "Label: value" lines."""

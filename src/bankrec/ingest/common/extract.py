@@ -287,6 +287,25 @@ def _intro_apr(text: str | None) -> tuple[Decimal, int] | None:
     return Decimal(m.group(1)), int(m.group(2))
 
 
+_RATE_TOKEN = re.compile(
+    r"(?<![\w$.,])\d{1,2}(?:\.\d{1,2})?\s*(?:%|[xX]\b|\s+(?:points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\b)"
+)
+
+
+def split_rate_clauses(text: str) -> list[str]:
+    """Split "Earn 2 points ... on travel and dining and unlimited 1.5 points ... on all other purchases" into one
+    clause per rate, so each rate keeps only its own categories. A rate introduced by "then" (a post-cap rate) stays
+    with its clause."""
+    starts = [m.start() for m in _RATE_TOKEN.finditer(text)]
+    cuts = [s for s in starts[1:] if not re.search(r"\bthen\s*$", text[:s], re.IGNORECASE)]
+    parts, prev = [], 0
+    for c in cuts:
+        parts.append(text[prev:c])
+        prev = c
+    parts.append(text[prev:])
+    return [p.strip(" ,;") for p in parts if p.strip(" ,;")]
+
+
 def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[RewardRateRec]]:
     out: list[Sourced[RewardRateRec]] = []
     for st in statements:

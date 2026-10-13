@@ -1,7 +1,7 @@
 # Brand names used only to flag co-branded cards when the brand appears in the official product name.
 airline: [Delta, United, Southwest, Alaska Airlines, AAdvantage, American Airlines, JetBlue, Aeroplan, British Airways,
-          Aer Lingus, Iberia, Air France, Frontier, Spirit, Hawaiian Airlines, Allegiant, Emirates, Atmos]
+          Aer Lingus, Iberia, Air France, Allways, Frontier, Spirit, Hawaiian Airlines, Allegiant, Emirates, Atmos]
 hotel: [Hilton, Marriott, Bonvoy, Hyatt, IHG, Wyndham, Choice Privileges, Ritz-Carlton, Best Western]
 retail: [Amazon, Prime, Costco, Target, Walmart, Disney, Starbucks, Instacart, REI, Kroger, Lowe's, Home Depot, Apple,
          Macy's, Nordstrom, Kohl's, Gap, Old Navy, Bass Pro, Cabela's, Saks, Bloomingdale's]
-other: [AARP, Uber, Lyft, DoorDash]
+other: [AARP, Uber, Lyft, DoorDash, Norwegian Cruise Line, Royal ONE]  # cruise-line co-brands: not airline/hotel
