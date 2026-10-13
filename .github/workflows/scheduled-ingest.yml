@@ -16,7 +16,9 @@ jobs:
   ingest:
     if: vars.BANKREC_SCHEDULER == 'github'
     runs-on: ubuntu-latest
-    concurrency: { group: ingest-${{ github.event.schedule || inputs.tier }}, cancel-in-progress: false }
+    concurrency:
+      group: ingest-${{ github.event.schedule || inputs.tier }}
+      cancel-in-progress: false
     env:
       BANKREC_ENV: prod
       BANKREC_SCHEDULER: github
@@ -47,4 +49,6 @@ jobs:
       - run: uv run bankrec report stale
       - uses: actions/upload-artifact@v4
         if: always()
-        with: { name: reports-${{ steps.tier.outputs.tier }}-${{ github.run_id }}, path: reports/ }
+        with:
+          name: reports-${{ steps.tier.outputs.tier }}-${{ github.run_id }}
+          path: reports/
