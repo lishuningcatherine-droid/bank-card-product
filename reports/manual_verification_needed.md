@@ -63,6 +63,14 @@ fetched to test this**, so check the first manual capture with `bankrec review l
 | Foreign transaction fee (10 cards; all but Altitude Connect) | each card page's "See annual fee and full terms" / pricing link | Not stated in the product content. Capture the card's terms page manually and register its URL. |
 | Any card that fails a run with `ENV_NETWORK_BLOCKED` | — | Local connectivity drops on 2026-10-13 (`ERR_INTERNET_DISCONNECTED`); the next run retries. |
 
-## American Express, CFPB
+## American Express
+
+| What | URL | Reason |
+|---|---|---|
+| Welcome offers and APRs, all 13 cards | https://www.americanexpress.com/us/credit-cards/card/<card>/ | Only on the rendered page; rendering stopped returning product content on 2026-10-13 after ~30 loads. Capture each page in a normal browser (SingleFile) and ingest manually, or set `has_offers: true` and retry on a later day. |
+| 8 recheck-pending cards (Gold, Blue Cash Everyday/Preferred, Delta Blue/Gold/Platinum/Reserve, Hilton Aspire) | `bankrec review list --bank american_express` | Their earlier rendered offers were not seen in the static run: approve/reject in review. |
+| Platinum Card®, Gold Card® product fields | https://www.americanexpress.com/us/credit-cards/card/platinum/ , …/gold-card/ | Static page has no product name / a promotional h1. |
+
+## CFPB
 
 In progress (see `docs/REACHABILITY.md`).

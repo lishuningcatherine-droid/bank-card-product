@@ -5,6 +5,8 @@ categories:
   online_grocery: {label: Online grocery, synonyms: ["online grocery", "online grocery purchases"]}
   food_delivery: {label: Food delivery, synonyms: ["select food delivery", "food delivery"]}
   dining: {label: Dining, synonyms: ["dining", "restaurants", "takeout", "eligible delivery services"]}
+  # "Select travel" (e.g. flights booked directly with airlines or the issuer's portal) is not travel in general.
+  select_travel: {label: Select travel, synonyms: ["select travel"]}
   travel: {label: Travel, synonyms: ["travel", "travel purchases", "hotels and car rentals"]}
   # "Flights" are airline purchases, not travel in general (which would also cover hotels, cars, cruises).
   airline: {label: Airline, synonyms: ["flights booked directly with airlines", "flights booked directly",
@@ -20,4 +22,4 @@ categories:
   wholesale_clubs: {label: Wholesale clubs, synonyms: ["wholesale clubs"]}
   home_improvement: {label: Home improvement, synonyms: ["home improvement stores", "home improvement"]}
   rotating: {label: Rotating bonus categories, synonyms: ["bonus categories", "quarterly categories", "rotating categories"]}
-  other: {label: Everything else, synonyms: ["all other purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase", "everyday purchases"]}
+  other: {label: Everything else, synonyms: ["all other purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase", "everyday purchases", "other eligible purchases"]}

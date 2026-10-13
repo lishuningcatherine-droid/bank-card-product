@@ -21,8 +21,8 @@ _RATE = re.compile(
     r"\s+(?P<per>points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\s+(?:\$1\b|dollar))",
 )
 _CAP = re.compile(
-    r"(?:on\s+)?(?:up\s+to|(?:the|your)\s+first)\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)\s+(?:spent\s+)?(?:in\s+)?"
-    r"(?P<combined>combined\s+)?(?:eligible\s+)?(?:purchases|spend(?:ing)?)?[^.;()]*?"
+    r"(?:on\s+)?(?:up\s+to|(?:the|your)\s+first)\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)(?P<k>[Kk])?\s+(?:spent\s+)?"
+    r"(?:in\s+)?(?P<combined>combined\s+)?(?:eligible\s+)?(?:purchases|spend(?:ing)?)?(?:U\.S\.|[^.;()])*?"
     r"(?:(?:per|each|a|every)\s+(?P<period>calendar\s+year|(?:account\s+)?anniversary\s+year|year|quarter|"
     r"month|billing\s+cycle|cardmember\s+year)|(?P<annually>annually))",
     re.IGNORECASE,
@@ -119,7 +119,7 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     rr = RewardRate(rate=rate, rate_unit=unit, categories=cats, is_base=is_base, text=text.strip())
     cap = _CAP.search(text)
     if cap:
-        rr.cap_cents = _dollars_to_cents(cap.group("amt"))
+        rr.cap_cents = _dollars_to_cents(cap.group("amt")) * (1000 if cap.group("k") else 1)  # "$50K"
         rr.cap_period = (
             "annual" if cap.group("annually") else _PERIODS[re.sub(r"\s+", " ", cap.group("period").lower())]
         )

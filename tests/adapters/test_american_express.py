@@ -1,56 +1,78 @@
-"""American Express adapter (brief §6.7). Verbatim fixtures pending; logic tested on synthetic Example Bank pages."""
+"""American Express adapter tests on verbatim rendered pages (tests/fixtures/american_express/RETRIEVED.txt, 2026-10-13).
 
-from pathlib import Path
+Every expected value was read off the fixture's page text by hand.
+"""
 
-import pytest
+from decimal import Decimal
 
-from bankrec.ingest.adapters.american_express import OFFER_ABSENT, OFFER_NOTE
-from tests.adapters._helpers import FIX, run_adapter, verbatim_fixtures
+from bankrec.model import NullReason
+from tests.adapters._helpers import rates, run_official
 
-PENDING = (
-    "pending: no verbatim official American Express fixture (ENV_NETWORK_BLOCKED; see docs/REACHABILITY.md)"
-)
-E = FIX / "example_bank"
+OFFER_NOTE = "Offers may vary; confirm on American Express at application"
 
 
-@pytest.mark.pending_fixture
-@pytest.mark.skipif(not verbatim_fixtures("american_express"), reason=PENDING)
-def test_verbatim_official_fixtures() -> None:  # pragma: no cover
-    for f in verbatim_fixtures("american_express"):
-        raise AssertionError(f"write value assertions for {f.name} before enabling sources")
-
-
-def test_offer_found_gets_variability_note() -> None:
-    c = run_adapter("american_express", E / "card_voyager_rewards.html", "voyager-rewards")
-    o = c.offers[0].value
-    assert o is not None and o.audience == "public" and o.note == OFFER_NOTE and o.verbatim_text
-
-
-def test_offer_absent_statically_creates_no_offer(tmp_path: Path) -> None:
-    html = (E / "card_voyager_rewards.html").read_text()
-    start, end = (
-        html.index('<section class="offer">'),
-        html.index("</section>", html.index('<section class="offer">')),
+def test_blue_cash_preferred() -> None:
+    c = run_official(
+        "american_express", "blue-cash-preferred", "us-credit-cards-card-blue-cash-preferred.rendered.html"
     )
-    page = tmp_path / "no_offer.html"
-    page.write_text(html[:start] + html[end + len("</section>") :])
-    c = run_adapter("american_express", page, "voyager-rewards")
-    assert c.offers == [] and c.offer_absent_note == OFFER_ABSENT
+    assert c.parser_version == "american_express/1.0.0"
+    assert c.name == "Blue Cash Preferred® Card"
+    # "Annual Fee: $0 intro annual fee for the first year, then $95"
+    assert (c.value("intro_annual_fee_cents"), c.value("annual_fee_cents")) == (0, 9500)
+    assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
+        Decimal("19.74"),
+        Decimal("28.74"),
+    )
+    # "0% intro APR for up to 18 months ... may be as short as 6 months": the duration is not a fixed value.
+    assert c.fields["intro_purchase_apr_months"].null_reason is NullReason.ambiguous
+    assert c.value("network") == "American Express" and c.value("reward_currency") == "cashback"
+    assert rates(c) == {
+        "groceries": ("6pct", 600000),  # "On up to $6,000 per year in purchases at U.S. supermarkets"
+        "streaming": ("6pct", None),
+        "transit": ("3pct", None),
+        "gas": ("3pct", None),
+        "other": ("1pct", None),
+    }
+    [o] = [o.value for o in c.offers if o.value]
+    assert (
+        o.amount_qualifier,
+        o.amount_max,
+        o.reward_unit,
+        o.requirement_min_cents,
+        o.qualification_window_days,
+    ) == (
+        "exact",
+        25000,
+        "cents",
+        300000,
+        180,
+    )
+    assert o.note == OFFER_NOTE
 
 
-def test_annual_fee_from_faq_answer(tmp_path: Path) -> None:
-    html = (E / "card_voyager_rewards.html").read_text()
-    html = html.replace(
-        "<tr><th>Annual Fee</th><td>$0 intro annual fee for the first year, then $95</td></tr>", ""
+def test_gold_card_k_caps_and_absent_offer() -> None:
+    c = run_official("american_express", "gold-card", "us-credit-cards-card-gold-card.rendered.html")
+    assert c.value("annual_fee_cents") == 32500
+    r = rates(c)
+    # "on up to $50K in purchases per calendar year" / "on up to $25K ..."
+    assert r["dining"] == ("4x", 5000000) and r["groceries"] == ("4x", 2500000)
+    assert all(
+        x.value.portal_only for x in c.reward_rates if x.value and x.value.category in {"hotel", "travel"}
     )
-    html = html.replace(
-        "</main>",
-        "<h2>FAQ</h2><h3>What is the annual fee for the Example Bank Voyager Rewards Card?"
-        "</h3><p>It is $95 per year.</p></main>",
+    assert not [o for o in c.offers if o.value]
+    assert c.offer_absent_note == "Check American Express for the current welcome offer"
+
+
+def test_marriott_bevy_combined_cap_with_us_abbreviation() -> None:
+    c = run_official(
+        "american_express", "marriott-bonvoy-bevy", "us-credit-cards-card-marriott-bonvoy-bevy.rendered.html"
     )
-    page = tmp_path / "faq_fee.html"
-    page.write_text(html)
-    c = run_adapter("american_express", page, "voyager-rewards")
-    assert c.value("annual_fee_cents") == 9500
-    assert c.fields["annual_fee_cents"].span_text == "It is $95 per year."
-    assert "annual fee taken from FAQ answer" in c.notes
+    assert c.value("co_brand_partner") == "Marriott" and c.value("annual_fee_cents") == 25000
+    assert c.value("foreign_tx_fee_pct") == Decimal("0")
+    assert c.value("purchase_apr_min_pct") == Decimal(
+        "19.74"
+    )  # "APR: 19.74% to 28.74% variable APR on purchases."
+    r = rates(c)
+    # "(on up to $15,000 in combined purchases at restaurants and U.S. supermarkets per calendar year ...)"
+    assert r["dining"] == r["groceries"] == ("4x", 1500000)
+    assert r["hotel"] == ("6x", None)
