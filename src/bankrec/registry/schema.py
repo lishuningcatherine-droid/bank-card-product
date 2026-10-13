@@ -41,6 +41,8 @@ class BankConfig(BaseModel):
     referral_url_patterns: list[str] = Field(default_factory=list)
     block_signatures: list[str] = Field(default_factory=list)
     boilerplate_phrases: list[str] = Field(default_factory=list)
+    # Elements that hold the product name when the page's h1 is a promotion (classifier "product heading" signal).
+    product_heading_selectors: list[str] = Field(default_factory=list)
     cfpb_issuer_names: list[str] = Field(default_factory=list)
     discovery: Discovery = Field(default_factory=Discovery)
     known_limitations: list[str] = Field(default_factory=list)

@@ -1,5 +1,293 @@
-# No product URLs yet: none could be retrieved or confirmed from the build environment
-# (egress policy refused the domain; see docs/REACHABILITY.md). Add only URLs confirmed on the
-# official site. Discovered URLs go to capital_one.discovered.yaml with enabled: false.
+# Capital One card product pages, from www.capitalone.com/credit-cards/sitemap.xml and small-business/sitemap.xml,
+# retrieved verbatim on 2026-10-13 (tests/fixtures/capital_one/RETRIEVED.txt holds the subset kept as fixtures).
+# Plain HTTP (requires_render: false, has_offers: false): rendering loads card data from card-apis.capitalone.com,
+# which robots.txt disallows, and the app then shows "Page Not Found". Offers stated in the static HTML are still
+# extracted; refresh_tier: offer keeps them on the 24 h offer schedule. See config/banks/capital_one.yaml.
 bank_id: capital_one
-sources: []
+sources:
+- bank_id: capital_one
+  slug: venture-x
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/venture-x/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Venture X
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: venture
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/venture/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Venture Rewards from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: ventureone
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/ventureone/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: VentureOne Rewards from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: quicksilver
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/quicksilver/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Quicksilver from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: quicksilverone
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/quicksilverone/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: QuicksilverOne from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: savor
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/savor/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Savor Rewards from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: savorone
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/savorone/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: SavorOne Rewards from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: savor-student
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/savor-student/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Savor Rewards for Students
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: quicksilver-student
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/quicksilver-student/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Quicksilver Rewards for Students
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: platinum
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/platinum/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Platinum from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: platinum-secured
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/platinum-secured/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Platinum Secured Credit Card from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: quicksilver-secured
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/quicksilver-secured/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Quicksilver Secured from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: savor-good-credit
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/savor-good-credit/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Savor Rewards for Good Credit from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: quicksilver-good-credit
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/quicksilver-good-credit/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Quicksilver Rewards for Good Credit from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: ventureone-good-credit
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/ventureone-good-credit/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: VentureOne Rewards for Good Credit from Capital One
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: bjs-wholesale-club
+  product_type: credit_card
+  source_url: https://www.capitalone.com/credit-cards/bjs-wholesale-club/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: BJ’s One® Mastercard®
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: venture-x-business
+  product_type: credit_card
+  source_url: https://www.capitalone.com/small-business/credit-cards/venture-x-business/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Venture X Business
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: spark-cash
+  product_type: credit_card
+  source_url: https://www.capitalone.com/small-business/credit-cards/spark-cash/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Spark Cash
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: spark-cash-select
+  product_type: credit_card
+  source_url: https://www.capitalone.com/small-business/credit-cards/spark-cash-select/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Spark 1.5% Cash Select
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: spark-cash-plus
+  product_type: credit_card
+  source_url: https://www.capitalone.com/small-business/credit-cards/spark-cash-plus/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Spark Cash Plus
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: venture-business
+  product_type: credit_card
+  source_url: https://www.capitalone.com/small-business/credit-cards/venture-business/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Venture Business
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: ventureone-business
+  product_type: credit_card
+  source_url: https://www.capitalone.com/small-business/credit-cards/ventureone-business/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: VentureOne Business
+  has_offers: false
+  refresh_tier: offer
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13

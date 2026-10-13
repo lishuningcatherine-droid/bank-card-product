@@ -171,7 +171,7 @@ class DeclarativeAdapter:
         c.fields.update(self.fees_and_rates(page, ctx))
         biz = re.search(r"\bbusiness\b", name, re.IGNORECASE)
         c.fields["segment"] = ctx.field("business" if biz else "consumer", name, method="label_regex")
-        c.fields["is_student"] = ctx.field(bool(re.search(r"\bstudent\b", name, re.I)), name)
+        c.fields["is_student"] = ctx.field(bool(re.search(r"\bstudents?\b", name, re.I)), name)
         secured = re.search(r"\bsecured\b", name, re.IGNORECASE)
         c.fields["is_secured"] = ctx.field(bool(secured), name)
         if not secured:
@@ -210,6 +210,14 @@ class DeclarativeAdapter:
             r"(?:cash back|back|points|miles|on\b)",
         )
         rates = X.reward_rates(reward_lines, ctx)
+        # Rewards paid in a merchant's own currency (e.g. "Disney Rewards Dollars") are not cash back or points the
+        # recommender can value: no rates, no currency (the card stays Partially verified).
+        store = next(
+            (m for p in self.rules.get("store_currency_patterns", []) if (m := re.search(p, page.text))), None
+        )
+        if store is not None:
+            rates = []
+            c.notes.append(f"rewards paid in store currency ({store.group(0)}); not valued")
         c.reward_rates = rates
         rate_text = " ".join(r.span_text or "" for r in rates)
         currency, _ = X.reward_currency(rates, rate_text)
@@ -231,9 +239,10 @@ class DeclarativeAdapter:
         c.benefits = X.credits(credit_lines, ctx)
         c.benefits += X.named_benefits(self.statements(page, "benefit", None), ctx)
         guide = X.first_line(doc, r"^(?:recommended credit|credit (?:level|needed|score|profile))\s*[:\-]")
-        c.fields["credit_profile_guidance"] = (
-            ctx.field(guide.split(":", 1)[-1].strip(), guide) if guide else ctx.field(None, None)
-        )
+        if not c.fields.get("credit_profile_guidance", Sourced(null_reason=NullReason.not_found)).present:
+            c.fields["credit_profile_guidance"] = (
+                ctx.field(guide.split(":", 1)[-1].strip(), guide) if guide else ctx.field(None, None)
+            )
         elig = X.lines(
             doc,
             r"not available to|once per (?:lifetime|card ?member)|if you have (?:received|had)|"

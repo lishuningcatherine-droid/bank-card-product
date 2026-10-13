@@ -26,7 +26,7 @@ cloud-session survey (every domain refused by that session's egress proxy) is ke
 | Bank | Credit cards | Checking | Savings |
 |---|---|---|---|
 | Chase | **Static HTML, 200.** 42 card pages from the card sitemap; 38 single-card product pages registered (`product_detail`, `has_offers` → rendered). Annual fee, APR, earn rates and welcome offer are in the static HTML; rendering gives the same content (2 of 38 renders timed out on `networkidle`). Pricing & Terms on `sites.chase.com`: **robots-disallowed**. | Offered (sitemap lists `personal/checking/total-checking`, `premier-plus-checking`, `high-school-checking`; offers on `personal/offers/total-checking-300`). Not yet ingested. | Not surveyed yet. |
-| Capital One | In progress | | |
+| Capital One | **Static HTML, 200** for all 27 card pages fetched (consumer, student, secured, business, retail co-brand). **Rendering fails within robots.txt**: the script loads card data from `card-apis.capitalone.com` (robots.txt 403 → disallow-all), and the app redirects to `/page-not-found/`. 22 sources registered as plain-HTTP `product_detail` (`requires_render: false`). | Offered (360 Checking in site navigation). Not yet ingested. | Offered (360 Performance Savings in navigation). Not yet ingested. |
 | Bank of America | Pending | | |
 | U.S. Bank | Pending | | |
 | American Express | Pending | | |
@@ -40,3 +40,5 @@ cloud-session survey (every domain refused by that session's egress proxy) is ke
 | `www.chase.com` disallows education paths and `/content/dam/chase-ux/ratesheets/` | Not re-checked line by line; the fetcher applies the live file on every run. |
 | Checking bonuses on separate `/personal/offers/…` pages | **Confirmed** in the sitemap (`/personal/offers/total-checking-300`). |
 | Card terms on `sites.chase.com` | **Confirmed, and that host disallows all crawlers.** |
+| Capital One card pages are static | **Confirmed** (27 pages). |
+| Capital One APY shows "NaN" statically | Not yet checked (savings not ingested). |

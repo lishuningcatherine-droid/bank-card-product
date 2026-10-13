@@ -1,0 +1,9 @@
+# Verbatim official pages. Raw response bytes, unmodified.
+# method: plain HTTP GET (httpx), no cookies, no login, no JS; robots.txt checked first;
+#         >= 3 s between requests per host; User-Agent: bankrec/0.1.0 (+https://github.com/lishuningcatherine-droid/bank-card-product; contact@example.invalid)
+# columns: file | url | final_url | http_status | content_type | bytes | retrieved_at_utc
+www-credit-cards-venture-x.html | https://www.capitalone.com/credit-cards/venture-x/ | https://www.capitalone.com/credit-cards/venture-x/ | 200 | text/html | 971765 | 2026-10-13T09:13:51Z
+www-credit-cards-venture.html | https://www.capitalone.com/credit-cards/venture/ | https://www.capitalone.com/credit-cards/venture/ | 200 | text/html | 1004908 | 2026-10-13T09:13:54Z
+www-credit-cards-savor.html | https://www.capitalone.com/credit-cards/savor/ | https://www.capitalone.com/credit-cards/savor/ | 200 | text/html | 947292 | 2026-10-13T09:14:07Z
+www-credit-cards-platinum-secured.html | https://www.capitalone.com/credit-cards/platinum-secured/ | https://www.capitalone.com/credit-cards/platinum-secured/ | 200 | text/html | 903429 | 2026-10-13T09:14:23Z
+www-small-business-credit-cards-spark-cash.html | https://www.capitalone.com/small-business/credit-cards/spark-cash/ | https://www.capitalone.com/small-business/credit-cards/spark-cash/ | 200 | text/html | 516160 | 2026-10-13T09:15:01Z

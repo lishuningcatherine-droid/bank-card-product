@@ -1,0 +1,4 @@
+# Declarative extraction rules for Capital One card pages (www.capitalone.com).
+# Built from verbatim pages retrieved 2026-10-13 (tests/fixtures/capital_one/RETRIEVED.txt). Most logic is in
+# ingest/adapters/capital_one.py (showcase headline/body pairs); see docs/adapters/capital_one.md.
+store_currency_patterns: ["T-Mobile Rewards", "REI Co-op card rewards"]

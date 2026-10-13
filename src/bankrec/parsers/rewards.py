@@ -40,8 +40,8 @@ _PORTAL = re.compile(
     r"\b(?:booked|purchased|reserved|made)\s+(?:directly\s+)?(?:through|via|on)\s+(?:the\s+)?"
     r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|"
     r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
-    r"\b(?:on|through|via)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one travel|amex ?travel|"
-    r"american express travel)\b",
+    r"\b(?:on|through|via)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
+    r"amex ?travel|american express travel)\b",
     re.IGNORECASE,
 )
 _UNTIL = re.compile(

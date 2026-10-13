@@ -136,7 +136,13 @@ def classify_retrieval(
 
 
 def classify(
-    url: str, doc: PageDoc, expected_entity: str, *, source_kind: str, boilerplate: list[str] | None = None
+    url: str,
+    doc: PageDoc,
+    expected_entity: str,
+    *,
+    source_kind: str,
+    boilerplate: list[str] | None = None,
+    heading_selectors: list[str] | None = None,
 ) -> Classification:
     """Content rules (stage 5) for a successfully retrieved HTML page."""
     sig: list[str] = []
@@ -189,7 +195,10 @@ def classify(
             return Classification(PageType.category_page, sig, Failure.NON_PRODUCT_PAGE)
         return Classification(PageType.unknown_page, sig, Failure.NON_PRODUCT_PAGE)
 
-    h1_match = any(name_present(expected_entity, h) for h in doc.h1)
+    headings = list(doc.h1)
+    for sel in heading_selectors or []:
+        headings += [doc.node_text(n).replace("\n", " ") for n in doc.select(sel)]
+    h1_match = any(name_present(expected_entity, h) for h in headings)
     if h1_match:
         sig.append("product_h1")
     in_text = name_present(expected_entity, text)

@@ -42,6 +42,14 @@ fetched to test this**, so check the first manual capture with `bankrec review l
 | Sapphire Reserve for Business℠ | https://creditcards.chase.com/business-credit-cards/sapphire/reserve |
 | Iberia Visa Signature® | https://creditcards.chase.com/travel-credit-cards/avios/iberia |
 
-## Capital One, Bank of America, U.S. Bank, American Express, CFPB
+## Capital One
+
+| What | URL | Reason |
+|---|---|---|
+| Quicksilver from Capital One: annual fee, APR | https://www.capitalone.com/credit-cards/quicksilver/ | Not in the static HTML; rendering needs `card-apis.capitalone.com` (robots.txt 403). Product is in review (`bankrec review list`). |
+| Welcome offers shown only by the page script | every Capital One card page | Same API. Offers stated in the static HTML are captured; others are not. A manual capture of the rendered page records them. |
+| Foreign transaction fee (Partially verified cards) | Spark Cash, Spark Cash Plus, Spark 1.5% Cash Select, Venture Business, Venture X Business, VentureOne Business, Platinum, QuicksilverOne, SavorOne | Not stated on the product page. Capital One's pricing pages were not located in the sitemaps; confirm the official terms URL. |
+
+## Bank of America, U.S. Bank, American Express, CFPB
 
 In progress (see `docs/REACHABILITY.md`).

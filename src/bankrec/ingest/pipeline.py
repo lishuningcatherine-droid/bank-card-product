@@ -425,6 +425,7 @@ class Pipeline:
                 src.expected_entity,
                 source_kind=src.source_kind.value,
                 boilerplate=bank.boilerplate_phrases,
+                heading_selectors=bank.product_heading_selectors,
             )
         snap_row.page_type, snap_row.classifier_signals = cl.page_type.value, cl.signals
         out.page_type, out.signals = cl.page_type.value, cl.signals

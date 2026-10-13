@@ -1059,3 +1059,23 @@ as `up_to` ($0 contribution).
 
 The fetcher keeps treating a 401/403 robots.txt as "disallow all" (stricter than RFC 9309 §2.3.1.3, which allows
 crawling on 4xx). Seen on `card-apis.capitalone.com`.
+
+### 24.6 Static capture where rendering is impossible within robots.txt
+
+Offer-bearing sources are normally rendered in a fresh context (§22.1). When a page's own data API is
+robots-disallowed (Capital One: `card-apis.capitalone.com`), rendering cannot reproduce the page without breaking
+robots.txt. Such sources set `requires_render: false`, `has_offers: false` and `refresh_tier: offer`; they are
+fetched by plain HTTP with no cookies (capture conditions `method: http`, `capture_context: public_default`), and
+offers stated in that static HTML are recorded. The bank config documents the reason.
+
+### 24.7 Product heading selectors
+
+`BankConfig.product_heading_selectors` lists elements that hold the product name when the `h1` is a promotion. The
+classifier treats their text like an `h1` for the "product heading" signal. All other signals (name present in the
+text, rates section) are unchanged.
+
+### 24.8 Store-currency rewards
+
+`store_currency_patterns` in an adapter's rules (e.g. "Disney Rewards Dollars", "T-Mobile Rewards") drops the
+card's reward rates and currency: rewards redeemable only with one merchant are not cash back and are not valued.
+The card stays Partially verified.

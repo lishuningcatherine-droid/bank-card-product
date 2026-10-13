@@ -26,3 +26,5 @@ partner_words:
   Disney: [Disney]
   Instacart: [Instacart]
   DoorDash: [DoorDash, Caviar]
+# Rewards in a merchant's own currency are not valued (no reward rates, no currency).
+store_currency_patterns: ["Disney Rewards Dollars"]

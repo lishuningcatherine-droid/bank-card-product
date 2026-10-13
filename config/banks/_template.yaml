@@ -13,6 +13,7 @@ meaningful_query_params: []  # query params that select content; everything else
 referral_url_patterns: []
 block_signatures: []
 boilerplate_phrases: []      # hidden phrases that must not be read as block signals
+product_heading_selectors: []  # elements holding the product name when the h1 is a promotion (classifier signal)
 cfpb_issuer_names: []
 discovery:
   robots_url: "https://www.newbank.com/robots.txt"
