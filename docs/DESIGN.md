@@ -1016,3 +1016,46 @@ holds amendment 2, so they are recorded here. Where they differ from §21/§22, 
 | "Real-time" | The disclaimer must say data is "not real-time" (§2). The wording test bans every other use of "real-time", "realtime", or "live rates" (§9). |
 | Deployment | One web replica in v1. A shared `cacheHandler` is required before scaling web horizontally. |
 | `/sources` last run | The API role cannot read `staging`, so the pipeline writes a public-safe `prod.source_summary` (migration 0002). |
+
+## 24. Amendment 3 — Ingesting real official pages (2026-10-13)
+
+Recorded while building the real adapters from verbatim pages on the owner's machine. These change shared code only
+where real pages showed the earlier behaviour was wrong; each item has a test.
+
+### 24.1 Visible text excludes struck-out values and screen-reader-only labels
+
+`ingest/common/html.py` treats `<s>`, `<del>`, `<strike>` and elements whose class is `strikethrough`,
+`visually-hidden`, `sr-only` or `screen-reader-only` as hidden. Chase shows a previous offer as
+`<span class="strikeThrough">$200<span class="visually-hidden">Strike through</span></span> $250`; reading the
+struck amount would record the old offer. `<sup>SM</sup>` / `<sup>TM</sup>` render as ℠ / ™ so names read
+"United℠ Explorer Card", not "UnitedSM Explorer Card". The raw HTML is stored unchanged.
+
+### 24.2 Extraction scope
+
+Adapter rules may set `scope_selector` (e.g. `main`) and `exclude_selector`. Extraction then reads only that part
+of the page; provenance spans are still located in the full snapshot text. Real pages repeat site-wide filter labels
+("No Annual Fee (15)", "No Foreign Transaction Fees") that the unscoped extractor read as product values.
+
+### 24.3 Reward-rate parsing
+
+- Multi-rate sentences ("4% on X, 3% on dining, 2% on groceries and 1% on all other") assign each category the rate
+  that precedes it, not the first rate.
+- Caps also read "on the first $X … per (account) anniversary year" and "… annually"; units read "N point(s) per
+  $1" and "N points for each/every dollar".
+- `flights` maps to `airline` (not `travel`); `online grocery` and `select food delivery` are their own categories
+  (`online_grocery`, `food_delivery`) so a narrow rate is never applied to all groceries or dining. Only the
+  categories in `scoring.yaml: category_map` count toward value, so new codes are conservative by construction.
+- Naming the issuer's travel portal ("on Chase Travel", "through Capital One Travel") marks the rate portal-only.
+
+### 24.4 Generic channel notices
+
+Chase prints "Offers may vary depending on where you apply, for example online or in a branch, and can change over
+time" on every card page. It describes channel differences, not the amount of the online offer, so the Chase adapter
+does not attach it to the offer text (otherwise every exact Chase offer would fail `V-QUALIFIER`). Offers whose own
+text says "up to" remain `up_to`. **Owner decision requested** (FINAL_AUDIT): keep this, or treat every Chase offer
+as `up_to` ($0 contribution).
+
+### 24.5 robots.txt answered with 401/403
+
+The fetcher keeps treating a 401/403 robots.txt as "disallow all" (stricter than RFC 9309 §2.3.1.3, which allows
+crawling on 4xx). Seen on `card-apis.capitalone.com`.

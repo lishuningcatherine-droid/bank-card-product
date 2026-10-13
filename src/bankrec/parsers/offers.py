@@ -38,14 +38,14 @@ _FLOOR = re.compile(r"\b(?:" + "|".join(FLOOR_PHRASES) + r")\s*$", re.IGNORECASE
 
 _POINTS = re.compile(
     r"(?P<n>\d{1,3}(?:,\d{3})+|\d{4,7})\s*(?:bonus\s+)?(?:(?:membership\s+rewards®?|ultimate\s+rewards®?|"
-    r"venture|miles?\s+rewards)\s+)?(?P<u>points?|miles?)\b",
+    r"venture|miles?\s+rewards)\s+)?(?P<u>points?|miles?|avios)\b",
     re.IGNORECASE,
 )
 _CASH = re.compile(r"\$\s*(?P<n>\d{1,3}(?:,\d{3})+|\d+)(?:\.(?P<c>\d{2}))?")
 _NUMBER = re.compile(r"\$?\s*\d[\d,]*(?:\.\d+)?\s*%?")
 
 _REQ_SPEND = re.compile(
-    r"(?:spend|make|making|purchases?\s+(?:totaling|of))\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)"
+    r"(?:spend|spending|make|making|purchases?\s+(?:totaling|of))\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)"
     r"(?:\.\d{2})?(?:\s+(?:or more\s+)?(?:on|in)\s+(?:eligible\s+|net\s+)?purchases)?",
     re.IGNORECASE,
 )
@@ -63,8 +63,8 @@ _DD_COUNT = re.compile(
     r"(?P<n>\d|one|two|three|four|five)\s+(?:or more\s+)?(?:qualifying\s+)?direct\s+deposits", re.IGNORECASE
 )
 _WINDOW = re.compile(
-    r"(?:within|in)\s+(?:the\s+)?(?:first\s+)?\d+\s*(?:days?|months?)|"
-    r"(?:within|in)\s+(?:the\s+)?first\s+\w+\s+(?:days?|months?)",
+    r"(?:within|in)\s+(?:the\s+|your\s+)?(?:first\s+)?\d+\s*(?:days?|months?)|"
+    r"(?:within|in)\s+(?:the\s+|your\s+)?first\s+\w+\s+(?:days?|months?)",
     re.IGNORECASE,
 )
 _HOLD = re.compile(

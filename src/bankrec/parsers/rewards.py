@@ -18,12 +18,13 @@ from bankrec.parsers.placeholders import contains_placeholder
 _RATE = re.compile(
     r"(?P<num>\d{1,2}(?:\.\d{1,2})?)\s*(?:(?P<pct>%)\s*(?:cash\s*back|back|cash\s*rewards?)?|"
     r"\s*(?P<x>[xX])\b(?:\s*(?:membership\s+rewards®?\s+)?(?:points|miles))?|"
-    r"\s+(?P<per>points|miles)\s+per\s+(?:\$1|dollar))",
+    r"\s+(?P<per>points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\s+(?:\$1\b|dollar))",
 )
 _CAP = re.compile(
-    r"(?:on\s+)?up\s+to\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)\s+(?:in\s+)?(?P<combined>combined\s+)?(?:eligible\s+)?"
-    r"(?:purchases|spend(?:ing)?)?[^.;()]*?(?:per|each|a|every)\s+(?P<period>calendar\s+year|year|quarter|month|"
-    r"billing\s+cycle|cardmember\s+year)",
+    r"(?:on\s+)?(?:up\s+to|the\s+first)\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)\s+(?:spent\s+)?(?:in\s+)?"
+    r"(?P<combined>combined\s+)?(?:eligible\s+)?(?:purchases|spend(?:ing)?)?[^.;()]*?"
+    r"(?:(?:per|each|a|every)\s+(?P<period>calendar\s+year|(?:account\s+)?anniversary\s+year|year|quarter|"
+    r"month|billing\s+cycle|cardmember\s+year)|(?P<annually>annually))",
     re.IGNORECASE,
 )
 _POST_CAP = re.compile(
@@ -38,7 +39,9 @@ _ACTIVATION = re.compile(r"\b(?:activate|activation|enroll(?:ment)?|opt[- ]in)\b
 _PORTAL = re.compile(
     r"\b(?:booked|purchased|reserved|made)\s+(?:directly\s+)?(?:through|via|on)\s+(?:the\s+)?"
     r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|"
-    r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b",
+    r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
+    r"\b(?:on|through|via)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one travel|amex ?travel|"
+    r"american express travel)\b",
     re.IGNORECASE,
 )
 _UNTIL = re.compile(
@@ -68,6 +71,8 @@ _MONTHS = {
 }
 _PERIODS = {
     "calendar year": "annual",
+    "anniversary year": "annual",
+    "account anniversary year": "annual",
     "year": "annual",
     "cardmember year": "annual",
     "quarter": "quarterly",
@@ -104,14 +109,20 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     rate = Decimal(m.group("num"))
     unit = "pct" if m.group("pct") else "x"
     rest = text[m.end() :]
-    cats = categories_in(rest) or categories_in(text)
+    # "4% on X, 3% on dining, 2% on groceries": the categories of this rate end where the next rate begins.
+    nxt = _RATE.search(rest)
+    if nxt is not None:
+        rest = rest[: nxt.start()]
+    cats = categories_in(rest) or categories_in(text[: m.start()])
     is_base = "other" in cats and len(cats) == 1
     cats = [c for c in cats if c != "other"] or (["other"] if is_base else [])
     rr = RewardRate(rate=rate, rate_unit=unit, categories=cats, is_base=is_base, text=text.strip())
     cap = _CAP.search(text)
     if cap:
         rr.cap_cents = _dollars_to_cents(cap.group("amt"))
-        rr.cap_period = _PERIODS[re.sub(r"\s+", " ", cap.group("period").lower())]
+        rr.cap_period = (
+            "annual" if cap.group("annually") else _PERIODS[re.sub(r"\s+", " ", cap.group("period").lower())]
+        )
         rr.cap_combined = bool(cap.group("combined"))
         post = _POST_CAP.search(text, cap.end() - 1) or _POST_CAP.search(text)
         if post:

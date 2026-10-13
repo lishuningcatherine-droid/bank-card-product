@@ -16,7 +16,9 @@ FIX = REPO / "tests" / "fixtures" / "example_bank"
 
 
 def registry() -> Registry:
-    return load_registry(include_test_only=True, known_parsers=known_parsers())
+    """The fictional Example Bank only: integration runs never touch real-bank sources (no network in tests)."""
+    r = load_registry(include_test_only=True, known_parsers=known_parsers())
+    return Registry(banks=r.banks, sources=[s for s in r.sources if s.bank_id == "example_bank"])
 
 
 def source(reg: Registry, slug: str, fixture: Path | None = None) -> SourceEntry:

@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from functools import lru_cache
 from pathlib import Path
@@ -13,7 +13,7 @@ import yaml
 
 from bankrec.candidate import ProductCandidate
 from bankrec.ingest.common import extract as X
-from bankrec.ingest.common.html import PageDoc
+from bankrec.ingest.common.html import PageDoc, scoped
 from bankrec.model import (
     PRIORITY,
     ExtractionContext,
@@ -21,6 +21,7 @@ from bankrec.model import (
     PageType,
     ProductType,
     ProvenanceClass,
+    Sourced,
 )
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.settings import CONFIG_DIR
@@ -106,10 +107,18 @@ class DeclarativeAdapter:
     def card_extras(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         """Bank-specific additions (e.g. annual fee stated only in an FAQ answer)."""
 
+    def fees_and_rates(self, page: ClassifiedPage, ctx: ExtractionContext) -> dict[str, Sourced[Any]]:
+        """Card fees and APRs. The default reads pricing tables and "Label: value" lines."""
+        assert page.doc is not None
+        return X.card_fees_and_rates(page.doc, ctx)
+
     # ------------------------------------------------------------------ main entry
     def extract(self, page: ClassifiedPage) -> list[ProductCandidate]:
         if page.source.product_type is None:
             return []
+        scope = self.rules.get("scope_selector")
+        if scope and page.doc is not None:
+            page = replace(page, doc=scoped(page.doc, scope, self.rules.get("exclude_selector")))
         conf = PRIORITY.get(page.page_type, 0) / 100.0
         prov = (
             ProvenanceClass.manual_capture
@@ -159,7 +168,7 @@ class DeclarativeAdapter:
         doc = page.doc
         assert doc is not None
         name = c.name or ""
-        c.fields.update(X.card_fees_and_rates(doc, ctx))
+        c.fields.update(self.fees_and_rates(page, ctx))
         biz = re.search(r"\bbusiness\b", name, re.IGNORECASE)
         c.fields["segment"] = ctx.field("business" if biz else "consumer", name, method="label_regex")
         c.fields["is_student"] = ctx.field(bool(re.search(r"\bstudent\b", name, re.I)), name)
@@ -202,9 +211,10 @@ class DeclarativeAdapter:
         )
         rates = X.reward_rates(reward_lines, ctx)
         c.reward_rates = rates
-        currency, _ = X.reward_currency(rates, " ".join(reward_lines))
+        rate_text = " ".join(r.span_text or "" for r in rates)
+        currency, _ = X.reward_currency(rates, rate_text)
         c.fields["reward_currency"] = (
-            ctx.field(currency, reward_lines[0]) if currency and reward_lines else ctx.field(None, None)
+            ctx.field(currency, rates[0].span_text) if currency and rates else ctx.field(None, None)
         )
         base = [r for r in rates if r.value and r.value.category == "other"]
         c.fields["base_rate"] = (

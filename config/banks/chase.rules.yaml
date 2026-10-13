@@ -1,0 +1,28 @@
+# Declarative extraction rules for Chase card pages on creditcards.chase.com.
+# Built from verbatim pages retrieved 2026-10-13 (tests/fixtures/chase/RETRIEVED.txt).
+# Extraction is limited to <main>: the site header repeats filter labels such as "No Annual Fee (15)" and
+# "Visa (35)" on every page, which must never be read as product values.
+scope_selector: "main"
+# Personal (Halo/Sapphire), business and Hyatt-style templates: name, earn rates, offers.
+reward_selector: ".cmp-rewardsbenefits__content p, .cmp-rewardsbenefits__content li, .cmp-reward__element"
+credit_selector: ".cmp-rewardsbenefits__content p, .cmp-rewardsbenefits__content li"
+offer_selector: "[class*='newcardmemberoffer'], [class*='summary__description']"
+offer_footnote_selector: "#od-body p"
+reward_program_pattern: "Chase Ultimate Rewards®"
+# Header/footer navigation and the "browse cards" tag cloud (e.g. "No Foreign Transaction Fees", "Visa") inside
+# <main> link to category pages; they say nothing about the product on the page.
+exclude_selector: ".cmp-browsecards, nav, header, footer, [class*='hamburgermenu'], [class*='footer-nav']"
+# Words that identify earn on the co-brand partner itself.
+partner_words:
+  United: [United]
+  Southwest: [Southwest]
+  Marriott: [Marriott, Bonvoy]
+  Bonvoy: [Marriott, Bonvoy]
+  IHG: [IHG]
+  Aeroplan: [Air Canada, Aeroplan]
+  British Airways: [British Airways]
+  Aer Lingus: [Aer Lingus]
+  Iberia: [Iberia]
+  Disney: [Disney]
+  Instacart: [Instacart]
+  DoorDash: [DoorDash, Caviar]

@@ -16,15 +16,19 @@ def cfg(tmp_path: Path) -> Path:
     return tmp_path / "config"
 
 
-def test_real_registry_without_sources_is_an_error() -> None:
+def test_real_registry_without_sources_is_an_error(tmp_path: Path) -> None:
+    cfg = tmp_path / "config"
+    shutil.copytree(CONFIG, cfg)
+    for f in (cfg / "sources").glob("*.yaml"):
+        f.write_text(f"bank_id: {f.stem}\nsources: []\n")
     with pytest.raises(EmptyRegistryError):
-        load_registry(known_parsers=known_parsers())
+        load_registry(cfg, known_parsers=known_parsers())
 
 
 def test_test_registry_loads() -> None:
     r = load_registry(include_test_only=True, known_parsers=known_parsers())
-    assert len(r.enabled()) == 11
-    assert {s.tier for s in r.enabled()} == {"offer", "terms", "apy"}
+    assert len(r.enabled(bank="example_bank")) == 11
+    assert {s.tier for s in r.enabled(bank="example_bank")} == {"offer", "terms", "apy"}
     assert all(s.requires_render for s in r.enabled() if s.has_offers)
 
 

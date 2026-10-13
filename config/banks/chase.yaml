@@ -1,22 +1,33 @@
-# Chase. Product-type availability stays "unknown" until the reachability survey (docs/REACHABILITY.md)
-# confirms it from an official page. Nothing below was retrieved from this build environment.
+# Chase. Reachability surveyed 2026-10-13 from the owner's machine (docs/REACHABILITY.md).
 bank_id: chase
 display_name: "Chase"
 official_domains: [chase.com, chasecdn.com]
 adapter: chase
 capture_timezone: America/New_York
 product_types:
-  credit_card: {availability: unknown, note: "pending reachability survey"}
-  checking: {availability: unknown, note: "pending reachability survey"}
-  savings: {availability: unknown, note: "pending reachability survey"}
+  credit_card:
+    availability: offered
+    evidence_url: "https://creditcards.chase.com/all-credit-cards"
+    note: "38 single-card product pages from creditcards.chase.com/sitemap.xml"
+  checking:
+    availability: offered
+    evidence_url: "https://www.chase.com/personal/checking/total-checking"
+    note: "listed in www.chase.com/sitemap.xml; no checking adapter rules yet (no sources)"
+  savings: {availability: unknown, note: "not surveyed yet"}
 meaningful_query_params: []
 referral_url_patterns: []
 boilerplate_phrases: []
-cfpb_issuer_names: []
+cfpb_issuer_names: ["JPMorgan Chase Bank, N.A."]
 discovery:
   robots_url: "https://www.chase.com/robots.txt"
   sitemaps: ["https://creditcards.chase.com/sitemap.xml", "https://www.chase.com/sitemap.xml"]
+  sitemap_url_patterns:
+    credit_card: ["^https://creditcards\\.chase\\.com/[a-z-]+-credit-cards/(?:[A-Za-z-]+/)?[A-Za-z-]+$"]
 known_limitations:
-  - "Owner pre-survey (unverified here): card pages are static; creditcards.chase.com robots allows all."
-  - "Owner pre-survey: www.chase.com disallows education paths and /content/dam/chase-ux/ratesheets/."
-  - "Owner pre-survey: checking bonuses are on separate /personal/offers/ pages; card terms on sites.chase.com."
+  - "Card pages are static HTML (verified 2026-10-13); offers are still captured from a fresh rendered context."
+  - "creditcards.chase.com robots.txt allows all paths (verified 2026-10-13)."
+  - "sites.chase.com (Pricing & Terms) disallows all crawlers in robots.txt: foreign transaction fee (when not
+    'none'), balance-transfer and cash-advance terms are not collected automatically; manual capture only."
+  - "Multi-card pages (Amazon, IHG family, World of Hyatt) are category pages and are not sources."
+  - "Earn rates stated as stacked 'total' rates, 'up to' rates or with a spend limit the parser cannot read are left
+    out (conservative); some cards therefore show fewer bonus categories than the page."

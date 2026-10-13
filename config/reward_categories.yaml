@@ -1,10 +1,15 @@
 # Controlled vocabulary for reward categories, with synonym phrases (matched case-insensitively, longest first).
 categories:
   groceries: {label: Groceries, synonyms: ["grocery stores", "groceries", "supermarkets", "u.s. supermarkets", "grocery"]}
-  dining: {label: Dining, synonyms: ["dining", "restaurants", "takeout", "eligible delivery services", "food delivery"]}
-  travel: {label: Travel, synonyms: ["travel", "travel purchases", "flights", "hotels and car rentals"]}
-  airline: {label: Airline, synonyms: ["flights booked directly with airlines", "airline purchases", "airfare"]}
-  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels"]}
+  # Narrower than groceries / dining: never applied to the broad user categories.
+  online_grocery: {label: Online grocery, synonyms: ["online grocery", "online grocery purchases"]}
+  food_delivery: {label: Food delivery, synonyms: ["select food delivery", "food delivery"]}
+  dining: {label: Dining, synonyms: ["dining", "restaurants", "takeout", "eligible delivery services"]}
+  travel: {label: Travel, synonyms: ["travel", "travel purchases", "hotels and car rentals"]}
+  # "Flights" are airline purchases, not travel in general (which would also cover hotels, cars, cruises).
+  airline: {label: Airline, synonyms: ["flights booked directly with airlines", "flights booked directly",
+                                       "flights booked direct", "airline purchases", "airfare", "flights"]}
+  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels", "hotels booked direct"]}
   gas: {label: Gas, synonyms: ["gas stations", "gas", "fuel", "u.s. gas stations", "gas and ev charging"]}
   ev_charging: {label: EV charging, synonyms: ["ev charging", "electric vehicle charging"]}
   entertainment: {label: Entertainment, synonyms: ["entertainment", "live entertainment"]}

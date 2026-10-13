@@ -100,3 +100,16 @@ def test_variability_phrase_never_yields_exact(phrase: str, n: int, ws: str, noi
 def test_footnote_variability_is_up_to(foot: str) -> None:
     p = parse_offer_block("Earn 40,000 points after you spend $2,000 in 3 months.*", foot)
     assert p is not None and p.qualifier is Qualifier.up_to
+
+
+def test_spending_and_your_first_months() -> None:
+    po = parse_offer_block(
+        "Earn 45,000 bonus points after spending $1,000 on eligible purchases in your first 3 months"
+    )
+    assert po is not None and po.requirement_min_cents == 100000 and po.window is not None
+    assert po.window.months == 3
+
+
+def test_avios_are_points() -> None:
+    po = parse_offer_block("Earn 75,000 Avios after you spend $5,000 on purchases within the first 3 months")
+    assert po is not None and (po.amount_max, po.reward_unit) == (75000, "points")

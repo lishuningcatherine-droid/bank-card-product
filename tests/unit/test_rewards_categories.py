@@ -63,3 +63,50 @@ def test_categories_vocabulary() -> None:
     assert categories_in("U.S. supermarkets") == ["groceries"]
     assert normalize_category("gas stations") == ("gas", True)
     assert normalize_category("yacht charters") == ("other", False)
+
+
+# ---- shapes seen on real issuer pages (DESIGN §24.3); statements written here, not copied from a bank
+
+
+def test_each_rate_in_a_multi_rate_sentence_keeps_its_own_categories() -> None:
+    r = parse_reward_statement(
+        "Earn 4% on partner orders, 3% on dining, 2% at grocery stores and 1% on all other"
+    )
+    # "partner orders" is not a vocabulary category, and later clauses' categories are not borrowed.
+    assert r is None
+    r = parse_reward_statement("3% on dining, 2% at grocery stores")
+    assert r is not None and r.categories == ["dining"]
+
+
+def test_first_dollars_cap_and_annually() -> None:
+    r = parse_reward_statement(
+        "Earn 2 points for each dollar spent at gas stations on the first $5,000 in combined purchases per "
+        "anniversary year"
+    )
+    assert r is not None and (r.rate, r.rate_unit, r.categories) == (Decimal("2"), "x", ["gas"])
+    assert (r.cap_cents, r.cap_period, r.cap_combined) == (500000, "annual", True)
+    r = parse_reward_statement(
+        "Earn 3X points for every $1 on the first $6,000 spent in combined purchases annually"
+    )
+    assert r is None  # no category named → no rate
+    r = parse_reward_statement(
+        "Earn 3X points for every $1 on the first $6,000 spent annually at grocery stores"
+    )
+    assert r is not None and (r.cap_cents, r.cap_period) == (600000, "annual")
+
+
+def test_singular_point_per_dollar() -> None:
+    r = parse_reward_statement("Earn 1 point per $1 on all other purchases")
+    assert r is not None and (r.rate, r.rate_unit, r.categories) == (Decimal("1"), "x", ["other"])
+
+
+def test_narrow_categories_are_not_broad_ones() -> None:
+    assert categories_in("online grocery") == ["online_grocery"]
+    assert categories_in("select food delivery") == ["food_delivery"]
+    assert categories_in("flights booked direct") == ["airline"]
+    assert categories_in("flights") == ["airline"]
+
+
+def test_issuer_portal_names_mark_portal_only() -> None:
+    r = parse_reward_statement("5x points on Chase Travel")
+    assert r is not None and r.portal_only is True

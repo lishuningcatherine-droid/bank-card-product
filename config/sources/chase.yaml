@@ -1,5 +1,572 @@
-# No product URLs yet: none could be retrieved or confirmed from the build environment
-# (egress policy refused the domain; see docs/REACHABILITY.md). Add only URLs confirmed on the
-# official site. Discovered URLs go to chase.discovered.yaml with enabled: false.
+# Chase card product pages on creditcards.chase.com, from the official sitemap (creditcards.chase.com/sitemap.xml)
+# and retrieved verbatim on 2026-10-13 (tests/fixtures/chase/RETRIEVED.txt holds the subset kept as fixtures).
+# robots.txt for creditcards.chase.com allows all paths. has_offers → rendered in a fresh context (DESIGN §22.1).
+# Not listed: multi-card pages (cash-back-credit-cards/amazon, travel-credit-cards/ihg,
+# travel-credit-cards/world-of-hyatt, business-credit-cards/world-of-hyatt) — they describe several cards and are
+# category pages, not product pages. Pricing & Terms pages on sites.chase.com are robots-disallowed (manual capture).
 bank_id: chase
-sources: []
+sources:
+- bank_id: chase
+  slug: slate
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/balance-transfer-credit-cards/slate
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Slate® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ihg-one-rewards-business
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/IHG/business
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: IHG One Rewards Business Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ink-business-preferred
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/ink/business-preferred
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Ink Business Preferred® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ink-business-cash
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/ink/cash
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Ink Business Cash® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ink-business-premier
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/ink/premier
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Ink Business Premier® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ink-business-unlimited
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/ink/unlimited
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Ink Business Unlimited® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: sapphire-reserve-for-business
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/sapphire/reserve
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Sapphire Reserve for Business℠ Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: southwest-rapid-rewards-premier-business
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/southwest/premier-business
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Southwest Rapid Rewards® Premier Business Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: united-business
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/united/united-business-card
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: United℠ Business Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: united-club-business
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/business-credit-cards/united/united-club-business
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: United Club℠ Business Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: doordash-rewards-mastercard
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/cash-back-credit-cards/doordash
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: DoorDash Rewards Mastercard®
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: chase-freedom-flex
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/cash-back-credit-cards/freedom/flex
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Chase Freedom Flex® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: chase-freedom-rise
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/cash-back-credit-cards/freedom/rise
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Chase Freedom Rise® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: chase-freedom-unlimited
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Chase Freedom Unlimited® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: instacart-mastercard
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/cash-back-credit-cards/instacart
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Instacart Mastercard®
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: slate-edge
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/credit-building-credit-cards/edge
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Slate Edge® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: disney-inspire-visa
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/rewards-credit-cards/disney/inspire
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Disney® Inspire Visa® Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: disney-premier-visa
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/rewards-credit-cards/disney/premier
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Disney® Premier Visa® Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: disney-visa
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/rewards-credit-cards/disney/rewards
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Disney® Visa® Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: chase-sapphire-preferred
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Chase Sapphire Preferred® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: chase-sapphire-reserve
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Chase Sapphire Reserve® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: air-canada-aeroplan
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/aircanada/aeroplan
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Air Canada Aeroplan® Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: aer-lingus-visa-signature
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/avios/aer-lingus
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Aer Lingus Visa Signature® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: british-airways-visa-signature
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/avios/british-airways
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: British Airways Visa Signature® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: iberia-visa-signature
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/avios/iberia
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Iberia Visa Signature® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ihg-one-rewards
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/one-rewards
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: IHG One Rewards Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ihg-one-rewards-premier
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: IHG One Rewards Premier Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: ihg-one-rewards-premier-select
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier-select
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: IHG One Rewards Premier Select Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: marriott-bonvoy-bold
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/bold
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Marriott Bonvoy Bold® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: marriott-bonvoy-boundless
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Marriott Bonvoy Boundless® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: marriott-bonvoy-bountiful
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/bountiful
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Marriott Bonvoy Bountiful® Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: southwest-rapid-rewards-plus
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/southwest/plus
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Southwest Rapid Rewards® Plus Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: southwest-rapid-rewards-premier
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/southwest/premier
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Southwest Rapid Rewards® Premier Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: southwest-rapid-rewards-priority
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/southwest/priority
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Southwest Rapid Rewards® Priority Credit Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: united-club
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/united/club-infinite
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: United Club℠ Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: united-explorer
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/united/united-explorer
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: United℠ Explorer Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: united-gateway
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/united/united-gateway
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: United Gateway℠ Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: united-quest
+  product_type: credit_card
+  source_url: https://creditcards.chase.com/travel-credit-cards/united/united-quest
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: United Quest℠ Card
+  has_offers: true
+  notes: card page on creditcards.chase.com; verbatim capture 2026-10-13
+- bank_id: chase
+  slug: chase-freedom-unlimited-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC61498.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Chase Freedom Unlimited® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: chase-freedom-rise-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC65397.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Chase Freedom Rise® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: ink-business-cash-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC63827.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Ink Business Cash® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: ink-business-unlimited-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC63749.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Ink Business Unlimited® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: ink-business-premier-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC63834.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Ink Business Premier® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: slate-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC63300.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Slate® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: slate-edge-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC64148.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Slate Edge® Credit Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: disney-premier-visa-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC63172.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Disney® Premier Visa® Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: disney-visa-pricing-terms
+  product_type: credit_card
+  source_url: https://sites.chase.com/services/creatives/pricingandterms.html/content/dam/pricingandterms/LGC63171.html
+  source_kind: manual_snapshot
+  parser_name: chase
+  requires_render: false
+  enabled: false
+  priority: 80
+  expected_entity: Disney® Visa® Card
+  notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
+    (bankrec ingest --manual ... --source-url <this URL>).'

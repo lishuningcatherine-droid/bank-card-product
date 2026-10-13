@@ -44,11 +44,24 @@ _BLOCK = {
     "blockquote",
 }
 _HIDDEN_STYLE = re.compile(r"display\s*:\s*none|visibility\s*:\s*hidden", re.IGNORECASE)
+# Struck-out values (a previous offer amount shown crossed out) and screen-reader-only labels ("Opens in a new
+# window", "Strike through") are not part of what the page currently states, so they are kept out of the text.
+_STRUCK_TAGS = {"s", "del", "strike"}
+_NON_VISUAL_CLASS = re.compile(
+    r"(?:^|\s)(?:strike-?through|visually-hidden|sr-only|screen-reader-only)(?:\s|$)", re.IGNORECASE
+)
+_MARKS = {"SM": "\u2120", "TM": "\u2122"}  # <sup>SM</sup> → ℠, <sup>TM</sup> → ™
 
 
 def _is_hidden(node: Node) -> bool:
     a = node.attributes
-    return "hidden" in a or a.get("aria-hidden") == "true" or bool(_HIDDEN_STYLE.search(a.get("style") or ""))
+    return (
+        "hidden" in a
+        or a.get("aria-hidden") == "true"
+        or bool(_HIDDEN_STYLE.search(a.get("style") or ""))
+        or node.tag in _STRUCK_TAGS
+        or bool(_NON_VISUAL_CLASS.search(a.get("class") or ""))
+    )
 
 
 @dataclass
@@ -78,6 +91,9 @@ def render_text(node: Node) -> str:
             return
         if n.tag == "-text":
             parts.append(n.text_content or "")
+            return
+        if n.tag == "sup" and (mark := _MARKS.get((n.text(deep=True) or "").strip())):
+            parts.append(mark)
             return
         block = n.tag in _BLOCK
         if block:
@@ -115,6 +131,23 @@ def parse_html(html: str) -> PageDoc:
         title=(title.text(strip=True) if title else ""),
         h1=[h for h in h1s if h],
     )
+
+
+def scoped(doc: PageDoc, css: str, exclude: str | None = None) -> PageDoc:
+    """A PageDoc over only the nodes matching ``css`` (e.g. ``main``) minus those matching ``exclude``, so site
+    navigation, category tag clouds and cross-sell blocks stay out of extraction. Falls back to the whole page when
+    nothing matches. The scoped text is a subset of the full page text, so provenance spans still resolve against
+    the snapshot."""
+    nodes = doc.select(css)
+    if not nodes:
+        return doc
+    tree = HTMLParser("<html><body>" + "".join(n.html or "" for n in nodes) + "</body></html>")
+    if exclude:
+        for n in tree.css(exclude):
+            n.decompose()
+    sub = parse_html(tree.html or "")
+    sub.title = doc.title
+    return sub
 
 
 def table_rows(doc: PageDoc, css: str = "table tr") -> list[tuple[str, str]]:

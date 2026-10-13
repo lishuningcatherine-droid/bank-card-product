@@ -1,0 +1,13 @@
+# Verbatim official pages. Raw response bytes, unmodified.
+# method: plain HTTP GET (httpx), no cookies, no login, no JS; robots.txt checked first;
+#         >= 3 s between requests per host; User-Agent: bankrec/0.1.0 (+https://github.com/lishuningcatherine-droid/bank-card-product; contact@example.invalid)
+# columns: file | url | final_url | http_status | content_type | bytes | retrieved_at_utc
+creditcards-rewards-credit-cards-sapphire-preferred.html | https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred | https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred | 200 | text/html;charset=utf-8 | 195769 | 2026-10-13T08:56:58Z
+creditcards-cash-back-credit-cards-freedom-unlimited.html | https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited | https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited | 200 | text/html;charset=utf-8 | 182317 | 2026-10-13T08:56:39Z
+creditcards-cash-back-credit-cards-freedom-flex.html | https://creditcards.chase.com/cash-back-credit-cards/freedom/flex | https://creditcards.chase.com/cash-back-credit-cards/freedom/flex | 200 | text/html;charset=utf-8 | 193607 | 2026-10-13T08:56:33Z
+creditcards-business-credit-cards-ink-cash.html | https://creditcards.chase.com/business-credit-cards/ink/cash | https://creditcards.chase.com/business-credit-cards/ink/cash | 200 | text/html;charset=utf-8 | 188572 | 2026-10-13T08:56:01Z
+creditcards-travel-credit-cards-united-united-explorer.html | https://creditcards.chase.com/travel-credit-cards/united/united-explorer | https://creditcards.chase.com/travel-credit-cards/united/united-explorer | 200 | text/html;charset=utf-8 | 253262 | 2026-10-13T08:57:53Z
+creditcards-travel-credit-cards-marriott-bonvoy-boundless.html | https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless | https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless | 200 | text/html;charset=utf-8 | 194071 | 2026-10-13T08:57:34Z
+creditcards-business-credit-cards-sapphire-reserve.html | https://creditcards.chase.com/business-credit-cards/sapphire/reserve | https://creditcards.chase.com/business-credit-cards/sapphire/reserve | 200 | text/html;charset=utf-8 | 244064 | 2026-10-13T08:56:10Z
+creditcards-cash-back-credit-cards-doordash.html | https://creditcards.chase.com/cash-back-credit-cards/doordash | https://creditcards.chase.com/cash-back-credit-cards/doordash | 200 | text/html;charset=utf-8 | 175080 | 2026-10-13T08:56:30Z
+creditcards-credit-building-credit-cards-edge.html | https://creditcards.chase.com/credit-building-credit-cards/edge | https://creditcards.chase.com/credit-building-credit-cards/edge | 200 | text/html;charset=utf-8 | 162096 | 2026-10-13T08:56:46Z

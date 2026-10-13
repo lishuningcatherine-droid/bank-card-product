@@ -136,3 +136,25 @@ def test_savings_tiers_and_bonus() -> None:
     assert h.value("apy_pct") == Decimal("4.00") and h.value("max_withdrawals_per_month") == 6
     o = h.offers[0].value
     assert o is not None and o.requirement_type == "new_money_deposit" and o.holding_period_days == 90
+
+
+def test_struck_out_and_screen_reader_text_is_not_visible() -> None:
+    from bankrec.ingest.common.html import parse_html
+
+    doc = parse_html(
+        '<h1>Example Bank Card<sup>SM</sup></h1><p>Earn a <span class="strikeThrough">$200'
+        '<span class="visually-hidden">Strike through</span></span> $250 bonus</p><p><del>$95</del> $0</p>'
+    )
+    assert doc.h1 == ["Example Bank Card℠"]
+    assert "Earn a $250 bonus" in doc.text and "$200" not in doc.text and "$95" not in doc.text
+
+
+def test_scoped_doc_excludes_navigation() -> None:
+    from bankrec.ingest.common.html import parse_html, scoped
+
+    doc = parse_html(
+        "<nav>No Annual Fee (15)</nav><main><div class='browse'>No Foreign Transaction Fees</div>"
+        "<h1>Example Bank Card</h1><p>Annual fee: $95</p></main>"
+    )
+    sub = scoped(doc, "main", ".browse")
+    assert "No Annual Fee" not in sub.text and "Foreign" not in sub.text and "Annual fee: $95" in sub.text
