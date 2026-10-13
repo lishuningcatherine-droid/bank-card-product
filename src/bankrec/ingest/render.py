@@ -79,8 +79,15 @@ class Renderer:
             context.route("**/*", on_route)
             page = context.new_page()
             page.on("response", on_response)
-            resp = page.goto(url, wait_until="networkidle", timeout=45_000)
-            waited = "networkidle"
+            # "load", then up to 15 s for network idle: pages with constant background requests (analytics,
+            # chat) never go idle, and that alone must not fail the capture. What was reached is recorded.
+            resp = page.goto(url, wait_until="load", timeout=45_000)
+            waited = "load"
+            try:
+                page.wait_for_load_state("networkidle", timeout=15_000)
+                waited += "+networkidle"
+            except Exception:
+                waited += "+networkidle_not_reached_15s"
             if source.render_ready_selector:
                 page.wait_for_selector(source.render_ready_selector, timeout=15_000)
                 waited += f"+selector:{source.render_ready_selector}"
@@ -107,7 +114,9 @@ class Renderer:
                 if "Timeout" in msg
                 else (
                     Failure.ENV_NETWORK_BLOCKED
-                    if "ERR_TUNNEL" in msg or "ERR_PROXY" in msg or "ERR_NAME" in msg
+                    if any(
+                        k in msg for k in ("ERR_TUNNEL", "ERR_PROXY", "ERR_NAME", "ERR_INTERNET_DISCONNECTED")
+                    )
                     else Failure.HTTP_ERROR
                 )
             )

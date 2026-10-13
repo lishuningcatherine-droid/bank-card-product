@@ -1,0 +1,10 @@
+# Verbatim official pages from www.usbank.com, 2026-10-13.
+# *.rendered.html: DOM after rendering in a fresh Playwright Chromium context (no cookies, no login, en-US,
+#   America/New_York, 1280x900, project User-Agent, robots-disallowed requests aborted; load + up to 15 s idle).
+# static-*.html: raw HTTP response bytes (plain GET, no cookies, no JS). Not modified.
+# columns: file | url | method | http_status | retrieved_at_utc
+credit-cards-altitude-connect-visa-signature-credit-card-html.rendered.html | https://www.usbank.com/credit-cards/altitude-connect-visa-signature-credit-card.html | playwright | 200 | 2026-10-13T18:06:31Z
+credit-cards-cash-plus-visa-signature-credit-card-html.rendered.html | https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html | playwright | 200 | 2026-10-13T18:07:56Z
+business-banking-business-credit-cards-business-triple-cash-back-credit-card-html.rendered.html | https://www.usbank.com/business-banking/business-credit-cards/business-triple-cash-back-credit-card.html | playwright | 200 | 2026-10-13T18:08:51Z
+credit-cards-altitude-go-secured-visa-credit-card-html.rendered.html | https://www.usbank.com/credit-cards/altitude-go-secured-visa-credit-card.html | playwright | 200 | 2026-10-13T18:06:48Z
+static-cash-plus-visa-signature-credit-card.html | https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html | http | 200 | 2026-10-13T18:03:45Z

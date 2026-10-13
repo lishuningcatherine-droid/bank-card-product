@@ -1,5 +1,136 @@
-# No product URLs yet: none could be retrieved or confirmed from the build environment
-# (egress policy refused the domain; see docs/REACHABILITY.md). Add only URLs confirmed on the
-# official site. Discovered URLs go to us_bank.discovered.yaml with enabled: false.
+# U.S. Bank card product pages from www.usbank.com/site-map.xml, retrieved 2026-10-13. Rendered (static HTML has
+# '$' placeholders for fee and APR). Fixtures: tests/fixtures/us_bank.
 bank_id: us_bank
-sources: []
+sources:
+- bank_id: us_bank
+  slug: altitude-connect-visa-signature-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/altitude-connect-visa-signature-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Altitude® Connect Visa Signature® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: altitude-go-secured-visa-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/altitude-go-secured-visa-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Altitude® Go Secured Visa® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: altitude-go-visa-signature-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/altitude-go-visa-signature-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Altitude® Go Visa Signature® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: bank-smartly-visa-signature-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/bank-smartly-visa-signature-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Smartly™ Visa Signature® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: cash-plus-secured-visa-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/cash-plus-secured-visa-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Cash+® Secured Visa® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: cash-plus-visa-signature-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. BANK CASH+® VISA SIGNATURE® CARD
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: secured-visa-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/secured-visa-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Secured Visa® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: shield-visa-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/credit-cards/shield-visa-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Shield® Visa® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: business-triple-cash-back-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/business-banking/business-credit-cards/business-triple-cash-back-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Triple Cash Rewards Visa® Business Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: business-altitude-connect-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/business-banking/business-credit-cards/business-altitude-connect-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Business Altitude® Connect Visa Signature® Card
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: business-shield-credit-card
+  product_type: credit_card
+  source_url: https://www.usbank.com/business-banking/business-credit-cards/business-shield-credit-card.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: U.S. BANK BUSINESS SHIELD™ VISA® CARD
+  has_offers: true
+  notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'

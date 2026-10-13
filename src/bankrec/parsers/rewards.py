@@ -21,7 +21,7 @@ _RATE = re.compile(
     r"\s+(?P<per>points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\s+(?:\$1\b|dollar))",
 )
 _CAP = re.compile(
-    r"(?:on\s+)?(?:up\s+to|the\s+first)\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)\s+(?:spent\s+)?(?:in\s+)?"
+    r"(?:on\s+)?(?:up\s+to|(?:the|your)\s+first)\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)\s+(?:spent\s+)?(?:in\s+)?"
     r"(?P<combined>combined\s+)?(?:eligible\s+)?(?:purchases|spend(?:ing)?)?[^.;()]*?"
     r"(?:(?:per|each|a|every)\s+(?P<period>calendar\s+year|(?:account\s+)?anniversary\s+year|year|quarter|"
     r"month|billing\s+cycle|cardmember\s+year)|(?P<annually>annually))",
@@ -41,7 +41,7 @@ _PORTAL = re.compile(
     r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|"
     r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
     r"\b(?:on|through|via)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
-    r"amex ?travel|american express travel)\b",
+    r"amex ?travel|american express travel)\b|\bin the travel center\b",
     re.IGNORECASE,
 )
 _UNTIL = re.compile(

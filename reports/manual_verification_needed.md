@@ -56,6 +56,13 @@ fetched to test this**, so check the first manual capture with `bankrec review l
 |---|---|---|
 | Foreign transaction fee of 17 cards (cash-back, BankAmericard, secured, Premium Rewards Elite, Atmos, Allways, Royal ONE, Susan G. Komen) | each card's "View complete list of rates and fees" link, e.g. https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082058&productoffercode=6E&locale=en_US (Unlimited Cash Rewards) | The terms page renders empty in an anonymous browser context; the fee is not on the product page. Save the terms page from a normal browser (or the PDF it offers) and ingest it manually; register the URL first. |
 
-## U.S. Bank, American Express, CFPB
+## U.S. Bank
+
+| What | Where | Reason |
+|---|---|---|
+| Foreign transaction fee (10 cards; all but Altitude Connect) | each card page's "See annual fee and full terms" / pricing link | Not stated in the product content. Capture the card's terms page manually and register its URL. |
+| Any card that fails a run with `ENV_NETWORK_BLOCKED` | — | Local connectivity drops on 2026-10-13 (`ERR_INTERNET_DISCONNECTED`); the next run retries. |
+
+## American Express, CFPB
 
 In progress (see `docs/REACHABILITY.md`).

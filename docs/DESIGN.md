@@ -1079,3 +1079,16 @@ text, rates section) are unchanged.
 `store_currency_patterns` in an adapter's rules (e.g. "Disney Rewards Dollars", "T-Mobile Rewards") drops the
 card's reward rates and currency: rewards redeemable only with one merchant are not cash back and are not valued.
 The card stays Partially verified.
+
+### 24.9 Anchored fee phrases
+
+U.S. Bank states some annual fees only in a sentence ("Enjoy no annual fee and get all of these great benefits.").
+An anchored "no annual fee" / "$0 annual fee" phrase is recorded with method `label_regex` (confidence 0.9) rather
+than `free_text` (0.75): the phrase is the label and the value. Looser free-text matches keep `free_text`.
+
+### 24.10 Render wait
+
+The renderer waits for `load`, then up to 15 s for network idle, then the source's `render_ready_selector`.
+Pages with constant background requests (analytics, chat) never go idle; that alone no longer fails a capture.
+`capture_conditions.render_wait.strategy` records what was reached. Lost local connectivity
+(`ERR_INTERNET_DISCONNECTED`) is `ENV_NETWORK_BLOCKED`, not `HTTP_ERROR`.
