@@ -381,7 +381,7 @@ class Pipeline:
             capture_conditions=fr.capture_conditions,
             supporting_responses=[{"url": r["url"], "status": r["status"]} for r in fr.supporting_responses],
         )
-        self.s.merge(snap_row)
+        snap_row = self.s.merge(snap_row)
         if pre is not None and pre.failure is not None:
             snap_row.page_type, snap_row.classifier_signals = pre.page_type.value, pre.signals
             out.page_type, out.signals = pre.page_type.value, pre.signals

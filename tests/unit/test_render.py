@@ -63,12 +63,13 @@ def server() -> Iterator[str]:
 
 @pytest.fixture
 def browser() -> Iterator[object]:
-    if not Path(CHROME).exists():
-        pytest.skip("Chromium not available")
-    from playwright.sync_api import sync_playwright
+    from playwright.sync_api import Error, sync_playwright
 
     with sync_playwright() as p:
-        b = p.chromium.launch(executable_path=CHROME)
+        try:
+            b = p.chromium.launch(executable_path=CHROME) if Path(CHROME).exists() else p.chromium.launch()
+        except Error as e:
+            pytest.skip(f"Chromium not available: {e}")
         yield b
         b.close()
 

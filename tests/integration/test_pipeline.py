@@ -63,6 +63,9 @@ def test_first_run_publishes_with_provenance(session, settings) -> None:  # type
     assert up_to and all(o.amount_min is None for o in up_to)
     assert session.scalar(select(func.count()).select_from(P.ProductVersion)) == 11
     assert session.scalar(select(func.count()).select_from(S.RevalidationOutbox)) > 0
+    snaps = list(session.scalars(select(S.PageSnapshot)))
+    assert len(snaps) == 11
+    assert all(x.page_type == "official_product_detail" and x.classifier_signals for x in snaps)
 
 
 def test_second_run_unchanged_only_updates_checked(session, settings) -> None:  # type: ignore[no-untyped-def]

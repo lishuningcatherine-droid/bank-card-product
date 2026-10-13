@@ -1,0 +1,10 @@
+.git
+.venv
+**/node_modules
+web/.next
+web/test-results
+web/playwright-report
+data/raw/*
+reports/*/
+docs/screenshots
+legacy

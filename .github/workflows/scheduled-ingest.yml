@@ -1,0 +1,50 @@
+name: Scheduled ingestion (alternative to the worker cron)
+# Active only when the repository variable BANKREC_SCHEDULER is "github". Exactly one scheduler should be active;
+# a per-tier Postgres advisory lock also prevents overlapping runs. Schedules mirror config/freshness.yaml.
+on:
+  schedule:
+    - cron: "0 */12 * * *"   # apy
+    - cron: "15 6 * * *"     # offer
+    - cron: "30 7 * * 1"     # terms
+    - cron: "45 8 * * *"     # regulator_release
+  workflow_dispatch:
+    inputs:
+      tier: { description: "apy | offer | terms | regulator_release", required: true, default: offer }
+permissions:
+  contents: read
+jobs:
+  ingest:
+    if: vars.BANKREC_SCHEDULER == 'github'
+    runs-on: ubuntu-latest
+    concurrency: { group: ingest-${{ github.event.schedule || inputs.tier }}, cancel-in-progress: false }
+    env:
+      BANKREC_ENV: prod
+      BANKREC_SCHEDULER: github
+      CAPTURE_RUNNER_LABEL: github-actions
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      BANKREC_CONTACT_EMAIL: ${{ secrets.BANKREC_CONTACT_EMAIL }}
+      REVALIDATE_URL: ${{ secrets.REVALIDATE_URL }}
+      REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      ALERT_WEBHOOK_SECRET: ${{ secrets.ALERT_WEBHOOK_SECRET }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { version: "0.11.32" }
+      - run: uv sync --frozen --no-dev
+      - run: uv run playwright install --with-deps chromium
+      - name: Resolve tier
+        id: tier
+        run: |
+          case "${{ github.event.schedule }}" in
+            "0 */12 * * *") echo "tier=apy" >> "$GITHUB_OUTPUT" ;;
+            "15 6 * * *") echo "tier=offer" >> "$GITHUB_OUTPUT" ;;
+            "30 7 * * 1") echo "tier=terms" >> "$GITHUB_OUTPUT" ;;
+            "45 8 * * *") echo "tier=regulator_release" >> "$GITHUB_OUTPUT" ;;
+            *) echo "tier=${{ inputs.tier }}" >> "$GITHUB_OUTPUT" ;;
+          esac
+      - run: uv run bankrec ingest --tier ${{ steps.tier.outputs.tier }} --trigger github
+      - run: uv run bankrec report stale
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: reports-${{ steps.tier.outputs.tier }}-${{ github.run_id }}, path: reports/ }

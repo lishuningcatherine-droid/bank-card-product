@@ -988,3 +988,31 @@ Further tests:
 ### 22.6 Decisions for you (defaults are applied unless you say otherwise)
 - **Q5.** A `starting_at` offer counts its stated floor in first-year value. (Alternative: treat it like `up_to` and count $0.)
 - **Q6.** The `possible_offer_signal` applies only when bonus importance is `high`, with a weight of 0.03.
+
+---
+
+## 23. Consolidated brief (BUILD_PROMPT v2) — decisions recorded
+
+The consolidated brief supersedes earlier messages. It asks for its decisions to be recorded "as §22", but §22 already
+holds amendment 2, so they are recorded here. Where they differ from §21/§22, this section wins.
+
+| Topic | Decision now in force |
+|---|---|
+| Change policy | Automatic publish only for APY moves within **±0.25 pp** (was ±0.50) and uniform APR shifts within ±0.50 pp. Everything else, including **new offers on existing products**, goes to review. `config/change_policy.yaml` notes this can be relaxed once parsers have a track record. |
+| Recheck pending | Old value stays visible as "Recheck pending", stops counting as confirmed, and is **excluded from recommendations** (Q1). |
+| CFPB conflicts | Review item, no downgrade (Q3). Dataset URLs are not configured until they can be confirmed. |
+| `starting_at` offers | Count **$0**: promotional value requires an `exact` amount (resolves Q5 conservatively). Tiered offers count only through explicit per-tier exact amounts. |
+| Possible-offer signal | Applies when bonus importance is `high` (weight 0.03, labeled; Q6). |
+| Multi-year view | Year 1 / Year 2 (with any scheduled fee change) / Year 3 / 3-year total, plus a break-even line. |
+| Credits | Statement credits count only when the user selects them (default unchecked). |
+| APR requirement | Purchase APR is required only for low-interest and balance-transfer goals; otherwise the UI shows "APR: see issuer". |
+| Offer vs product verification | Independent: a missing or unverified offer does not downgrade the product. |
+| Placeholders | `NaN`, empty, bare `$`, `--`, `{{…}}`, "Loading" → missing with reason `requires_render` (`not_found` if still present after rendering). |
+| Blocked classification | Never on a phrase alone; needs a blocking status or the absence of product structure. Known hidden boilerplate is ignored. |
+| Failure taxonomy | Closed enum `bankrec.failures.Failure`; every failure row has bank, URL, time, stage, enum, detail, retry status, next action. |
+| XHR evidence | Rendered pages keep the official-domain XHR/fetch responses the page itself loads. Robots-disallowed XHR paths are aborted, never fetched. |
+| Tooling versions | Next.js 16.4 (App Router, `revalidateTag(tag, { expire: 0 })`), React 19.3, Tailwind 4.3, TypeScript 5.9, Playwright Test 1.56 (matches the preinstalled Chromium), Python 3.13 with uv. |
+| CSP | Without nonces (`'unsafe-inline'` scripts): nonces would force every page dynamic. No third-party scripts; `connect-src` limited to self + API. |
+| "Real-time" | The disclaimer must say data is "not real-time" (§2). The wording test bans every other use of "real-time", "realtime", or "live rates" (§9). |
+| Deployment | One web replica in v1. A shared `cacheHandler` is required before scaling web horizontally. |
+| `/sources` last run | The API role cannot read `staging`, so the pipeline writes a public-safe `prod.source_summary` (migration 0002). |

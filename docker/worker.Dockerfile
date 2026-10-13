@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends curl ca-certifi
     && curl -fsSL -o /usr/local/bin/supercronic \
        "https://github.com/aptible/supercronic/releases/download/${SUPERCRONIC_VERSION}/supercronic-linux-amd64" \
     && chmod +x /usr/local/bin/supercronic && rm -rf /var/lib/apt/lists/*
-COPY --from=ghcr.io/astral-sh/uv:0.9.5 /uv /usr/local/bin/uv
+RUN pip install --no-cache-dir uv==0.11.32
 WORKDIR /app
 COPY pyproject.toml uv.lock README.md ./
 RUN uv sync --frozen --no-dev --no-install-project

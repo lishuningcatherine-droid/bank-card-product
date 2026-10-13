@@ -279,9 +279,14 @@ async def test_privacy_inputs_not_persisted_or_logged(client: httpx.AsyncClient,
         event.remove(api_engine, "before_cursor_execute", capture)
     assert counts() == before
     assert statements and set(statements) <= {"SELECT", "ROLLBACK", "BEGIN"}
+    import re
+
     logs = caplog.text + json.dumps([r.__dict__ for r in caplog.records], default=str)
+    # Bounded matches: random request IDs / UUIDs / timings may contain these digits as substrings.
     for v in ("4242", "1717", "2929", "777"):
-        assert v not in logs
+        assert not re.search(rf"(?<![0-9a-fA-F.:-]){v}(?![0-9a-fA-F.:-])", logs), v
+    for key in ("monthly_spend", "dining", "groceries", "max_annual_fee", "product_ids"):
+        assert key not in logs, key
 
 
 async def test_security_headers_limits_cors(client: httpx.AsyncClient) -> None:
