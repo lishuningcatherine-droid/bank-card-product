@@ -11,7 +11,8 @@ product_types:
     note: "consumer card pages from www.bankofamerica.com/credit-cards/spa-assets/sitemap.xml"
   checking: {availability: unknown, note: "not surveyed yet"}
   savings: {availability: unknown, note: "not surveyed yet"}
-meaningful_query_params: []
+# The terms page shows the card selected by these parameters (taken from the card page's own link).
+meaningful_query_params: [campaignid, productoffercode, locale]
 referral_url_patterns: []
 # Visible (not hidden) in both the static shell and the rendered page; never a block signal.
 boilerplate_phrases: ["We're sorry, this page is temporarily unavailable. We apologize for the inconvenience.",

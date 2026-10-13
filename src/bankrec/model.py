@@ -46,6 +46,7 @@ class SourceKind(StrEnum):
     comparison = "comparison"
     listing = "listing"
     terms_pdf = "terms_pdf"
+    terms_page = "terms_page"  # HTML pricing/terms page linked from a product page (DESIGN §24.12)
     manual_snapshot = "manual_snapshot"
     regulator_dataset = "regulator_dataset"
     licensed_data_provider = "licensed_data_provider"

@@ -1092,3 +1092,17 @@ The renderer waits for `load`, then up to 15 s for network idle, then the source
 Pages with constant background requests (analytics, chat) never go idle; that alone no longer fails a capture.
 `capture_conditions.render_wait.strategy` records what was reached. Lost local connectivity
 (`ERR_INTERNET_DISCONNECTED`) is `ENV_NETWORK_BLOCKED`, not `HTTP_ERROR`.
+
+### 24.11 Foreign transaction fee is a conditional field (owner decision 2026-10-13)
+
+`foreign_tx_fee_pct` moved from `key` to `conditional` in `config/validation.yaml`, the same rule as the purchase
+APR: a missing value no longer makes a card Partially verified; the UI shows "See issuer"; a request with
+`avoid_foreign_fee` excludes cards without a verified fee. `bankrec db relabel` recomputes labels after a policy
+change (no values change). Effect on 2026-10-13: Verified 38 → 68.
+
+### 24.12 HTML terms pages
+
+`SourceKind.terms_page`: a pricing/terms page linked from a product page. BoA's terms page fills itself from the
+link's `campaignid`, `productoffercode`, `locale` parameters (now `meaningful_query_params`); stripping them gave an
+empty page. The BoA adapter reads only fees, APRs and the foreign transaction fee from it; values merge into the
+product by canonical key, product-page values keep priority, disagreements become review items.

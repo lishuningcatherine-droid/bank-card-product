@@ -7,9 +7,14 @@ required:
   savings: [official_name, monthly_fee_cents, apy]          # apy = apy_pct or apy_tiers
 # Key fields for the "Verified" label. Missing → published as "Partially verified" (listed to users).
 key:
-  credit_card: [reward_currency, base_rate, foreign_tx_fee_pct]
+  credit_card: [reward_currency, base_rate]
   checking: [fee_waivers]
   savings: [min_opening_deposit_cents]
+# Shown and used when verified, but their absence does not downgrade the label (owner decision 2026-10-13, same
+# rule as the purchase APR): the UI shows "See issuer", and a recommendation request that depends on the field
+# excludes the card (avoid_foreign_fee → a verified 0% foreign transaction fee is required).
+conditional:
+  credit_card: [foreign_tx_fee_pct]
 generic_names: [unknown, "credit card", "credit cards", card, "apply now", checking, savings, "checking account",
                 "savings account", "learn more", "compare cards", "rewards card", "n/a", "none"]
 sanity:

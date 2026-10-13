@@ -412,6 +412,31 @@ def db_upgrade() -> None:
     typer.echo("migrated")
 
 
+@db_app.command("relabel")
+def db_relabel() -> None:
+    """Recompute each published product's key-field gaps under the current config/validation.yaml.
+
+    Only ``critical_missing`` changes (it is ``missing_fields`` ∩ the policy's key fields); no value is touched.
+    Use after a policy change such as moving a field from ``key`` to ``conditional``."""
+    from sqlalchemy import select
+
+    from bankrec.db import prod as P
+    from bankrec.publish.publisher import enqueue_revalidation, product_tags
+    from bankrec.validation.rules import policy
+
+    key = policy()["key"]
+    changed = 0
+    with _session() as s:
+        for p in s.scalars(select(P.Product)):
+            new = [f for f in key[p.product_type] if f in (p.missing_fields or [])]
+            if new != list(p.critical_missing or []):
+                p.critical_missing = new
+                enqueue_revalidation(s, product_tags(p), _now())
+                changed += 1
+        s.commit()
+    typer.echo(json.dumps({"relabelled": changed}))
+
+
 @db_app.command("export-prod")
 def db_export(path: Path) -> None:
     from bankrec.db.seed import export_prod

@@ -22,7 +22,7 @@ export function keyFacts(p: Product): { label: string; value: React.ReactNode }[
       { label: "Annual fee", value: fee == null ? missing : <span className="tabular">{usd(fee)}{intro != null && intro !== fee ? ` (${usd(intro)} first year)` : ""}</span> },
       { label: "Rewards", value: top.length ? top.join(" · ") : missing },
       { label: "Purchase APR", value: aprRange(d.purchase_apr_min_pct, d.purchase_apr_max_pct) ?? "See issuer" },
-      { label: "Foreign transaction fee", value: val(d.foreign_tx_fee_pct, (x) => (Number(x) === 0 ? "None" : pct(x as string))) },
+      { label: "Foreign transaction fee", value: d.foreign_tx_fee_pct == null ? "See issuer" : val(d.foreign_tx_fee_pct, (x) => (Number(x) === 0 ? "None" : pct(x as string))) },
     ];
   }
   if (p.product_type === "checking") {

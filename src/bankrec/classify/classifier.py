@@ -179,9 +179,9 @@ def classify(
         sig.append(f"product_tiles:{tiles}")
 
     if (
-        source_kind == "terms_pdf"
+        source_kind in {"terms_pdf", "terms_page"}
         or re.search(
-            r"pricing (?:and|&) terms|rates (?:and|&) fees|cardmember agreement",
+            r"pricing (?:and|&) terms|rates (?:and|&) fees|cardmember agreement|terms and conditions for",
             doc.title + " " + " ".join(doc.h1),
             re.IGNORECASE,
         )

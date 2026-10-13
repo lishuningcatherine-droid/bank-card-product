@@ -39,11 +39,8 @@ def cand(
 
 def test_valid_card() -> None:
     v = validate(cand(), TEXT, DOM)
-    assert v.status == "valid" and sorted(v.missing_key) == [
-        "base_rate",
-        "foreign_tx_fee_pct",
-        "reward_currency",
-    ]
+    # foreign_tx_fee_pct is "conditional" (config/validation.yaml): missing, but it does not block "Verified".
+    assert v.status == "valid" and sorted(v.missing_key) == ["base_rate", "reward_currency"]
 
 
 def test_name_rules() -> None:

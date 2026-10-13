@@ -352,7 +352,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             "point_values": point_values(),
             "freshness": fresh(),
             "change_policy": change_policy(),
-            "validation": {"required": vp["required"], "key": vp["key"]},
+            "validation": {
+                "required": vp["required"],
+                "key": vp["key"],
+                "conditional": vp.get("conditional", {}),
+            },
             "principles": [
                 "Only Verified products and current, public, recently verified offers are recommended.",
                 "A welcome bonus is never counted as recurring value.",

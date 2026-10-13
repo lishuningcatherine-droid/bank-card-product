@@ -20,7 +20,7 @@ from typing import Any
 from bankrec.candidate import ProductCandidate
 from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter, lowest_rate_per_category
 from bankrec.ingest.common import extract as X
-from bankrec.model import ExtractionContext, NullReason, Sourced
+from bankrec.model import ExtractionContext, NullReason, PageType, Sourced
 from bankrec.normalize.categories import categories_in
 from bankrec.parsers.money import parse_fee_schedule, parse_money
 
@@ -48,9 +48,81 @@ _OFFER_AMT = re.compile(
 )
 
 
+_TERMS_H1 = re.compile(r"^Terms and Conditions for (.+)$")
+
+
+def _after(lines: list[str], label: str, stop: tuple[str, ...]) -> list[str]:
+    """Lines after an exact label line, up to the next line starting with one of ``stop``."""
+    try:
+        i = lines.index(label)
+    except ValueError:
+        return []
+    out = []
+    for ln in lines[i + 1 :]:
+        if ln.startswith(stop):
+            break
+        out.append(ln)
+    return out
+
+
 class Adapter(DeclarativeAdapter):
     bank_id = "bank_of_america"
-    parser_version = "bank_of_america/1.0.0"
+    parser_version = "bank_of_america/1.1.0"
+
+    @staticmethod
+    def _is_terms(page: ClassifiedPage) -> bool:
+        return page.page_type is PageType.terms_page
+
+    def product_name(self, page: ClassifiedPage) -> str | None:
+        if page.doc is not None and self._is_terms(page):
+            # "Terms and Conditions for Bank of America® Unlimited Cash Rewards" → the same canonical product
+            for h in page.doc.h1:
+                if m := _TERMS_H1.match(h.strip()):
+                    return m.group(1).strip()
+            return None
+        return super().product_name(page)
+
+    def _terms_fees(self, page: ClassifiedPage, ctx: ExtractionContext) -> dict[str, Sourced[Any]]:
+        """The Schumer box of the rendered terms page (label line, then value lines)."""
+        assert page.doc is not None
+        lines = page.doc.text.split("\n")
+        out: dict[str, Sourced[Any]] = {}
+        na = NullReason.not_applicable
+        fee = _after(lines, "Annual Fee", ("Transaction Fees", "Penalty", "•"))
+        if fee:
+            v = fee[0]
+            cents = 0 if re.fullmatch(r"none\.?", v.strip(), re.I) else parse_money(v)
+            if cents is not None and not re.search(r"\bintro|first year\b", " ".join(fee), re.I):
+                out["annual_fee_cents"] = ctx.field(cents, f"Annual Fee\n{v}", method="table_cell")
+                out["intro_annual_fee_cents"] = ctx.field(None, None, null_reason=na)
+                out["intro_annual_fee_months"] = ctx.field(None, None, null_reason=na)
+        pur = _after(lines, "Annual Percentage Rate (APR) for Purchases", ("APR for Balance Transfers",))
+        for ln in pur:
+            if m := _RANGE.search(ln) or re.search(r"(\d{1,2}\.\d{2})%,? based on", ln):
+                lo = Decimal(m.group(1))
+                hi = Decimal(m.group(2)) if m.re is _RANGE else lo
+                out["purchase_apr_min_pct"] = ctx.field(lo, ln, method="table_cell")
+                out["purchase_apr_max_pct"] = ctx.field(hi, ln, method="table_cell")
+                out["purchase_apr_variable"] = ctx.field(
+                    bool(re.search(r"vary with the market", " ".join(pur), re.I)), ln, method="table_cell"
+                )
+                break
+        ftf = _after(lines, "• Foreign Transaction", ("Penalty Fee", "•"))
+        if ftf:
+            v = ftf[0]
+            if re.match(r"^none\b", v, re.I):
+                out["foreign_tx_fee_pct"] = ctx.field(
+                    Decimal("0"), f"• Foreign Transaction\n{v}", method="table_cell"
+                )
+            elif m := re.match(r"^(\d{1,2}(?:\.\d+)?)% of the U\.S\. dollar amount", v):
+                out["foreign_tx_fee_pct"] = ctx.field(
+                    Decimal(m.group(1)), f"• Foreign Transaction\n{v}", method="table_cell"
+                )
+        bt = _after(lines, "• Balance Transfer", ("•", "Penalty Fee"))
+        pcts = [m for ln in bt if (m := re.match(r"^(\d{1,2})% of the amount of each transaction", ln))]
+        if pcts:  # the last stated fee is the ongoing one ("After that, your fee will be: 5% ...")
+            out["bt_fee_pct"] = ctx.field(Decimal(pcts[-1].group(1)), pcts[-1].string, method="table_cell")
+        return out
 
     # ------------------------------------------------------------------ blocks
     def _rates_table(self, page: ClassifiedPage) -> dict[str, tuple[str, str]]:
@@ -81,6 +153,8 @@ class Adapter(DeclarativeAdapter):
 
     # ------------------------------------------------------------------ fees and APR
     def fees_and_rates(self, page: ClassifiedPage, ctx: ExtractionContext) -> dict[str, Sourced[Any]]:
+        if self._is_terms(page):
+            return self._terms_fees(page, ctx)
         out: dict[str, Sourced[Any]] = {}
         na = NullReason.not_applicable
         table = self._rates_table(page)
@@ -150,6 +224,15 @@ class Adapter(DeclarativeAdapter):
     def statements(self, page: ClassifiedPage, key: str, fallback: str | None) -> list[str]:
         if page.doc is None:
             return []
+        if self._is_terms(page) and key in {
+            "reward",
+            "offer",
+            "offer_footnote",
+            "offer_tier",
+            "credit",
+            "benefit",
+        }:
+            return []  # rewards and offers come from the product page only
         feats = self._features(page)
         if key == "reward":
             out: list[str] = []

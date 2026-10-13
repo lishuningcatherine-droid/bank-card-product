@@ -323,3 +323,16 @@ def test_ranking_is_deterministic() -> None:
     assert [x.product.name for x in r1.results] == [x.product.name for x in r2.results] == ["A", "B"]
     assert [x.rank for x in r1.results] == [1, 2]
     assert NOW - timedelta(0) == NOW
+
+
+def test_unverified_foreign_fee_only_matters_when_the_user_avoids_foreign_fees() -> None:
+    """foreign_tx_fee_pct is a conditional field (DESIGN §24.11): like the APR, it is needed only when asked for."""
+    p = card(foreign_tx_fee_pct=None)
+    assert cards.recommend([p], req(goal="travel"), NOW).results  # still recommended
+    ex = cards.recommend([p], req(goal="travel", avoid_foreign_fee=True), NOW).excluded
+    assert ex and ex[0].reason.startswith("no verified foreign transaction fee")
+    # A verified 3% fee is not excluded (soft preference), and is never described as "not verified".
+    r = cards.recommend(
+        [card(foreign_tx_fee_pct=Decimal("3"))], req(goal="travel", avoid_foreign_fee=True), NOW
+    )
+    assert r.results

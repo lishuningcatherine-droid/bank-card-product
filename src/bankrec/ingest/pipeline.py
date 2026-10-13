@@ -552,7 +552,10 @@ class Pipeline:
         pol = policy()
         tracked = set()
         for c, *_ in out.candidates:
-            tracked |= set(pol["required"][c.product_type.value]) | set(pol["key"][c.product_type.value])
+            t = c.product_type.value
+            tracked |= (
+                set(pol["required"][t]) | set(pol["key"][t]) | set(pol.get("conditional", {}).get(t, []))
+            )
         lost = sorted((set(sp.last_found_fields or []) & tracked) - found_now)
         if lost and sp.health == "healthy":
             self._regression(

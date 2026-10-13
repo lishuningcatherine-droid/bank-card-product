@@ -296,6 +296,8 @@ def _filters(p: ProductView, req: CardRequest) -> str | None:
         and d.get("intro_purchase_apr_months") is None
     ):
         return "no verified APR (needed for a low-interest goal)"
+    if req.avoid_foreign_fee and d.get("foreign_tx_fee_pct") is None:
+        return "no verified foreign transaction fee (you asked to avoid foreign transaction fees)"
     if req.goal == "balance_transfer" and d.get("intro_bt_apr_months") is None:
         return "no verified balance-transfer intro APR"
     if req.preferred_reward != "any" and d.get("reward_currency") not in {req.preferred_reward, None}:
@@ -546,7 +548,9 @@ def _reason(key: str, c: CardCalc, req: CardRequest) -> Reason:
             code=key,
             text="No foreign transaction fee."
             if d.get("foreign_tx_fee_pct") is not None and Decimal(str(d["foreign_tx_fee_pct"])) == 0
-            else "Foreign transaction fee applies.",
+            else "Foreign transaction fee applies."
+            if d.get("foreign_tx_fee_pct") is not None
+            else "Foreign transaction fee not verified — check the issuer.",
         )
     if key == "possible_offer_signal":
         return Reason(
