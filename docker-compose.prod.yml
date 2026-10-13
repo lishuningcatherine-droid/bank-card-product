@@ -1,0 +1,65 @@
+# Deployable reference (single host). All secrets come from the environment / .env (see .env.example).
+# v1 runs ONE web replica: on-demand revalidation updates that replica's cache. Scaling web horizontally needs a
+# shared Next.js cacheHandler (e.g. Redis) — see README "Deployment".
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bankrec
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: bankrec
+      API_DB_PASSWORD: ${API_DB_PASSWORD:?set API_DB_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./deploy/db/init-roles.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U bankrec"], interval: 10s, retries: 10 }
+
+  migrate:
+    image: ${REGISTRY:-bankrec}/api:${TAG:-latest}
+    command: ["bankrec", "db", "upgrade"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://bankrec:${POSTGRES_PASSWORD}@db:5432/bankrec
+    depends_on: { db: { condition: service_healthy } }
+
+  api:
+    image: ${REGISTRY:-bankrec}/api:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      BANKREC_ENV: prod
+      DATABASE_URL: postgresql+psycopg://bankrec:${POSTGRES_PASSWORD}@db:5432/bankrec
+      API_DATABASE_URL: postgresql+psycopg://bankrec_api:${API_DB_PASSWORD}@db:5432/bankrec
+      WEB_ORIGIN: ${WEB_ORIGIN:?set WEB_ORIGIN}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    depends_on: { migrate: { condition: service_completed_successfully } }
+    deploy: { resources: { limits: { memory: 512m } } }
+
+  web:
+    image: ${REGISTRY:-bankrec}/web:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      API_INTERNAL_URL: http://api:8000
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET:?set REVALIDATE_SECRET}
+    ports: ["3000:3000"]
+    depends_on: [api]
+    deploy: { replicas: 1, resources: { limits: { memory: 512m } } }
+
+  worker:
+    image: ${REGISTRY:-bankrec}/worker:${TAG:-latest}
+    restart: unless-stopped
+    environment:
+      BANKREC_ENV: prod
+      BANKREC_SCHEDULER: worker
+      DATABASE_URL: postgresql+psycopg://bankrec:${POSTGRES_PASSWORD}@db:5432/bankrec
+      BANKREC_CONTACT_EMAIL: ${BANKREC_CONTACT_EMAIL:?set BANKREC_CONTACT_EMAIL}
+      REVALIDATE_URL: http://web:3000/api/internal/revalidate
+      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
+      ALERT_WEBHOOK_URL: ${ALERT_WEBHOOK_URL:-}
+      ALERT_WEBHOOK_SECRET: ${ALERT_WEBHOOK_SECRET:-}
+    volumes: ["rawdata:/app/data", "reports:/app/reports"]
+    depends_on: { migrate: { condition: service_completed_successfully } }
+
+volumes:
+  pgdata:
+  rawdata:
+  reports:

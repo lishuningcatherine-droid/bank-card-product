@@ -46,7 +46,7 @@ function ResultCard({ r }: { r: Result }) {
           {r.possible_welcome_offer ? <p className="rounded-md bg-info-bg p-3 text-sm text-info">{r.possible_welcome_offer}</p> : null}
           {r.offer_note && !r.current_offer ? <p className="text-sm text-ink-500">{r.offer_note}</p> : null}
           {r.achievability ? (
-            <p className="text-sm"><span className="font-medium text-ink-900">Requirement achievable: {r.achievability.achievable ? "yes" : "no"}.</span> {r.achievability.explanation}</p>
+            <p className="text-sm"><span className="font-medium text-ink-900">Requirement achievable: {r.achievability.achievable ? "yes" : "no"}</span>{" "}— {r.achievability.explanation.replace(/^(Yes|No):\s*/, "")}</p>
           ) : null}
           {r.limitations && r.limitations.length ? (
             <section aria-label="Limitations"><h3 className="text-base">Limitations</h3><ul className="mt-1 list-disc pl-5 text-sm">{r.limitations.map((l) => <li key={l}>{l}</li>)}</ul></section>

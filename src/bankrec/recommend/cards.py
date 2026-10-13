@@ -35,6 +35,13 @@ from bankrec.recommend.models import (
 PROFILE_RANK = {"limited": 1, "fair": 2, "good": 3, "excellent": 4}
 PERIODS = {"monthly": 12, "quarterly": 4, "annual": 1}
 TRAVEL_BENEFITS = {"travel", "airline", "hotel"}
+PERIOD_NOUN = {"monthly": "month", "quarterly": "quarter", "annual": "year"}
+
+
+def _r(rate: Decimal, unit: str) -> str:
+    """Human rate text: Decimal("2.0000") → "2%" (or "2x")."""
+    n = rate.normalize()
+    return f"{n:f}{'%' if unit == 'pct' else 'x'}"
 
 
 @dataclass
@@ -122,7 +129,7 @@ def annual_rewards(
         frac = _months_active(best, now) / 12
         if frac < 1:
             notes.append(
-                f"{best.rate}{'%' if best.rate_unit == 'pct' else 'x'} on {best.category} ends "
+                f"{_r(best.rate, best.rate_unit)} on {best.category.replace('_', ' ')} ends "
                 f"{best.ends_on}; counted only until then."
             )
         eligible = annual[user_cat] * frac
@@ -145,12 +152,12 @@ def annual_rewards(
         if best.rate > base:
             matched += in_cap
         if best.requires_activation:
-            notes.append(f"{best.category} rate requires activation.")
+            notes.append(f"{best.category.replace('_', ' ').capitalize()} rate requires activation.")
         if cap is not None:
             notes.append(
-                f"{best.category}: {best.rate}{'%' if best.rate_unit == 'pct' else 'x'} up to "
-                f"{usd(int(Decimal(best.cap_cents or 0)))} per {best.cap_period}, then "
-                f"{post}{'%' if base_unit == 'pct' else 'x'}."
+                f"{best.category.replace('_', ' ').capitalize()}: {_r(best.rate, best.rate_unit)} up to "
+                f"{usd(int(Decimal(best.cap_cents or 0)))} per {PERIOD_NOUN.get(best.cap_period or '', best.cap_period or '')}, "
+                f"then {_r(post, base_unit)}."
             )
 
     rotating = [r for r in p.reward_rates if r.is_rotating]
@@ -170,7 +177,7 @@ def annual_rewards(
                 remaining[k] -= cut
                 take -= cut
             notes.append(
-                f"Rotating categories counted at {r.rate}{'%' if r.rate_unit == 'pct' else 'x'} on "
+                f"Rotating categories counted at {_r(r.rate, r.rate_unit)} on "
                 f"{usd(int(eligible * 100))} a year (assumes {int(rot_share * 100)}% of your spend falls in "
                 "each quarter's categories, up to the published cap; activation required)."
             )

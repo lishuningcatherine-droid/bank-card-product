@@ -258,6 +258,7 @@ def test_seed_export_roundtrip_refuses_test_data(session, settings, tmp_path) ->
     out = tmp_path / "prod.jsonl"
     assert export_prod(session, out) > 5
     for t in [
+        "source_summary",
         "field_provenance",
         "offer_versions",
         "product_versions",
