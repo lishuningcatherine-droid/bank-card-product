@@ -199,4 +199,4 @@ Build images (`docker/api.Dockerfile`, `docker/web.Dockerfile` with build arg `N
 
 See [docs/FINAL_AUDIT.md](docs/FINAL_AUDIT.md). In short: no real bank or CFPB data could be retrieved from the build
 environment, so the production dataset is empty and the five real-bank adapters are unverified against real pages.
-Docker images could not be built here (Docker Hub rate limit) and are verified in CI only.
+Docker images could not be built in the build sandbox (Docker Hub rate limit). The CI `docker` job builds them and smoke-tests the compose stack.
