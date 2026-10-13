@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import random
 import time
-import urllib.robotparser
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -21,6 +20,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from bankrec.failures import Failure
+from bankrec.ingest.robots import RobotsTxt
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.registry.urls import canonicalize, domain_allowed, looks_like_referral
 from bankrec.settings import Settings
@@ -68,7 +68,7 @@ class RobotsCache:
 
     def __init__(self, client: httpx.Client, limiter: HostRateLimiter, user_agent: str) -> None:
         self.client, self.limiter, self.ua = client, limiter, user_agent
-        self._cache: dict[str, urllib.robotparser.RobotFileParser | Failure] = {}
+        self._cache: dict[str, RobotsTxt | Failure] = {}
 
     def check(self, url: str) -> Failure | None:
         parts = urlsplit(url)
@@ -80,8 +80,7 @@ class RobotsCache:
             return rp
         return None if rp.can_fetch(self.ua, url) else Failure.ROBOTS_DISALLOWED
 
-    def _load(self, host: str) -> urllib.robotparser.RobotFileParser | Failure:
-        rp = urllib.robotparser.RobotFileParser()
+    def _load(self, host: str) -> RobotsTxt | Failure:
         self.limiter.wait(urlsplit(host).netloc)
         try:
             r = self.client.get(host + "/robots.txt")
@@ -92,12 +91,10 @@ class RobotsCache:
         except httpx.HTTPError:
             return Failure.ENV_NETWORK_BLOCKED
         if r.status_code in (401, 403):
-            rp.parse(["User-agent: *", "Disallow: /"])
-        elif r.status_code >= 400:
-            rp.parse([])  # no robots.txt: standard semantics (everything allowed)
-        else:
-            rp.parse(r.text.splitlines())
-        return rp
+            return RobotsTxt.disallow_all()
+        if r.status_code >= 400:
+            return RobotsTxt.allow_all()  # no robots.txt: standard semantics (RFC 9309 §2.3.1.3)
+        return RobotsTxt.parse(r.text)
 
 
 def _classify_exception(e: Exception) -> Failure:

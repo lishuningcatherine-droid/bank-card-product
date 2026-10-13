@@ -8,6 +8,28 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[1]
 FIX = REPO / "tests" / "fixtures"
+LOCAL_HOSTS = {"localhost", "127.0.0.1", "::1", "postgres", "db"}
+
+
+@pytest.fixture(autouse=True)
+def _no_external_network(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Tests use saved fixtures only: name resolution for any non-local host fails (bank and CFPB sites included).
+    Tests marked ``live_network`` are exempt and excluded from default/CI runs."""
+    if request.node.get_closest_marker("live_network"):
+        return
+    import socket
+
+    real = socket.getaddrinfo
+
+    def guarded(host, *args, **kwargs):  # type: ignore[no-untyped-def]
+        h = host.decode() if isinstance(host, bytes) else host
+        if h is not None and h not in LOCAL_HOSTS:
+            raise OSError(f"external network access is disabled in tests (attempted {h!r})")
+        return real(host, *args, **kwargs)
+
+    monkeypatch.setattr(socket, "getaddrinfo", guarded)
+
+
 TEST_DB = os.environ.get(
     "TEST_DATABASE_URL", "postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec_test"
 )

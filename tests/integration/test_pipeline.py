@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from datetime import UTC, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 import httpx
@@ -91,7 +92,7 @@ def test_minor_apy_change_auto_publishes_new_version(session, settings, tmp_path
     r = run(session, settings, reg, [source(reg, "high-yield", f)])
     assert r.products[0].decision == "published_version"
     p = _product(session, "Example Bank High Yield Savings")
-    assert str(p.savings.apy_pct) == "4.2000" and p.current_version == 2 and not p.recheck_pending
+    assert p.savings.apy_pct == Decimal("4.20") and p.current_version == 2 and not p.recheck_pending
     v2 = session.scalar(
         select(P.ProductVersion).where(P.ProductVersion.product_id == p.id, P.ProductVersion.version == 2)
     )
@@ -109,7 +110,7 @@ def test_major_changes_go_to_review_and_old_value_stays(session, settings, tmp_p
     r = run(session, settings, reg, [source(reg, "high-yield", f)])
     assert r.products[0].decision == "review"
     p = _product(session, "Example Bank High Yield Savings")
-    assert str(p.savings.apy_pct) == "4.0000" and p.recheck_pending and p.recheck_reason == "major_change"
+    assert p.savings.apy_pct == Decimal("4.00") and p.recheck_pending and p.recheck_reason == "major_change"
     item = session.scalar(select(S.ManualReviewItem).where(S.ManualReviewItem.reason_code == "major_change"))
     assert item is not None and item.context["changes"][0]["field"] == "apy_pct"
     # annual fee change on a card

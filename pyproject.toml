@@ -48,11 +48,12 @@ packages = ["src/bankrec"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-addopts = "-ra --strict-markers"
+addopts = "-ra --strict-markers -m 'not live_network'"
 markers = [
   "db: requires PostgreSQL (DATABASE_URL)",
   "browser: requires Playwright Chromium",
   "pending_fixture: real-bank adapter test waiting for a verbatim official fixture",
+  "live_network: contacts real external sites; never run in CI (excluded by default)",
 ]
 
 [tool.ruff]

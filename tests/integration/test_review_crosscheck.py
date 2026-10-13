@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, timedelta
+from decimal import Decimal
 from pathlib import Path
 
 import httpx
@@ -31,7 +32,7 @@ def test_approve_major_change_publishes_version(session, settings, tmp_path) -> 
     )
     session.commit()
     p = session.scalar(select(P.Product).where(P.Product.official_name == "Example Bank High Yield Savings"))
-    assert str(p.savings.apy_pct) == "4.6000" and not p.recheck_pending and p.current_version == 2
+    assert p.savings.apy_pct == Decimal("4.60") and not p.recheck_pending and p.current_version == 2
     d = session.scalar(select(S.ReviewDecision))
     assert (d.reviewer, d.action, d.note) == ("alice", "approve", "confirmed on page")
 

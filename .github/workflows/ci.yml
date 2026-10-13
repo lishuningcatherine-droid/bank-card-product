@@ -11,14 +11,20 @@ concurrency:
 jobs:
   python:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # requires-python is ">=3.12": test the oldest supported and the pinned (.python-version) interpreter.
+        python: ["3.12", "3.13"]
     services:
       postgres:
         image: postgres:16-alpine
         env: { POSTGRES_USER: bankrec, POSTGRES_PASSWORD: bankrec, POSTGRES_DB: bankrec_test }
         ports: ["5432:5432"]
         options: >-
-          --health-cmd "pg_isready -U bankrec" --health-interval 5s --health-retries 20
+          --health-cmd "pg_isready -U bankrec -d bankrec_test" --health-interval 5s --health-retries 20
     env:
+      UV_PYTHON: ${{ matrix.python }}
       TEST_DATABASE_URL: postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec_test
       DATABASE_URL: postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec_test
     steps:
@@ -37,8 +43,6 @@ jobs:
           uv run pytest -q
           --cov=bankrec.parsers --cov=bankrec.normalize --cov=bankrec.validation --cov=bankrec.dedup
           --cov=bankrec.recommend --cov=bankrec.freshness --cov-report=term --cov-fail-under=85
-        env:
-          BANKREC_CHROMIUM_EXECUTABLE: ""
       - name: Registry validates
         run: uv run bankrec registry validate --include-test
       - name: OpenAPI spec is up to date
@@ -74,7 +78,7 @@ jobs:
         image: postgres:16-alpine
         env: { POSTGRES_USER: bankrec, POSTGRES_PASSWORD: bankrec, POSTGRES_DB: bankrec }
         ports: ["5432:5432"]
-        options: --health-cmd "pg_isready -U bankrec" --health-interval 5s --health-retries 20
+        options: --health-cmd "pg_isready -U bankrec -d bankrec" --health-interval 5s --health-retries 20
     env:
       PGPASSWORD: bankrec
       E2E_DATABASE_URL: postgresql+psycopg://bankrec:bankrec@localhost:5432/bankrec_e2e

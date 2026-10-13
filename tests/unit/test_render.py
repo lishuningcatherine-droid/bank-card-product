@@ -13,7 +13,8 @@ from bankrec.ingest.render import Renderer
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.settings import Settings
 
-CHROME = os.environ.get("BANKREC_CHROMIUM_EXECUTABLE", "/opt/pw-browsers/chromium-1194/chrome-linux/chrome")
+# An empty value means "unset" (Path("") would resolve to the current directory).
+CHROME = os.environ.get("BANKREC_CHROMIUM_EXECUTABLE") or "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
 pytestmark = pytest.mark.browser
 
 PAGE = """<!doctype html><html><body><h1>Example Bank Test Card</h1>

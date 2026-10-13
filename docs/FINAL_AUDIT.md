@@ -56,7 +56,10 @@ Date: 2026-10-13. Branch `claude/blissful-feynman-qua5w1`.
 8. **Heuristics to review on real pages:** segment derived from "Business" in the name; co-brand detection via
    `config/co_brands.yaml`; airline/hotel/streaming rates not applied to broad user categories (conservative);
    rotating categories assume 25% of spend when the user opts in (configurable and disclosed).
-9. The fetcher treats an unreadable robots.txt as unreachable, so a site whose robots.txt is blocked can only be
+9. robots.txt matching is implemented in `bankrec.ingest.robots` (RFC 9309: `*`/`$` wildcards, longest match,
+   Allow wins ties) because Python 3.12's `urllib.robotparser` silently ignores wildcards. That was found by CI on
+   Python 3.12 and is covered by `tests/unit/test_robots.py` on 3.12 and 3.13.
+10. The fetcher treats an unreadable robots.txt as unreachable, so a site whose robots.txt is blocked can only be
    captured manually.
 
 ## Manual-review / owner actions
