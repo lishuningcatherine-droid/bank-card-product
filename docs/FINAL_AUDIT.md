@@ -1,54 +1,46 @@
 # Final audit — limitations and manual-review items
 
-Date: 2026-10-13. Branch `claude/blissful-feynman-qua5w1`.
+Date: 2026-10-13. Branch `claude/blissful-feynman-qua5w1`. Updated after the first real ingestion on the owner's machine.
 
-## What was verified in this environment
+## Real data (2026-10-13)
+
+Reachability: robots.txt 200 for all five banks and CFPB (`docs/REACHABILITY.md`). Credit cards only; checking and
+savings are offered by four of the banks but no deposit sources were added yet.
+
+| Bank | Card sources | Published | **Verified** (recommendation-ready) | Partially verified | In review / not published | Fetch |
+|---|---|---|---|---|---|---|
+| Chase | 38 (+9 disabled P&T) | 38 | **23** | 15 | — | rendered |
+| Capital One | 22 | 21 | **9** | 12 | Quicksilver (no fee in static HTML) | plain HTTP (render blocked by robots on its data API) |
+| Bank of America | 22 | 22 | **3** | 19 | — | rendered (static HTML is a shell) |
+| U.S. Bank | 11 | 11 | **1** | 10 | — | rendered (static "$" placeholders) |
+| American Express | 13 | 12 | **2** | 10 (8 recheck pending) | Platinum (no static name) | plain HTTP (rendering stopped after ~30 loads) |
+| **Total** | 106 | 104 | **38** | 66 | | |
+
+The main reason for "Partially verified" is the foreign transaction fee (a key field in `config/validation.yaml`):
+most product pages state it only when it is zero, and the issuers' terms pages are robots-disallowed (Chase),
+render empty (BoA) or were not located (Capital One, U.S. Bank, Amex).
+
+CFPB TCCP release 2025-12-31 cross-check: 48 plans matched, 89 conflicts (76 APR, 12 balance-transfer fee,
+1 annual fee) → review items only; no official value changed or downgraded.
+
+## What was verified on the owner's machine
 
 | Check | Result |
 |---|---|
-| Python lint (`ruff check`, `ruff format --check`) and typecheck (`mypy`, 85 files) | pass |
-| Python tests (`pytest`, real PostgreSQL 16) | **224 passed, 5 skipped** (the 5 real-bank verbatim-fixture tests, pending) |
-| Coverage of `parsers`, `normalize`, `validation`, `dedup`, `recommend`, `freshness` | **93%** (target 85%) |
-| Web lint, typecheck (TS strict), Vitest | pass; **66** unit tests |
-| Web production build (Next.js 16.4) | pass |
-| Playwright E2E incl. axe (WCAG 2.1 A/AA) on 16 pages, 375/768/1280 px layouts, keyboard | **28 passed** |
-| Migrations up → down → up; read-only API role denied on `staging` | pass |
-| Reachability survey through the real fetcher | every bank and CFPB domain `ENV_NETWORK_BLOCKED` |
-| Docker images and `docker compose` stack | Not buildable in this sandbox (Docker Hub `429`). **Verified in CI**: the `docker` job builds the api, web and worker images and smoke-tests the compose stack (run 38345207939, green) |
-| GitHub Actions CI | **All green** on `ef7a840` (run 38345207939): web, python (3.12), python (3.13), e2e, docker |
-
-## Acceptance criteria status (brief §20)
-
-| # | Criterion | Status |
-|---|---|---|
-| 1 | Runs locally via documented commands | Native path verified here (uv, pnpm, Postgres). Compose path verified by the CI `docker` job |
-| 2 | Builds, lint, typecheck pass | Yes |
-| 3 | All tests pass, including E2E | Yes (5 real-bank fixture tests skipped as pending, by design) |
-| 4–5 | Five banks and three product types supported structurally | Yes (configs, adapters, schema, API, UI). **No real data** |
-| 6 | User-facing data only from `prod` | Yes (read-only role; repository reads `prod` only) |
-| 7 | Unverified, stale, targeted, expired and recheck-pending offers hidden from recommendations | Yes (request-time `offer_state`; tests) |
-| 8 | Every displayed offer has a source and verification date | Yes |
-| 9 | Expired offers excluded or labeled | Yes (server and browser re-check) |
-| 10 | No duplicates in recommendations | Yes (canonical key; fuzzy matches go to review) |
-| 11 | No product named `unknown` | Yes (rule `R-NAME` plus a DB CHECK constraint) |
-| 12 | Every production field has provenance | Yes (span-guarded `Sourced` values; tested) |
-| 13–16 | Explained scores; first-year/ongoing/multi-year split; achievability test; savings rules | Yes |
-| 17 | Example Bank added via the documented process only | Yes |
-| 18 | UI follows DESIGN_SYSTEM, responsive, passes axe | Yes (token guard test; E2E) |
-| 19 | README matches the system | Yes |
-| 20 | This file | Yes |
-| 21 | Docker production build runs, CI green | Yes: CI run 38345207939 is green on all five jobs, including the Docker image builds and the compose smoke test |
-| 22 | REACHABILITY.md exists and the registry matches it | Yes (all real banks: zero sources, availability `unknown`) |
+| Python lint, format, mypy (86 files) | pass |
+| pytest (real PostgreSQL 16 in Docker) | **280 passed**; adapter tests assert values from 34 verbatim fixtures (5 banks + CFPB release) |
+| Web Vitest | 66 passed (web unchanged in this session) |
+| Real ingestion runs | 9 runs; every source ended with a terminal status |
 
 ## Remaining limitations
 
-1. **No real product data.** All five bank domains and `consumerfinance.gov` were refused by this session's egress
-   proxy, even after the owner changed the allowed domains (the policy most likely applies only to new sessions). The
-   production dataset is empty. The 30–50 verified cards target is not met. Nothing was substituted.
-2. **Real-bank adapters are unverified.** They use the shared extractors and the owner's pre-survey notes, tested on
-   synthetic Example Bank pages only. Selectors and labels must be checked against verbatim pages before enabling sources.
-3. **CFPB column mapping is unconfirmed** (`config/regulators/cfpb_tccp.yaml`). Files that don't match fail loudly
-   (`SCHEMA_DRIFT`). Dataset URLs are not configured.
+1. **Credit cards only.** No checking or savings sources yet (Chase, Capital One and Amex offer both; BoA and U.S. Bank
+   not surveyed). Business cards for BoA and Amex not surveyed.
+2. **Conservative extraction.** Rates that could be overstated are left out (stacked "total" rates, "up to" rates,
+   choice categories, caps that cannot be parsed); see each `docs/adapters/<bank>.md`. Cards can show fewer bonus
+   categories than their page, never more.
+3. **Welcome offers are missing for Capital One cards whose offer is script-only, and for all Amex cards** (rendering
+   blocked/degraded); see `reports/manual_verification_needed.md`.
 4. **Docker** could not run in this sandbox (Docker Hub rate limit). It is verified only in CI.
 5. **CSP uses `'unsafe-inline'` scripts** (no nonces) so pages can be cached. There are no third-party scripts.
 6. **Single web replica.** Horizontal scaling needs a shared Next.js cache handler.

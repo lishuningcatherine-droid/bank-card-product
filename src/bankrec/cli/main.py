@@ -466,11 +466,11 @@ def crosscheck_tccp(
     include_test: bool = typer.Option(False, "--include-test"),
 ) -> None:
     """Cross-check a downloaded TCCP release file against published values (never publishes)."""
-    from bankrec.crosscheck.cfpb import RegulatorSchemaError, parse_tccp_csv, run_crosscheck
+    from bankrec.crosscheck.cfpb import RegulatorSchemaError, parse_tccp, run_crosscheck
 
     data = path.read_bytes()
     try:
-        rows = parse_tccp_csv(data)
+        rows = parse_tccp(data)
     except RegulatorSchemaError as e:
         typer.echo(f"SCHEMA_DRIFT: {e}", err=True)
         raise typer.Exit(1) from e

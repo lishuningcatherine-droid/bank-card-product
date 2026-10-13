@@ -190,3 +190,16 @@ def test_scope_excludes_navigation(fixture: str) -> None:
 def test_logic_on_synthetic_placeholders() -> None:
     s = run_adapter("chase", FIX / "example_bank" / "pages" / "savings_static_nan.html", "high-yield")
     assert s.fields["apy_pct"].null_reason is NullReason.requires_render
+
+
+def test_new_card_marketplace_template() -> None:
+    """Some Chase cards switched (2026-10-13) to a template with label and value on one line: "ANNUAL FEE$0†"."""
+    c = run_official("chase", "instacart-mastercard", "instacart-new-template.rendered.html")
+    assert c.value("annual_fee_cents") == 0
+    assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
+        Decimal("18.49"),
+        Decimal("27.99"),
+    )
+    assert rates(c)["other"] == ("1pct", None)
+    # "Get a $50 Instacart credit automatically upon approval" is not a cash or points welcome bonus.
+    assert not [o for o in c.offers if o.value]

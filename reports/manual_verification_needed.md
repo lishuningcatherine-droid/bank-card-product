@@ -71,6 +71,12 @@ fetched to test this**, so check the first manual capture with `bankrec review l
 | 8 recheck-pending cards (Gold, Blue Cash Everyday/Preferred, Delta Blue/Gold/Platinum/Reserve, Hilton Aspire) | `bankrec review list --bank american_express` | Their earlier rendered offers were not seen in the static run: approve/reject in review. |
 | Platinum Card®, Gold Card® product fields | https://www.americanexpress.com/us/credit-cards/card/platinum/ , …/gold-card/ | Static page has no product name / a promotional h1. |
 
-## CFPB
+## CFPB (cross-check only)
+
+| What | Action |
+|---|---|
+| 89 regulator conflicts from release 2025-12-31 (40 max APR, 36 min APR, 12 balance-transfer fee, 1 annual fee: Southwest Rapid Rewards® Plus $99 official vs $69 CFPB) | `bankrec review list` → items of kind `regulator_conflict`. They never change or downgrade official values. APR differences are expected (the release predates current rates). |
+| New releases | Download the newest file from the TCCP page and run `bankrec crosscheck tccp …` (see `config/sources/cfpb.yaml`). |
+| Credit Card Agreements database | Not ingested; confirm whether you want agreement PDFs cross-checked. |
 
 In progress (see `docs/REACHABILITY.md`).

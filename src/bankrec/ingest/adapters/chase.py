@@ -106,6 +106,13 @@ class Adapter(DeclarativeAdapter):
                 sib = sib.next
             if sib is not None and sib.tag == "p":
                 out[key] = doc.node_text(h).strip() + "\n" + doc.node_text(sib).replace("\n", " ")
+        # Newer card-marketplace template (seen 2026-10-13 on some cards): label and value on one line,
+        # "ANNUAL FEE$0†" / "APR18.49%–27.99% variable APR.†".
+        for ln in doc.text.split("\n"):
+            if "fee" not in out and re.match(r"^ANNUAL FEE\s*\$\d", ln):
+                out["fee"] = ln
+            if "apr" not in out and re.match(r"^APR\s*\d{1,2}(?:\.\d+)?%", ln):
+                out["apr"] = ln
         for key, sel in (("fee", "[class*='aprfee--fee'] p"), ("apr", "[class*='aprfee--apr'] p")):
             if key not in out:
                 for n in doc.select(sel):
@@ -125,7 +132,7 @@ class Adapter(DeclarativeAdapter):
         na = NullReason.not_applicable
         fee = blocks.get("fee")
         if fee:
-            value = fee.split("\n", 1)[-1]
+            value = re.sub(r"^ANNUAL FEE\s*", "", fee.split("\n", 1)[-1])
             sched = parse_fee_schedule(value)
             if sched.ongoing_cents is not None:
                 out["annual_fee_cents"] = ctx.field(sched.ongoing_cents, fee, method="table_cell")
@@ -143,7 +150,7 @@ class Adapter(DeclarativeAdapter):
                 out["au_fee_cents"] = ctx.field(int(au.group(1).replace(",", "")) * 100, fee)
         apr = blocks.get("apr")
         if apr:
-            value = apr.split("\n", 1)[-1]
+            value = re.sub(r"^APR(?=\d)", "", apr.split("\n", 1)[-1])
             rng = _RANGE.search(value)
             single = _SINGLE.search(value)
             lo: Decimal | None

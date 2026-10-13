@@ -31,6 +31,13 @@ cloud-session survey (every domain refused by that session's egress proxy) is ke
 | U.S. Bank | 200 for 11 card pages (8 consumer, 3 business; Business Leverage redirects to the listing). Static HTML has name, bonus and earn rates; **annual fee and APR are bare "$" placeholders**. Rendered pages fill them. Pages never reach network idle (renderer waits load + 15 s). 11 sources, rendered. | Not surveyed yet. | Not surveyed yet. |
 | American Express | 200 for 15 consumer card pages. Static HTML has name, annual fee and earn tiles; **welcome offer and APR only after rendering** (pre-survey confirmed). Rendering worked for the first ~30 loads, then returned pages without product content for 13 consecutive loads (not retried). Sources now plain HTTP. EveryDay Preferred and Cash Magnet have no product content. | Offered (`/en-us/banking/checking-account/`). Not ingested. | Offered (`/en-us/banking/online-savings/high-yield-savings-account/`). Not ingested. |
 
+## CFPB
+
+| Dataset | Result |
+|---|---|
+| Terms of Credit Card Plans | Release files linked from https://www.consumerfinance.gov/data-research/credit-card-data/terms-credit-card-plans-survey/ (`.xlsx`, semi-annual). Newest: `cfpb_tccp-data_2025-12-31.xlsx` (survey collected January–April 2026), 200, 516 KB; `files.consumerfinance.gov/robots.txt` is 404 (no restrictions). Column mapping confirmed (`config/regulators/cfpb_tccp.yaml`). U.S. Bank is not in this release. |
+| Credit Card Agreements database | Not downloaded (agreement PDFs per issuer); `parse_agreement_pdf` remains tested on synthetic files only. |
+
 ## Pre-survey findings checked against real pages
 
 | Finding (owner's notes) | Observed 2026-10-13 |

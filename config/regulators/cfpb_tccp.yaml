@@ -1,15 +1,18 @@
 # Column mapping for the CFPB Terms of Credit Card Plans (TCCP) release file.
-# UNCONFIRMED: consumerfinance.gov was refused by the build environment's egress policy, so these names could not be
-# checked against a real release's data dictionary. The loader refuses any file that lacks these columns
-# (SCHEMA_DRIFT), so a wrong mapping fails loudly instead of producing values. Update after downloading a release.
-confirmed_against_release: null
+# Confirmed against the real release cfpb_tccp-data_2025-12-31.xlsx (sheet "TCCP Survey", header on row 10), linked
+# from https://www.consumerfinance.gov/data-research/credit-card-data/terms-credit-card-plans-survey/ and downloaded
+# 2026-10-13. The loader refuses any file that lacks these columns (SCHEMA_DRIFT).
+confirmed_against_release: "2025-12-31 (https://files.consumerfinance.gov/f/documents/cfpb_tccp-data_2025-12-31.xlsx), checked 2026-10-13"
 columns:
   issuer_name: "Institution Name"
   plan_name: "Product Name"
-  purchase_apr_min_pct: "Purchase APR Min"
-  purchase_apr_max_pct: "Purchase APR Max"
+  purchase_apr_min_pct: "Purchase APR min"
+  purchase_apr_max_pct: "Purchase APR max"
   annual_fee_cents: "Annual Fee"
-  foreign_tx_fee_pct: "Foreign Transaction Fee"
-  bt_fee_pct: "Balance Transfer Fee Percent"
-  cash_fee_pct: "Cash Advance Fee Percent"
-money_columns: [annual_fee_cents]
+  foreign_tx_fee_pct: "Foreign Transaction Fee (%)"
+  bt_fee_pct: "Balance Transfer Fee (%)"
+  cash_fee_pct: "Cash Advance Fee (%)"
+money_columns: [annual_fee_cents]          # dollars in the file → cents
+# The .xlsx stores percentages as fractions (0.1824 = 18.24%). A blank cell means "not reported" and is skipped,
+# never read as zero.
+fraction_columns: [purchase_apr_min_pct, purchase_apr_max_pct, foreign_tx_fee_pct, bt_fee_pct, cash_fee_pct]

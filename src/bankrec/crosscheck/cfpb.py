@@ -76,28 +76,77 @@ def _num(v: str) -> Decimal | None:
         return None
 
 
-def parse_tccp_csv(data: bytes) -> list[RegulatorRow]:
+def parse_tccp(data: bytes) -> list[RegulatorRow]:
+    """CSV or the .xlsx CFPB publishes (detected by the ZIP signature)."""
+    return parse_tccp_xlsx(data) if data[:2] == b"PK" else parse_tccp_csv(data)
+
+
+def parse_tccp_xlsx(data: bytes) -> list[RegulatorRow]:
+    """The published workbook has title rows above the header; the header is the row naming the issuer column."""
+    import openpyxl
+
     m = tccp_mapping()
     cols: dict[str, str] = m["columns"]
+    ws = openpyxl.load_workbook(io.BytesIO(data), read_only=True, data_only=True).worksheets[0]
+    rows_iter = list(ws.iter_rows(values_only=True))
+    hdr_i = next(
+        (
+            i
+            for i, r in enumerate(rows_iter[:50])
+            if r and cols["issuer_name"] in [str(c).strip() if c else "" for c in r]
+        ),
+        None,
+    )
+    if hdr_i is None:
+        raise RegulatorSchemaError(f"TCCP workbook has no header row with {cols['issuer_name']!r}")
+    header = [str(c).strip() if c is not None else "" for c in rows_iter[hdr_i]]
+    dicts = [
+        {h: ("" if v is None else str(v)) for h, v in zip(header, r, strict=False) if h}
+        for r in rows_iter[hdr_i + 1 :]
+        if r and any(v is not None for v in r)
+    ]
+    return _rows_from_dicts(dicts, set(header), m, first_row=hdr_i + 2)
+
+
+def parse_tccp_csv(data: bytes) -> list[RegulatorRow]:
+    m = tccp_mapping()
     reader = csv.DictReader(io.StringIO(data.decode("utf-8-sig")))
-    header = set(reader.fieldnames or [])
+    return _rows_from_dicts(list(reader), set(reader.fieldnames or []), m, first_row=2)
+
+
+def _rows_from_dicts(
+    records: list[dict[str, str]], header: set[str], m: dict[str, Any], first_row: int
+) -> list[RegulatorRow]:
+    cols: dict[str, str] = m["columns"]
     missing = [c for c in cols.values() if c not in header]
     if missing:
         raise RegulatorSchemaError(
             f"TCCP file lacks mapped columns {missing}; update config/regulators/cfpb_tccp.yaml"
         )
+    fractions = set(m.get("fraction_columns", []))
     rows: list[RegulatorRow] = []
-    for i, r in enumerate(reader, start=2):
+    for i, r in enumerate(records, start=first_row):
+        if not (r.get(cols["issuer_name"]) or "").strip():
+            continue
         f: dict[str, Any] = {}
         for logical, col in cols.items():
             if logical in {"issuer_name", "plan_name"}:
                 continue
             n = _num(r.get(col, ""))
+            if n is not None and logical in fractions:
+                n = (n * 100).quantize(Decimal("0.01"))  # 0.18239999999999998 → 18.24
             if n is not None and logical in m.get("money_columns", []):
                 f[logical] = int(n * 100)
             elif n is not None:
                 f[logical] = n
-        rows.append(RegulatorRow(r[cols["issuer_name"]].strip(), r[cols["plan_name"]].strip(), f, f"row {i}"))
+        rows.append(
+            RegulatorRow(
+                r[cols["issuer_name"]].strip(),
+                r[cols["plan_name"]].replace("\xa0", " ").strip(),
+                f,
+                f"row {i}",
+            )
+        )
     return rows
 
 

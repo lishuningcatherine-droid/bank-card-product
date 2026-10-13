@@ -172,7 +172,7 @@ results apply the deposit and holding-period rules. Every result returns a per-c
 ## Tests
 
 ```bash
-uv run pytest                          # 224 passed, 5 skipped (real-bank verbatim-fixture tests pending)
+uv run pytest                          # 280 passed (adapter tests on verbatim official fixtures)
 pnpm -C web test                       # Vitest: design tokens, wording ban, offer wording, signatures, …
 cd web && NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8010 NEXT_PUBLIC_TEST_DATA_BANNER=1 pnpm build \
        && pnpm exec playwright test    # 28 E2E tests incl. axe on every major page; starts a seeded API itself

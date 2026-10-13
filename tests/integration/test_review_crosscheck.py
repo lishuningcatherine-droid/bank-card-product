@@ -101,6 +101,7 @@ def _tccp(rows: list[dict[str, str]], path: Path) -> Path:
     return path
 
 
+# Synthetic rows in the confirmed TCCP release format (column names of the 2025-12-31 release; percentages as fractions).
 def test_cfpb_crosscheck_conflict_explained_and_never_published(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
     from bankrec.crosscheck.cfpb import RegulatorSchemaError, parse_tccp_csv, run_crosscheck
 
@@ -112,16 +113,16 @@ def test_cfpb_crosscheck_conflict_explained_and_never_published(session, setting
             {
                 "Institution Name": "EXAMPLE BANK, N.A.",
                 "Product Name": "Example Bank Everyday Cash Card",
-                "Purchase APR Min": "19.24",
-                "Purchase APR Max": "28.24",
+                "Purchase APR min": "0.1924",
+                "Purchase APR max": "0.2824",
                 "Annual Fee": "0",
-                "Foreign Transaction Fee": "3",
+                "Foreign Transaction Fee (%)": "0.03",
             },
             {
                 "Institution Name": "EXAMPLE BANK, N.A.",
                 "Product Name": "Example Bank Secured Card",
-                "Purchase APR Min": "29.99",
-                "Purchase APR Max": "29.99",
+                "Purchase APR min": "0.2999",
+                "Purchase APR max": "0.2999",
                 "Annual Fee": "25",
             },
             {
@@ -179,7 +180,7 @@ def test_cfpb_difference_explained_by_history(session, settings, tmp_path) -> No
             {
                 "Institution Name": "EXAMPLE BANK, N.A.",
                 "Product Name": "Example Bank Everyday Cash Card",
-                "Foreign Transaction Fee": "2",
+                "Foreign Transaction Fee (%)": "0.02",
             }
         ],
         tmp_path / "t.csv",

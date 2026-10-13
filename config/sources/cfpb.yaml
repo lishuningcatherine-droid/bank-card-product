@@ -1,4 +1,17 @@
-# Add the TCCP and Credit Card Agreements dataset URLs once confirmed (source_kind: regulator_dataset,
-# parser_name: cfpb_tccp | cfpb_agreements). See docs/REACHABILITY.md.
+# CFPB datasets (cross-check only: they never create products, offers or published values; brief §10).
+# URLs confirmed 2026-10-13 from the official page
+# https://www.consumerfinance.gov/data-research/credit-card-data/terms-credit-card-plans-survey/ (links each release).
+# Disabled: releases are semi-annual and new file names are published on that page; download the newest release and
+# run `bankrec crosscheck tccp <file> --release-id <date> --as-of <date> --file-url <url>`.
 bank_id: cfpb
-sources: []
+sources:
+- bank_id: cfpb
+  slug: tccp-2025-12-31
+  source_url: https://files.consumerfinance.gov/f/documents/cfpb_tccp-data_2025-12-31.xlsx
+  source_kind: regulator_dataset
+  parser_name: cfpb_tccp
+  requires_render: false
+  enabled: false
+  priority: 10
+  expected_entity: multiple
+  notes: "TCCP release 2025-12-31 (survey collected January-April 2026); verbatim copy in tests/fixtures/cfpb/"

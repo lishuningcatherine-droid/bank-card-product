@@ -1,0 +1,5 @@
+# Verbatim CFPB release file, unmodified. Linked from
+# https://www.consumerfinance.gov/data-research/credit-card-data/terms-credit-card-plans-survey/
+# method: plain HTTP GET (no cookies); files.consumerfinance.gov/robots.txt is 404 (no restrictions).
+# columns: file | url | http_status | bytes | retrieved_at_utc
+cfpb_tccp-data_2025-12-31.xlsx | https://files.consumerfinance.gov/f/documents/cfpb_tccp-data_2025-12-31.xlsx | 200 | 516356 | 2026-10-13T20:27:36Z

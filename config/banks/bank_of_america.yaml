@@ -16,7 +16,7 @@ referral_url_patterns: []
 # Visible (not hidden) in both the static shell and the rendered page; never a block signal.
 boilerplate_phrases: ["We're sorry, this page is temporarily unavailable. We apologize for the inconvenience.",
                       "temporarily unavailable"]
-cfpb_issuer_names: ["Bank of America, N.A."]
+cfpb_issuer_names: ["Bank Of America, National Association"]  # as spelled in the TCCP release 2025-12-31
 discovery:
   robots_url: "https://www.bankofamerica.com/robots.txt"
   sitemaps: ["https://www.bankofamerica.com/content/sitemap_index.xml"]
