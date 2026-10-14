@@ -58,8 +58,10 @@ _RATE_LEAD = re.compile(
 _NOT_EARN = re.compile(
     r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|\bdiscount|\bpromo|inflight|on\s+board|\b\d+%\s+back\s+(?:on|as)\b|"
     r"statement\s+credit|purchases?\s+of\s+\$[\d,]+\s+or\s+more|large\s+purchases|"
-    # "14X total points at Marriott hotels" stacks loyalty-program earn on top of the card's own rate.
-    r"\btotal\b|"
+    # "14X total points at Marriott hotels" / "9x total miles on eligible United flights" stack loyalty-program earn on
+    # top of the card's own rate; a named-merchant promotion ("5% total cash back on Lyft rides", "10x total points on
+    # eligible Peloton equipment") is the card's own rate.
+    r"\btotal\b(?!\s+(?:cash\s+back|points|miles)\s+on\s+(?:eligible\s+|qualifying\s+)?(?:lyft|peloton)\b)|"
     # APR statements and airline-program earn ("6x miles on the fare ... as a MileagePlus member") are not card earn
     r"\bAPR\b|\bas an? [\w ]{0,40}member\b|\bon top of the\b",
     re.IGNORECASE,
@@ -233,6 +235,8 @@ class Adapter(DeclarativeAdapter):
                 doc, "body", "[class*='cmp-popup--cardofferdetails'], [class*='experiencefragment-modal']"
             )
             for line in body.text.split("\n"):
+                if X.is_program_paragraph(line):
+                    continue  # the rewards-program terms are read clause by clause (DESIGN §24.17 B)
                 if out and line[:1].islower() and not out[-1].endswith((".", "*", "†")):
                     out[-1] = f"{out[-1]} {line}"
                 else:

@@ -278,3 +278,26 @@ def test_b_program_statements_split_and_clean() -> None:
         "You'll earn 1 point for each $1 spent on all other purchases.",
         "You'll earn 5 points for each $1 spent on office supply stores.",
     ]
+
+
+def test_b_program_paragraph_is_not_an_earn_statement_and_merchant_promo_kept() -> None:
+    # Instacart's rewards-program terms (revised 2026-10-14) say «... (4% additional Cash Back rewards on up to $6,000
+    # spent annually on top of the 1% Cash Back rewards earned on all qualifying Instacart purchases). After $6,000 ...
+    # you go back to earning 1% Cash Back rewards for each $1 spent, with no maximum.» Read as page earn statements,
+    # those fragments made a 1% partner rate that replaced the 5% one. The terms are read clause by clause instead.
+    c = run_official("chase", "instacart-mastercard", "instacart-2026-10-14-1939.rendered.html")
+    by = {r.value.category: r.value for r in c.reward_rates if r.value}
+    assert (by["partner"].rate, by["partner"].cap_cents) == (Decimal("5"), 600000)
+    assert c.fields["earn_rates_complete"].value is True
+
+
+def test_b_named_merchant_total_is_the_cards_rate_but_loyalty_totals_are_not() -> None:
+    from bankrec.ingest.adapters.chase import _NOT_EARN
+
+    assert _NOT_EARN.search("Earn 5% total cash back on Lyft rides") is None
+    assert (
+        _NOT_EARN.search("Plus, earn 10x total points on eligible Peloton equipment and accessory purchases")
+        is None
+    )
+    assert _NOT_EARN.search("9x total miles on eligible United flights*") is not None
+    assert _NOT_EARN.search("14X total points at hotels participating in Marriott Bonvoy") is not None

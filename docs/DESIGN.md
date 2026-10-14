@@ -1235,3 +1235,8 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   5X travel and office supply through 2026-12-31), Ink Business Preferred (3X shipping, advertising, travel, internet,
   cable & phone on the first $150,000 a year; now complete), Marriott Bonvoy Bold (1X base); Ink Business Premier's
   2.5% on purchases of $5,000 or more is listed as not represented.
+  Found on the re-run: Chase revised Instacart's rewards-program terms the same day, and their fragments ("… on top of
+  the 1% Cash Back rewards earned on all qualifying Instacart purchases)") were collected as page earn statements and
+  replaced the 5% Instacart rate with 1%; the terms paragraph is now read only clause by clause. "total" no longer
+  excludes a named-merchant promotion ("5% total cash back on Lyft rides"); loyalty-program totals ("9x total miles
+  on eligible United flights") stay excluded. Numeric end dates ("through 12/31/2027") set `ends_on`.

@@ -366,6 +366,10 @@ _RATE_IN_PAREN = re.compile(r"\([^()]*\d+(?:\.\d+)?\s*(?:%|points?|miles?)[^()]*
 PURCHASE_SIZE = re.compile(r"\bpurchases?\s+totaling\s+\$[\d,]+\s+or\s+more", re.IGNORECASE)
 
 
+def is_program_paragraph(line: str) -> bool:
+    return bool(_PROGRAM_PARA.search(line))
+
+
 def program_statements(text: str) -> list[tuple[str, str]]:
     """The issuer's rewards-program terms printed on the product page (Chase: "Earning in the Rewards Program: ...
     5 points ("5X points"): You'll earn 5 points for each $1 spent on qualifying purchases made at hotels

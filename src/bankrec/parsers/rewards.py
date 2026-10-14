@@ -47,8 +47,9 @@ _PORTAL = re.compile(
     re.IGNORECASE,
 )
 _UNTIL = re.compile(
-    r"\b(?:through|until|thru|ending)\s+(?P<m>january|february|march|april|may|june|july|august|september|october|"
-    r"november|december)\s+(?P<d>\d{1,2}),?\s+(?P<y>\d{4})",
+    r"\b(?:through|until|thru|ending)\s+(?:(?P<m>january|february|march|april|may|june|july|august|september|"
+    r"october|november|december)\s+(?P<d>\d{1,2}),?\s+(?P<y>\d{4})"
+    r"|(?P<nm>\d{1,2})/(?P<nd>\d{1,2})/(?P<ny>\d{4}|\d{2})\b)",
     re.IGNORECASE,
 )
 _CHOICE = {"choice", "choice_everyday"}
@@ -210,8 +211,11 @@ def parse_reward_statement(text: str) -> RewardRate | None:
         if found:
             rr.conditions[c] = found
     until = _UNTIL.search(text)
-    if until:
+    if until and until.group("m"):
         rr.ends_on = date(int(until.group("y")), _MONTHS[until.group("m").lower()], int(until.group("d")))
+    elif until:
+        y = int(until.group("ny"))
+        rr.ends_on = date(y + 2000 if y < 100 else y, int(until.group("nm")), int(until.group("nd")))
     if not rr.categories:
         return None
     return rr
