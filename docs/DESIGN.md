@@ -1188,3 +1188,11 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   (stated by Capital One): …"), and a stated "no intro APR" marks the intro APR fields not applicable. Conditional
   eligibility rules ("may not be eligible … if you previously held this card") are never a stated absence. Found on
   Capital One's three "for Good Credit" cards (2026-10-14).
+- **E. FAQ / accordion text is page text.** Collapsed accordion and disclosure panels (an element whose id is named
+  by an `aria-controls` control with `aria-expanded`, or a `role="region"` panel with `aria-labelledby`) are rendered
+  into the snapshot text even while `aria-hidden`; hidden tab panels (`role="tab"` controls) stay out, since a tab can
+  hold another product. A foreign-transaction-fee fact stated in a sentence that names the card ("The Hilton Honors
+  American Express Surpass® Card does not have foreign transaction fees.") sets the fee to 0 with that sentence as
+  evidence, preferred over a bare "No Foreign Transaction Fees" heading. Effect on the 2026-10-14 snapshots: only
+  Amex changed (FTF 0 on Surpass, Aspire, Delta Gold, Delta Platinum; annual fee from the FAQ answer on Gold, Platinum,
+  Blue Cash Everyday, Delta Blue).

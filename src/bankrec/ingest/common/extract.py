@@ -641,6 +641,33 @@ def offer_signal(text: str) -> str | None:
     return None
 
 
+_NO_FTF = re.compile(
+    r"\b(?:does\s+not\s+(?:have|charge)|doesn[’']t\s+(?:have|charge)|has\s+no|charges\s+no|there\s+(?:are|is)\s+no)\s+"
+    r"(?:any\s+)?(?:foreign\s+transaction\s+fees?|fees?\s+on\s+foreign\s+(?:transactions|purchases))",
+    re.IGNORECASE,
+)
+
+
+def _name_core(name: str) -> str:
+    s = re.sub(r"[®™℠*†‡¤]", "", name).lower()
+    s = re.sub(r"\b(?:credit\s+card|card)\b", " ", s)
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def stated_no_ftf(text: str, name: str) -> str | None:
+    """A sentence, typically an FAQ or benefit-panel answer, saying this card has no foreign transaction fees and
+    naming it ("The Hilton Honors American Express Surpass® Card does not have foreign transaction fees."). The card's
+    name must be in the sentence, so a cross-sell line about another card never counts (spot-check round 2, E)."""
+    core = _name_core(name)
+    if not core:
+        return None
+    for ln in text.split("\n"):
+        for sent in re.split(r"(?<=[.!?])\s+", ln):
+            if _NO_FTF.search(sent) and core in _name_core(sent):
+                return sent.strip()
+    return None
+
+
 _NO_OFFER = re.compile(
     r"\b(?:won[’']t|will\s+not|isn[’']t|is\s+not|aren[’']t|are\s+not)\s+(?:be\s+)?eligible\s+for\s+(?:a\s+|the\s+|any\s+)?"
     r"(?:new\s+card\s?member|welcome|sign[- ]?up)\s+(?:bonus|offer)"

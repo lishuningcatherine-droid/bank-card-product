@@ -53,15 +53,35 @@ _NON_VISUAL_CLASS = re.compile(
 _MARKS = {"SM": "\u2120", "TM": "\u2122"}  # <sup>SM</sup> → ℠, <sup>TM</sup> → ™
 
 
-def _is_hidden(node: Node) -> bool:
+def _is_hidden(node: Node, expandable: frozenset[str] = frozenset()) -> bool:
     a = node.attributes
-    return (
-        "hidden" in a
-        or a.get("aria-hidden") == "true"
-        or bool(_HIDDEN_STYLE.search(a.get("style") or ""))
-        or node.tag in _STRUCK_TAGS
-        or bool(_NON_VISUAL_CLASS.search(a.get("class") or ""))
+    if node.tag in _STRUCK_TAGS or _NON_VISUAL_CLASS.search(a.get("class") or ""):
+        return True
+    if _is_panel(node, expandable):
+        # A collapsed accordion / disclosure panel (FAQ answers, "Rates & Fees" sections): the page states it and a
+        # visitor opens it with one click, so it is page content (spot-check round 2, E).
+        return False
+    return "hidden" in a or a.get("aria-hidden") == "true" or bool(_HIDDEN_STYLE.search(a.get("style") or ""))
+
+
+def _is_panel(node: Node, expandable: frozenset[str]) -> bool:
+    a = node.attributes
+    return bool(
+        (a.get("id") and a.get("id") in expandable)
+        or (a.get("role") == "region" and a.get("aria-labelledby"))
     )
+
+
+def expandable_ids(tree: HTMLParser) -> frozenset[str]:
+    """Ids of panels opened by a disclosure control (``aria-controls`` + ``aria-expanded``, the WAI accordion
+    pattern). Tabs (``role="tab"``) are excluded: a hidden tab panel can belong to another product."""
+    out: set[str] = set()
+    for n in tree.css("[aria-controls][aria-expanded]"):
+        if n.attributes.get("role") == "tab":
+            continue
+        for i in (n.attributes.get("aria-controls") or "").split():
+            out.add(i)
+    return frozenset(out)
 
 
 @dataclass
@@ -72,6 +92,7 @@ class PageDoc:
     hidden_text: str  # text of hidden elements (kept for classifier signals only)
     title: str = ""
     h1: list[str] = field(default_factory=list)
+    expandable: frozenset[str] = frozenset()
 
     def select(self, css: str) -> list[Node]:
         try:
@@ -80,14 +101,14 @@ class PageDoc:
             return []
 
     def node_text(self, node: Node) -> str:
-        return render_text(node)
+        return render_text(node, self.expandable)
 
 
-def render_text(node: Node) -> str:
+def render_text(node: Node, expandable: frozenset[str] = frozenset()) -> str:
     parts: list[str] = []
 
     def walk(n: Node) -> None:
-        if n.tag in {"script", "style", "noscript", "template", "svg", "iframe"} or _is_hidden(n):
+        if n.tag in {"script", "style", "noscript", "template", "svg", "iframe"} or _is_hidden(n, expandable):
             return
         if n.tag == "-text":
             parts.append(n.text_content or "")
@@ -113,16 +134,19 @@ def render_text(node: Node) -> str:
     return "\n".join(ln for ln in lines if ln)
 
 
-def parse_html(html: str) -> PageDoc:
+def parse_html(html: str, expandable_extra: frozenset[str] = frozenset()) -> PageDoc:
     tree = HTMLParser(html)
     title = tree.css_first("title")
     hidden_parts: list[str] = []
+    expandable = expandable_ids(tree) | expandable_extra
     for n in tree.css("[hidden], [aria-hidden=true], [style]"):
-        if _is_hidden(n):
+        if _is_hidden(n, expandable):
             hidden_parts.append(n.text(separator=" ", strip=True))
     body = tree.body or tree.root
-    text = render_text(body) if body is not None else ""
-    h1s = [render_text(h).replace("\n", " ") for h in tree.css("h1") if not _is_hidden(h)]
+    text = render_text(body, expandable) if body is not None else ""
+    h1s = [
+        render_text(h, expandable).replace("\n", " ") for h in tree.css("h1") if not _is_hidden(h, expandable)
+    ]
     return PageDoc(
         html=html,
         tree=tree,
@@ -130,6 +154,7 @@ def parse_html(html: str) -> PageDoc:
         hidden_text=" ".join(hidden_parts),
         title=(title.text(strip=True) if title else ""),
         h1=[h for h in h1s if h],
+        expandable=expandable,
     )
 
 
@@ -145,7 +170,7 @@ def scoped(doc: PageDoc, css: str, exclude: str | None = None) -> PageDoc:
     if exclude:
         for n in tree.css(exclude):
             n.decompose()
-    sub = parse_html(tree.html or "")
+    sub = parse_html(tree.html or "", doc.expandable)
     sub.title = doc.title
     return sub
 
@@ -156,10 +181,20 @@ def table_rows(doc: PageDoc, css: str = "table tr") -> list[tuple[str, str]]:
     for tr in doc.select(css):
         cells = [c for c in tr.iter() if c.tag in {"th", "td"}]
         if len(cells) >= 2:
-            rows.append((render_text(cells[0]).replace("\n", " "), render_text(cells[1]).replace("\n", " ")))
+            rows.append(
+                (
+                    render_text(cells[0], doc.expandable).replace("\n", " "),
+                    render_text(cells[1], doc.expandable).replace("\n", " "),
+                )
+            )
     for dl in doc.select("dl"):
         dts = dl.css("dt")
         dds = dl.css("dd")
         for dt, dd in zip(dts, dds, strict=False):
-            rows.append((render_text(dt).replace("\n", " "), render_text(dd).replace("\n", " ")))
+            rows.append(
+                (
+                    render_text(dt, doc.expandable).replace("\n", " "),
+                    render_text(dd, doc.expandable).replace("\n", " "),
+                )
+            )
     return rows

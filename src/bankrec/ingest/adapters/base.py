@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, replace
 from datetime import datetime
+from decimal import Decimal
 from functools import lru_cache
 from pathlib import Path
 from typing import Any, ClassVar, Protocol
@@ -319,6 +320,16 @@ class DeclarativeAdapter:
         assert doc is not None
         name = c.name or ""
         c.fields.update(self.fees_and_rates(page, ctx))
+        ftf = c.fields.get("foreign_tx_fee_pct")
+        bare = (
+            ftf is not None
+            and ftf.present
+            and re.fullmatch(r"no foreign transaction fees?", ftf.span_text or "", re.I)
+        )
+        # Fee facts stated in an FAQ / accordion answer that names the card (spot-check round 2, E); preferred as
+        # evidence over a bare "No Foreign Transaction Fees" heading.
+        if (ftf is None or not ftf.present or bare) and (st := X.stated_no_ftf(page.text, name)) is not None:
+            c.fields["foreign_tx_fee_pct"] = ctx.field(Decimal("0"), st, method="free_text", name="ftf_faq")
         # The intro period keeps the unit the page states (spot-check round 1, finding 7): never shown as months
         # when the page says billing cycles. The count stays in intro_*_months; this field names its unit.
         intro = c.fields.get("intro_purchase_apr_months") or c.fields.get("intro_bt_apr_months")

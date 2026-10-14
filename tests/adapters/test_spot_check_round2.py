@@ -3,7 +3,10 @@ stored snapshots of 2026-10-14. Each test names its finding; values were read of
 
 from __future__ import annotations
 
+from decimal import Decimal
+
 from bankrec.ingest.common import extract as X
+from bankrec.ingest.common.html import parse_html
 from bankrec.model import NullReason
 from tests.adapters._helpers import run_official
 
@@ -69,3 +72,34 @@ def test_d_eligibility_rules_are_not_a_stated_absence() -> None:
         X.no_offer_statement("This card does not offer a welcome bonus.")
         == "This card does not offer a welcome bonus."
     )
+
+
+def test_e_surpass_no_ftf_from_faq_answer() -> None:
+    # The FAQ answer is a collapsed accordion panel (aria-hidden until opened): «The Hilton Honors American Express
+    # Surpass® Card does not have foreign transaction fees.» Stored before as "see issuer".
+    c = run_official("american_express", "hilton-honors-surpass", "hilton-surpass-2026-10-14.html")
+    f = c.fields["foreign_tx_fee_pct"]
+    assert f.value == Decimal("0")
+    assert (
+        f.span_text is not None and "Surpass® Card" in f.span_text and "foreign transactions" in f.span_text
+    )
+
+
+def test_e_no_ftf_sentence_must_name_the_card() -> None:
+    text = "Explore cards with no foreign transaction fees.\nThe Example Bank Voyager Card has no foreign transaction fees."
+    assert X.stated_no_ftf(text, "Example Bank Voyager® Card") == (
+        "The Example Bank Voyager Card has no foreign transaction fees."
+    )
+    assert X.stated_no_ftf(text, "Example Bank Cash Card") is None
+
+
+def test_e_accordion_panels_are_text_but_hidden_tabs_are_not() -> None:
+    html = (
+        "<main><button aria-controls='faq1' aria-expanded='false'>Does it have fees?</button>"
+        "<div id='faq1' aria-hidden='true' style='height:0px'>It has no annual fee.</div>"
+        "<button role='tab' aria-controls='tab2' aria-expanded='false'>Other card</button>"
+        "<div id='tab2' hidden>Other card: $95 annual fee.</div>"
+        "<div role='region' aria-labelledby='h3' aria-hidden='true'>Region answer.</div></main>"
+    )
+    t = parse_html(html).text
+    assert "It has no annual fee." in t and "Region answer." in t and "$95" not in t
