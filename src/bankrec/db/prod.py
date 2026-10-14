@@ -130,7 +130,10 @@ class CreditCardDetails(ProdBase):
     purchase_apr_max_pct: Mapped[Decimal | None] = mapped_column(Rate)
     purchase_apr_variable: Mapped[bool | None] = mapped_column(Boolean)
     intro_purchase_apr_pct: Mapped[Decimal | None] = mapped_column(Rate)
-    intro_purchase_apr_months: Mapped[int | None] = mapped_column(Integer)
+    intro_purchase_apr_months: Mapped[int | None] = mapped_column(Integer)  # a count; unit below
+    intro_apr_period_unit: Mapped[str | None] = mapped_column(
+        String(20)
+    )  # months | billing_cycles | statement_closings
     bt_apr_min_pct: Mapped[Decimal | None] = mapped_column(Rate)
     bt_apr_max_pct: Mapped[Decimal | None] = mapped_column(Rate)
     intro_bt_apr_pct: Mapped[Decimal | None] = mapped_column(Rate)

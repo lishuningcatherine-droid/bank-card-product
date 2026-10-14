@@ -635,6 +635,32 @@ def offer_signal(text: str) -> str | None:
     return None
 
 
+_END_LINE = re.compile(
+    r"\b(?:offer\s+(?:ends|expires|valid\s+through)|ends|expires|apply\s+by|available\s+through|through|until)\b[^.\n]{0,40}?"
+    r"(?:(?P<mon>january|february|march|april|may|june|july|august|september|october|november|december)\s+(?P<d>\d{1,2}),?\s+(?P<y>\d{4})"
+    r"|(?P<nm>\d{1,2})/(?P<nd>\d{1,2})/(?P<ny>\d{2}(?:\d{2})?))",
+    re.IGNORECASE,
+)
+
+
+def offer_end(text: str, block: str) -> tuple[date, str] | None:
+    """An end date stated for this offer: in the block, or on a line that repeats the offer's amount ("Earn 100,000
+    points ... Offer ends 7/29/26"). Returns (date, the line it came from)."""
+    m = _AMOUNT_TOKEN.search(block)
+    cands = [block] + ([ln for ln in text.split("\n") if m.group(0) in ln] if m else [])
+    for ln in cands:
+        e = _END_LINE.search(ln)
+        if not e:
+            continue
+        if e.group("mon"):
+            d = date(int(e.group("y")), _MONTHS[e.group("mon").lower()], int(e.group("d")))
+        else:
+            y = int(e.group("ny"))
+            d = date(y + 2000 if y < 100 else y, int(e.group("nm")), int(e.group("nd")))
+        return d, ln
+    return None
+
+
 def offer_context(text: str, block: str) -> str:
     """Lines elsewhere on the page that complete an offer headline lacking its requirement: the "Earn ... / Plus,
     earn ..." lines right after another occurrence of the headline amount (tiers), and footnotes that repeat the

@@ -16,16 +16,23 @@ export const metadata: Metadata = { title: "Compare", description: "Side-by-side
 const ROW_LABEL: Record<string, string> = {
   annual_fee_cents: "Annual fee", intro_annual_fee_cents: "First-year annual fee", reward_currency: "Reward type",
   base_rate: "Base rate", foreign_tx_fee_pct: "Foreign transaction fee", purchase_apr_min_pct: "Purchase APR (low)",
-  purchase_apr_max_pct: "Purchase APR (high)", intro_purchase_apr_months: "Intro purchase APR (months)",
-  intro_bt_apr_months: "Intro balance transfer APR (months)", bt_fee_pct: "Balance transfer fee", network: "Network",
+  purchase_apr_max_pct: "Purchase APR (high)", intro_purchase_apr_months: "Intro purchase APR period",
+  intro_bt_apr_months: "Intro balance transfer APR period", bt_fee_pct: "Balance transfer fee", network: "Network",
   segment: "Consumer / business", is_co_branded: "Co-branded", is_student: "Student", is_secured: "Secured",
   monthly_fee_cents: "Monthly fee", min_opening_deposit_cents: "Minimum opening deposit", fee_waivers: "Fee waivers",
   overdraft_summary: "Overdraft", eligible_states: "States", access_model: "Branch / online", apy_pct: "APY",
   apy_tiers: "APY tiers", min_balance_cents: "Minimum balance", withdrawal_restrictions: "Withdrawals",
 };
 
-function cell(key: string, v: unknown): React.ReactNode {
+const PERIOD_UNIT: Record<string, string> = { months: "months", billing_cycles: "billing cycles", statement_closings: "statement closings" };
+
+function cell(key: string, v: unknown, d?: Record<string, unknown>): React.ReactNode {
   if (v === null || v === undefined) return <span className="text-ink-500">Information missing</span>;
+  if (key === "intro_purchase_apr_months" || key === "intro_bt_apr_months") {
+    // the unit the page states (never converted to months)
+    const unit = PERIOD_UNIT[String(d?.intro_apr_period_unit ?? "")] ?? "periods";
+    return <span className="tabular">{`${String(v)} ${unit}`}</span>;
+  }
   if (key.endsWith("_cents")) return <span className="tabular">{usd(v as number)}</span>;
   if (key.endsWith("_pct") || key === "base_rate") return <span className="tabular">{pct(v as string)}</span>;
   if (typeof v === "boolean") return v ? "Yes" : "No";
@@ -76,7 +83,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
             {data.rows.map((r) => (
               <tr key={r}>
                 <th scope="row" className="sticky left-0 bg-surface p-3 text-left font-medium text-ink-900">{ROW_LABEL[r] ?? r}</th>
-                {items.map((p) => <td key={p.id} className="p-3">{cell(r, (p.details as Record<string, unknown>)[r])}</td>)}
+                {items.map((p) => <td key={p.id} className="p-3">{cell(r, (p.details as Record<string, unknown>)[r], p.details as Record<string, unknown>)}</td>)}
               </tr>
             ))}
             <tr>

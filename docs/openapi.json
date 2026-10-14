@@ -793,7 +793,8 @@
       "enum": [
        "exact",
        "up_to",
-       "starting_at"
+       "starting_at",
+       "tiered"
       ],
       "title": "Amount Qualifier",
       "type": "string"

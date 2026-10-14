@@ -21,6 +21,16 @@ export function isExpired(expiration: string | null | undefined, now: Date = new
   return expiration < todayET;
 }
 
+/** "creditcards.chase.com/rewards-credit-cards/sapphire/preferred" from the offer's official URL. */
+export function pageLabel(url: string): string {
+  try {
+    const u = new URL(url);
+    return (u.host + u.pathname).replace(/\/$/, "");
+  } catch {
+    return url;
+  }
+}
+
 const noop = () => () => {};
 
 /** Today's date in New York, read in the browser only (null during server rendering). */
@@ -59,10 +69,11 @@ export function OfferBlock({ offer, compact = false }: { offer: Offer; compact?:
           <blockquote className="border-l-2 border-border pl-3 text-ink-700">{offer.verbatim_text}</blockquote>
           {offer.note ? <p className="text-ink-500">{offer.note}</p> : null}
           {offer.eligibility_restrictions ? <p className="text-ink-500">{offer.eligibility_restrictions}</p> : null}
+          {/* Offers can differ by entry point: say which official page showed this one, and when. */}
           <p className="text-xs text-ink-500">
-            Verified {longDate(offer.last_confirmed_at)}
-            {offer.expiration_date ? ` · Expires ${longDate(offer.expiration_date)}` : ""} ·{" "}
-            <SourceLink href={offer.offer_url}>Offer source</SourceLink>
+            Offer shown on <SourceLink href={offer.offer_url}>{pageLabel(offer.offer_url)}</SourceLink> as of{" "}
+            {longDate(offer.last_confirmed_at)}
+            {offer.expiration_date ? ` · Expires ${longDate(offer.expiration_date)}` : ""}
           </p>
         </>
       ) : null}

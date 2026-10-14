@@ -296,6 +296,23 @@ class DeclarativeAdapter:
         assert doc is not None
         name = c.name or ""
         c.fields.update(self.fees_and_rates(page, ctx))
+        # The intro period keeps the unit the page states (spot-check round 1, finding 7): never shown as months
+        # when the page says billing cycles. The count stays in intro_*_months; this field names its unit.
+        intro = c.fields.get("intro_purchase_apr_months") or c.fields.get("intro_bt_apr_months")
+        if intro is not None and intro.present and intro.span_text:
+            sp = intro.span_text.lower()
+            unit = (
+                "billing_cycles"
+                if "billing cycle" in sp
+                else "statement_closings"
+                if "statement closing" in sp
+                else "months"
+                if "month" in sp
+                else None
+            )
+            c.fields["intro_apr_period_unit"] = (
+                ctx.field(unit, intro.span_text, method="label_regex") if unit else ctx.field(None, None)
+            )
         biz = re.search(r"\bbusiness\b", name, re.IGNORECASE)
         c.fields["segment"] = ctx.field("business" if biz else "consumer", name, method="label_regex")
         c.fields["is_student"] = ctx.field(bool(re.search(r"\bstudents?\b", name, re.I)), name)
@@ -521,6 +538,17 @@ class DeclarativeAdapter:
                         v2.requirement_type is not None or v2.amount_qualifier == "tiered"
                     ):
                         o = o2
+            if o is not None and o.value is not None and o.value.expiration_date is None:
+                end = X.offer_end(page.text, b)
+                if end is not None and ctx.locate(end[1]) is not None:
+                    # keep the dated line with the offer so the date is visible in its verbatim text
+                    v = o.value.model_copy(
+                        update={
+                            "expiration_date": end[0],
+                            "verbatim_text": f"{o.value.verbatim_text} {end[1]}".strip(),
+                        }
+                    )
+                    o = o.model_copy(update={"value": v})
             if o is not None:
                 c.offers.append(o)
         # Offer capture (spot-check round 1): a page that shows an offer block (amount + spend + window) but yields no

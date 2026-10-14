@@ -2,7 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { OfferAmount, UP_TO_TOOLTIP } from "@/components/OfferAmount";
-import { isExpired } from "@/components/OfferBlock";
+import { isExpired, pageLabel } from "@/components/OfferBlock";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { usd, pct, relativeHours } from "@/lib/format";
 import { decodeRequest, encodeRequest } from "@/lib/request-hash";
@@ -74,5 +74,17 @@ describe("request hash", () => {
     const r = { product_type: "savings", deposit_range: "5k_25k", holding_months: 12, liquidity_need: "medium", max_monthly_fee: 0, apy_vs_bonus: "balanced" } as const;
     expect(decodeRequest(`#${encodeRequest(r)}`)).toEqual(r);
     expect(decodeRequest("#not-base64!")).toBeNull();
+  });
+});
+
+describe("tiered offers and entry points (spot-check round 1)", () => {
+  it("shows a tiered maximum as 'Up to ... in tiers', never as a flat amount", () => {
+    render(<OfferAmount offer={{ amount_qualifier: "tiered", amount_min: 70000, amount_max: 80000, reward_unit: "miles" }} />);
+    expect(screen.getByText(/in tiers/)).toHaveTextContent("Up to 80,000 miles in tiers");
+  });
+  it("names the official page the offer came from", () => {
+    expect(pageLabel("https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred")).toBe(
+      "creditcards.chase.com/rewards-credit-cards/sapphire/preferred",
+    );
   });
 });

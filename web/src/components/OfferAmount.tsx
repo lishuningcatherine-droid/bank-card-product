@@ -19,6 +19,14 @@ export function OfferAmount({ offer }: { offer: Pick<Offer, "amount_qualifier" |
   if (offer.amount_qualifier === "exact" && offer.amount_max != null) {
     return <span className="tabular font-semibold">{amountText(offer.reward_unit, offer.amount_max)}</span>;
   }
+  if (offer.amount_qualifier === "tiered" && offer.amount_max != null) {
+    // Tiered offer: the maximum needs every tier; recommendations count only tiers your spending reaches.
+    return (
+      <span className="tabular font-semibold">
+        <strong>Up to</strong> {amountText(offer.reward_unit, offer.amount_max)} in tiers
+      </span>
+    );
+  }
   if (offer.amount_qualifier === "starting_at" && offer.amount_min != null) {
     return <span className="tabular font-semibold">At least {amountText(offer.reward_unit, offer.amount_min)}</span>;
   }

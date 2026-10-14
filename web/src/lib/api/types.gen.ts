@@ -565,7 +565,7 @@ export interface components {
              * Amount Qualifier
              * @enum {string}
              */
-            amount_qualifier: "exact" | "up_to" | "starting_at";
+            amount_qualifier: "exact" | "up_to" | "starting_at" | "tiered";
             /** Eligibility Restrictions */
             eligibility_restrictions?: string | null;
             /** Expiration Date */
