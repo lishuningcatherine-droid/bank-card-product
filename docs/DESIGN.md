@@ -1160,3 +1160,12 @@ admits the card only for low-interest, balance-transfer and credit-building goal
 - **End dates**: numeric dates ("7/29/26") and dated lines that repeat the offer amount set `expiration_date`; expired
   offers are never current (request-time state, browser re-check). 0 of 52 prod offers had a past end date (2026-10-14).
 - **Entry point**: each offer shows "Offer shown on <page> as of <date>" from its `offer_url`.
+- **Found re-running ingestion (step D), fixed and tested from the stored snapshots:** Chase's new page template
+  (offer in `data-slot="hero-offer"`, "In addition earn ..." rate lines); the completeness check missed "N Avios for
+  every $1" (case); adapter post-processing (partner rules, shared caps) dropped rates *after* the completeness check,
+  so a card could lose a rate and stay complete. Now any rate removed by post-processing whose category is no longer
+  represented and whose statement produced nothing else marks the card incomplete. Partner purchases listed beside
+  general categories ("dining, foreign transaction, Alaska Airlines ... purchases") keep the general categories and
+  add a `partner` rate; footnote digits glued to words ("cash back2on") no longer hide a rate; `foreign_purchases`
+  added. The change policy held every representation change as major (`recheck_pending`), so prod kept the previous
+  values until review; this is intended, and the held items are listed for the owner instead of auto-approved.
