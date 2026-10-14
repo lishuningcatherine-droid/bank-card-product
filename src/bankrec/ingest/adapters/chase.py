@@ -121,7 +121,7 @@ class Adapter(DeclarativeAdapter):
         for i, ln in enumerate(lines):
             nxt = lines[i + 1] if i + 1 < len(lines) else ""
             # the same blocks laid out as flex items: "ANNUAL FEE" / "$0†", "APR" / "18.49%–27.99% variable APR.†"
-            if "fee" not in out and ln.strip() == "ANNUAL FEE" and re.match(r"^\$\d", nxt):
+            if "fee" not in out and ln.strip().upper() == "ANNUAL FEE" and re.match(r"^\$\d", nxt):
                 out["fee"] = f"{ln}\n{nxt}"
             if (
                 "apr" not in out

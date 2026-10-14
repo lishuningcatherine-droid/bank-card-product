@@ -386,3 +386,7 @@ def test_flex_items_are_separate_lines() -> None:
         "<div class='flex flex-col'><span>NEW OFFER</span><span>Earn 5</span></div><p>a <span>b</span></p>"
     ).text
     assert t.split("\n") == ["NEW OFFER", "Earn 5", "a b"]
+    # «Annual Fee» / «$0†» in title case as separate flex items (Ink Business Unlimited, 20:26)
+    c = run_official("chase", "ink-business-unlimited", "ink-unlimited-flex-spans.rendered.html")
+    assert c.value("annual_fee_cents") == 0
+    assert (c.value("intro_purchase_apr_months"), c.value("intro_apr_period_unit")) == (12, "months")
