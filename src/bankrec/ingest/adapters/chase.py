@@ -59,7 +59,9 @@ _NOT_EARN = re.compile(
     r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|\bdiscount|\bpromo|inflight|on\s+board|\b\d+%\s+back\s+(?:on|as)\b|"
     r"statement\s+credit|purchases?\s+of\s+\$[\d,]+\s+or\s+more|large\s+purchases|"
     # "14X total points at Marriott hotels" stacks loyalty-program earn on top of the card's own rate.
-    r"\btotal\b",
+    r"\btotal\b|"
+    # APR statements and airline-program earn ("6x miles on the fare ... as a MileagePlus member") are not card earn
+    r"\bAPR\b|\bas an? [\w ]{0,40}member\b|\bon top of the\b",
     re.IGNORECASE,
 )
 # A spend limit we could not parse ("on $150K combined spend") makes the rate's cap unknown.
@@ -236,6 +238,8 @@ class Adapter(DeclarativeAdapter):
                     out.append(line)
             stmts: list[str] = []
             for line in out:
+                if re.search(r"\bAPR\b", line):
+                    continue  # APR statements are never earn statements (split pieces would lose the word "APR")
                 # one sentence, then one rate clause at a time ("Earn 3 Avios ... In addition earn 2 Avios ...")
                 sentences = re.split(r"(?<=[a-z*®])\.\s+(?=[A-Z])", line.strip())
                 parts = [

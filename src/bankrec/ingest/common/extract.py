@@ -292,12 +292,22 @@ _RATE_TOKEN = re.compile(
 )
 
 
+def norm_ws(s: str) -> str:
+    return re.sub(r"\s+", " ", s).strip()
+
+
+def has_rate_token(text: str) -> bool:
+    """True when the statement states an earn rate ("3%", "2X", "2 points per $1")."""
+    return _RATE_TOKEN.search(text) is not None
+
+
 def split_rate_clauses(text: str) -> list[str]:
     """Split "Earn 2 points ... on travel and dining and unlimited 1.5 points ... on all other purchases" into one
     clause per rate, so each rate keeps only its own categories. A rate introduced by "then" (a post-cap rate) stays
     with its clause."""
     starts = [m.start() for m in _RATE_TOKEN.finditer(text)]
-    cuts = [s for s in starts[1:] if not re.search(r"\bthen\s*$", text[:s], re.IGNORECASE)]
+    # never cut inside a range ("18.49%–27.99%", "3 to 5 points") or before a post-cap "then 1%"
+    cuts = [s for s in starts[1:] if not re.search(r"(?:\bthen|[–-]|\bto)\s*$", text[:s], re.IGNORECASE)]
     parts, prev = [], 0
     for c in cuts:
         parts.append(text[prev:c])

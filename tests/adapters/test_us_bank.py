@@ -60,7 +60,7 @@ def test_cash_plus_rendered_fills_placeholders_and_choice_categories_are_left_ou
     )
     r = rates(c)
     # 5% / 2% categories are chosen by the cardholder: not fixed categories. Prepaid travel is Travel Center only.
-    assert set(r) == {"other", "travel"} and r["other"] == ("1pct", None)
+    assert set(r) == {"other", "travel@portal"} and r["other"] == ("1pct", None)
     assert [x.value.portal_only for x in c.reward_rates if x.value and x.value.category == "travel"] == [True]
     assert (_offer(c).amount_max, _offer(c).requirement_min_cents) == (20000, 100000)
 

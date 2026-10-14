@@ -21,5 +21,22 @@ categories:
   drugstores: {label: Drugstores, synonyms: ["drugstores", "drugstore purchases", "pharmacies"]}
   wholesale_clubs: {label: Wholesale clubs, synonyms: ["wholesale clubs"]}
   home_improvement: {label: Home improvement, synonyms: ["home improvement stores", "home improvement"]}
+  # Business categories (spot-check round 1, findings 2 and 8). Not mapped to the consumer spend categories.
+  office_supply: {label: Office supply stores, synonyms: ["office supply stores", "office supply store purchases", "office supply"]}
+  telecom: {label: Internet, cable & phone, synonyms: ["internet, cable and phone services", "internet, cable, and phone services",
+                                                      "cell phone service providers", "cell phone services", "phone services",
+                                                      "internet, cable, and phone", "internet, cable and phone"]}
+  advertising: {label: Advertising, synonyms: ["advertising purchases made with social media sites and search engines",
+                                               "social media and search engine advertising", "select advertising", "advertising purchases"]}
+  shipping: {label: Shipping, synonyms: ["shipping purchases", "shipping"]}
+  # Cardholder-chosen category ("3% in the category of your choice", "5% on two categories you choose"): not a fixed
+  # category; never applied to user spend unless the user opts in (like rotating).
+  choice: {label: Category you choose, synonyms: ["category of your choice", "categories you choose", "category you choose",
+                                                   "choice category"]}
+  # Purchases with the co-brand partner itself ("4% on DoorDash orders", "3 points per dollar on Royal Caribbean").
+  partner: {label: Partner purchases, synonyms: ["partner purchases"]}
+  # A named merchant that is not the card's co-brand partner ("5x on Lyft rides", "5x on Peloton equipment").
+  merchant: {label: Specific merchant, synonyms: ["lyft rides", "lyft", "peloton equipment and accessory purchases",
+                                                  "peloton equipment", "peloton purchases", "peloton"]}
   rotating: {label: Rotating bonus categories, synonyms: ["bonus categories", "quarterly categories", "rotating categories"]}
   other: {label: Everything else, synonyms: ["all other purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase", "everyday purchases", "other eligible purchases"]}

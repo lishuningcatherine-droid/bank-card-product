@@ -33,7 +33,12 @@ def test_sapphire_preferred() -> None:
     assert c.value("segment") == "consumer" and c.value("is_co_branded") is False
     assert c.value("reward_currency") == "points" and c.value("base_rate") == Decimal("1")
     assert rates(c) == {
-        "travel": ("2x", None),  # "2x points on all other travel"; the 5x Chase Travel rate is portal-only
+        "travel": ("2x", None),  # "2x points on all other travel"
+        "travel@portal": ("5x", None),  # "5x points on Chase Travel" (kept next to 2x; spot-check finding 1)
+        "merchant": (
+            "5x",
+            None,
+        ),  # "5x on Peloton purchases" / "5x on Lyft rides" (named-merchant promotions)
         "dining": ("3x", None),
         "gas": ("3x", None),
         "ev_charging": ("3x", None),
@@ -41,9 +46,7 @@ def test_sapphire_preferred() -> None:
         "online_grocery": ("3x", None),  # "online grocery" is not groceries in general
         "other": ("1x", None),
     }
-    assert [r.value.portal_only for r in c.reward_rates if r.value and r.value.category == "travel"] == [
-        False
-    ]
+    assert c.value("earn_rates_complete") is True  # every earn statement on the page is represented
     [o] = [o.value for o in c.offers if o.value]
     assert (o.amount_qualifier, o.amount_max, o.reward_unit) == ("exact", 75000, "points")
     assert (o.requirement_type, o.requirement_min_cents, o.qualification_window_days) == ("spend", 500000, 90)
@@ -68,9 +71,10 @@ def test_freedom_unlimited_has_no_fee_claim_from_tag_cloud() -> None:
         "other": ("1.5pct", None),
         "dining": ("3pct", None),
         "drugstores": ("3pct", None),
-        "travel": ("5pct", None),
+        "travel@portal": ("5pct", None),
+        "merchant": ("2pct", None),  # "2% Cash Back Offer on Lyft Purchases" (named-merchant promotion)
     }
-    assert [r.value.portal_only for r in c.reward_rates if r.value and r.value.category == "travel"] == [True]
+    assert c.value("earn_rates_complete") is True
     [o] = [o.value for o in c.offers if o.value]
     assert (o.amount_qualifier, o.amount_max, o.reward_unit, o.requirement_min_cents) == (
         "exact",
@@ -170,8 +174,13 @@ def test_doordash_multi_rate_sentence_and_non_cash_offer() -> None:
     assert c.value("network") == "Mastercard"
     r = rates(c)
     # "4% on DoorDash and Caviar orders, 3% on dining ..., 2% on grocery stores ..., and 1% on all other": each
-    # category gets its own rate (merchant-only 4% has no category).
-    assert r == {"dining": ("3pct", None), "groceries": ("2pct", None), "other": ("1pct", None)}
+    # category gets its own rate; the 4% on DoorDash and Caviar orders is the co-brand partner's own purchases.
+    assert r == {
+        "dining": ("3pct", None),
+        "groceries": ("2pct", None),
+        "other": ("1pct", None),
+        "partner": ("4pct", None),
+    }
     # "a free year of DashPass that will auto-renew at $96/yr" is not a welcome bonus.
     assert not [o for o in c.offers if o.value]
 

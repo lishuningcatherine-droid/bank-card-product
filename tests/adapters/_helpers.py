@@ -53,10 +53,13 @@ def run_official(bank_id: str, slug: str, fixture: str) -> ProductCandidate:
 
 
 def rates(c: ProductCandidate) -> dict[str, tuple[str, int | None]]:
-    """{category: ("<rate><unit>", cap_cents)} for compact assertions."""
+    """{category (or "<category>@portal" for portal-only rates): ("<rate><unit>", cap_cents)}."""
     out = {}
     for r in c.reward_rates:
         v = r.value
         assert v is not None
-        out[v.category] = (f"{v.rate.normalize()}{v.rate_unit}", v.cap_cents)
+        out[v.category + ("@portal" if v.portal_only else "")] = (
+            f"{v.rate.normalize()}{v.rate_unit}",
+            v.cap_cents,
+        )
     return out

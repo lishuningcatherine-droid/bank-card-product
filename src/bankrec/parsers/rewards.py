@@ -101,6 +101,14 @@ class RewardRate:
     notes: list[str] = field(default_factory=list)
 
 
+def parse_rate_only(text: str) -> tuple[Decimal, str] | None:
+    """(rate, unit) of the first rate token, ignoring categories ("5% Cash Back on Business Essentials")."""
+    m = _RATE.search(text)
+    if not m:
+        return None
+    return Decimal(m.group("num")), ("pct" if m.group("pct") else "x")
+
+
 def parse_reward_statement(text: str) -> RewardRate | None:
     """Parse one earn-rate statement. Returns None when no rate is present or the text holds a placeholder."""
     if contains_placeholder(text):
@@ -112,10 +120,15 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     unit = "pct" if m.group("pct") else "x"
     rest = text[m.end() :]
     # "4% on X, 3% on dining, 2% on groceries": the categories of this rate end where the next rate begins.
+    full_rest = rest
     nxt = _RATE.search(rest)
     if nxt is not None:
         rest = rest[: nxt.start()]
     cats = categories_in(rest) or categories_in(text[: m.start()])
+    if not cats and re.search(r"\+\s*$", rest):
+        # "3% cash back + 3% first-year cash back bonus in the category of your choice": the category after the
+        # added (temporary) bonus also belongs to the ongoing rate; the added bonus itself is not counted.
+        cats = categories_in(full_rest)
     is_base = "other" in cats and len(cats) == 1
     cats = [c for c in cats if c != "other"] or (["other"] if is_base else [])
     rr = RewardRate(rate=rate, rate_unit=unit, categories=cats, is_base=is_base, text=text.strip())

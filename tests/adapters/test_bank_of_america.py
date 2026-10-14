@@ -72,8 +72,10 @@ def test_customized_cash_shared_quarterly_cap() -> None:
         if x.value and x.value.cap_cents
     )
     assert r["other"] == ("1pct", None)
-    # The 3% (6% first-year) choice category depends on the cardholder's choice: not a fixed category, left out.
-    assert set(r) == {"groceries", "wholesale_clubs", "other"}
+    # "3% cash back + 3% first-year cash back bonus in the category of your choice": represented as the "choice"
+    # category (ongoing 3%, shared quarterly cap), never applied to fixed spend categories (spot-check finding 5).
+    assert set(r) == {"groceries", "wholesale_clubs", "choice", "other"}
+    assert r["choice"] == ("3pct", 250000)
     assert _offer(c).amount_max == 20000
 
 

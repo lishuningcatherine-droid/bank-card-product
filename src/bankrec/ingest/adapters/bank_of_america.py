@@ -47,6 +47,10 @@ _EXTRA_EARN = re.compile(
     r"^(?:(?:automatic|unlimited)\s+\d|(?:plus,\s+)?earn\s+(?:unlimited\s+)?\d|\d{1,2}(?:\.\d+)?\s+(?:points?|miles?)\s+(?:per|for)\b)",
     re.IGNORECASE,
 )
+_PLUS_FIRST_YEAR = re.compile(
+    r"\d%[^%]{0,20}\+\s*\d+%\s+first-year[^.]*\bcategory of your choice", re.IGNORECASE
+)
+_RESPECTIVELY = re.compile(r"\d+(?:\.\d+)?%\s+and\s+\d+(?:\.\d+)?%")
 _SHARED_CAP = re.compile(r"on the first \$([\d,]+) in combined purchases each (quarter|year)", re.IGNORECASE)
 _OFFER_REQ = re.compile(r"\b(?:make|making|spend|spending)\s+(?:at\s+least\s+)?\$[\d,]+", re.IGNORECASE)
 _OFFER_AMT = re.compile(
@@ -251,11 +255,20 @@ class Adapter(DeclarativeAdapter):
             # stores and wholesale clubs", "Unlimited 1% cash back on all other purchases").
             lines = [b for _, b in feats] + [ln for ln in page.doc.text.split("\n") if _EXTRA_EARN.match(ln)]
             for body in lines:
+                if _RESPECTIVELY.search(body):
+                    continue  # "6% and 2% ... in the choice category, and at grocery stores": pairing is ambiguous
                 # one sentence at a time: "... on all other purchases. Plus, earn a 10% rewards bonus ..."
                 sentences = re.split(r"(?<=[a-z*®])\.\s+(?=[A-Z])", body)
-                for clause in (c for sent in sentences for c in X.split_rate_clauses(sent)):
+                for clause in (
+                    c
+                    for sent in sentences
+                    # "3% cash back + 3% first-year cash back bonus in the category of your choice" stays whole: the
+                    # parser counts the ongoing 3% for the category after the added first-year bonus.
+                    for c in ([sent] if _PLUS_FIRST_YEAR.search(sent) else X.split_rate_clauses(sent))
+                ):
                     clause = re.sub(r"^(?:and|plus)\s+(?:unlimited\s+)?", "", clause, flags=re.I)
-                    if _RATE_LEAD.search(clause) and not _NOT_EARN.search(clause) and clause not in out:
+                    excluded = _NOT_EARN.search(clause) and not _PLUS_FIRST_YEAR.search(clause)
+                    if _RATE_LEAD.search(clause) and not excluded and clause not in out:
                         out.append(clause)
             return out
         if key == "offer":
