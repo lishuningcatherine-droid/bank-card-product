@@ -301,3 +301,17 @@ def test_b_named_merchant_total_is_the_cards_rate_but_loyalty_totals_are_not() -
     )
     assert _NOT_EARN.search("9x total miles on eligible United flights*") is not None
     assert _NOT_EARN.search("14X total points at hotels participating in Marriott Bonvoy") is not None
+
+
+def test_chase_third_template_offer_and_fee() -> None:
+    # Chase moved Sapphire Reserve for Business to a third page template during the round-2 re-run (2026-10-14 19:50):
+    # «OUR BEST OFFER RETURNS» / «Earn 200,000 points» / «after you spend $30,000 on purchases in your first 6 months
+    # from account opening.*» and «$795 annual fee†; Employee Cards at no additional cost*».
+    c = run_official(
+        "chase", "sapphire-reserve-for-business", "sapphire-reserve-business-third-template.rendered.html"
+    )
+    [o] = offers(c)
+    assert (o.amount_max, o.reward_unit, o.requirement_min_cents) == (200000, "points", 3000000)
+    assert window(o) == (6, "months", None)
+    assert c.value("annual_fee_cents") == 79500
+    assert c.fields["earn_rates_complete"].value is True

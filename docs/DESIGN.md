@@ -1240,3 +1240,8 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   replaced the 5% Instacart rate with 1%; the terms paragraph is now read only clause by clause. "total" no longer
   excludes a named-merchant promotion ("5% total cash back on Lyft rides"); loyalty-program totals ("9x total miles
   on eligible United flights") stay excluded. Numeric end dates ("through 12/31/2027") set `ends_on`.
+  Chase moved Sapphire Reserve for Business to a third page template during the re-run (offer in
+  `section[data-slot="offer"]` after a flag line, fee as "$795 annual fee†; …"); both are read now. The new page no
+  longer states the foreign transaction fee (conditional field; prod keeps the reviewed value until the held change
+  is decided) and puts the 3x advertising cap on its own line ("On up to $1 million in spend each anniversary year,
+  starting 11/15/26"), which is not parsed yet.

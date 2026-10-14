@@ -63,7 +63,9 @@ _NOT_EARN = re.compile(
     # eligible Peloton equipment") is the card's own rate.
     r"\btotal\b(?!\s+(?:cash\s+back|points|miles)\s+on\s+(?:eligible\s+|qualifying\s+)?(?:lyft|peloton)\b)|"
     # APR statements and airline-program earn ("6x miles on the fare ... as a MileagePlus member") are not card earn
-    r"\bAPR\b|\bas an? [\w ]{0,40}member\b|\bon top of the\b",
+    r"\bAPR\b|\bas an? [\w ]{0,40}member\b|\bon top of the\b|"
+    # Points Boost: "up to 1.5x or 2x depending on your card and the offer" is a redemption value, not earn
+    r"\bdepending on your card\b",
     re.IGNORECASE,
 )
 # A spend limit we could not parse ("on $150K combined spend") makes the rate's cap unknown.
@@ -115,6 +117,9 @@ class Adapter(DeclarativeAdapter):
         # "ANNUAL FEE$0†" / "APR18.49%–27.99% variable APR.†".
         for ln in doc.text.split("\n"):
             if "fee" not in out and re.match(r"^ANNUAL FEE\s*\$\d", ln):
+                out["fee"] = ln
+            # third template (2026-10-14, Sapphire Reserve for Business): "$795 annual fee†; Employee Cards at no ..."
+            if "fee" not in out and re.match(r"^\$[\d,]+ annual fee\b", ln, re.IGNORECASE):
                 out["fee"] = ln
             # also "APRFlex for Business variable APR: 17.99%–28.74%.†" (2026-10-14)
             if "apr" not in out and re.match(r"^APR(?:\s*|[A-Z][^:\n]{0,40}APR:\s*)\d{1,2}(?:\.\d+)?%", ln):
@@ -201,6 +206,16 @@ class Adapter(DeclarativeAdapter):
         out: list[str] = []
         if key == "offer":
             for n in doc.select(self.rules["offer_selector"]):
+                if n.attributes.get("data-slot") == "offer":
+                    # third template: a flag ("OUR BEST OFFER RETURNS"), then "Earn 200,000 points" / "after you spend
+                    # $30,000 ... in your first 6 months ...", then value call-outs
+                    lines = [ln for ln in doc.node_text(n).split("\n") if ln.strip()]
+                    i = next((k for k, ln in enumerate(lines) if _OFFER_LEAD.search(ln)), None)
+                    if i is not None and i + 1 < len(lines) and re.match(r"^after\b", lines[i + 1], re.I):
+                        t = f"{lines[i]} {lines[i + 1]}"
+                        if t not in out:
+                            out.append(t)
+                    continue
                 t = re.sub(r"\s+", " ", doc.node_text(n)).strip()
                 if "newcardmemberoffer" in (n.attributes.get("class") or "") or t.upper().startswith(
                     "NEW CARDMEMBER OFFER"
