@@ -1,6 +1,6 @@
 # Held changes awaiting review
 
-Generated 2026-10-14 20:34 UTC from the open `major_change` review items (80 products: 64 LOW risk, 16 HIGH risk). Prod keeps the previous values for these cards (shown Partially verified) until the item is approved or rejected with `bankrec review approve|reject <id>`. A product's changes are decided together.
+Generated 2026-10-14 20:38 UTC from the open `major_change` review items (16 products: 0 LOW risk, 16 HIGH risk). Prod keeps the previous values for these cards (shown Partially verified) until the item is approved or rejected with `bankrec review approve|reject <id>`. A product's changes are decided together.
 
 **LOW risk**: every change only adds rates or qualifiers that the page states, drops 'travel' read from a
 portal's name, or fills a previously empty field; nothing is removed or re-valued. **HIGH risk**: a value is
@@ -56,67 +56,3 @@ removed or changed, or an offer appears / changes / disappears.
 
 | Review id | Bank | Card | Field | Change | Page |
 |---|---|---|---|---|---|
-| 318 | american_express | Marriott Bonvoy Bevy® American Express® Card | reward_rates | + 2x other<br>qualifier added: 4x groceries cap $15,000/annual [us_only]; 6x hotel [partner_only] | <https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-bevy/> |
-| 349 | american_express | Blue Cash Everyday® Card | reward_rates | + 1% other; 3% gas cap $6,000/annual; 3% groceries cap $6,000/annual; 3% online_shopping cap $6,000/annual [us_only] | <https://www.americanexpress.com/us/credit-cards/card/blue-cash-everyday/> |
-| 350 | american_express | Delta SkyMiles® Blue American Express Card | reward_rates | + 1x other; 2x dining; 2x partner | <https://www.americanexpress.com/us/credit-cards/card/delta-skymiles-blue-american-express-card/> |
-| 351 | american_express | Hilton Honors American Express Surpass® Card | reward_rates | qualifier added: 12x hotel [booked_direct, partner_only]; 4x online_shopping [us_only]; 6x dining [us_only]; 6x gas [us_only]; 6x groceries [us_only] | <https://www.americanexpress.com/us/credit-cards/card/hilton-honors-surpass/> |
-| 352 | american_express | Hilton Honors American Express Card | reward_rates | qualifier added: 5x dining [us_only]; 5x gas [us_only]; 5x groceries [us_only]; 7x hotel [booked_direct, partner_only] | <https://www.americanexpress.com/us/credit-cards/card/hilton-honors/> |
-| 353 | american_express | Marriott Bonvoy Brilliant® American Express® Card | reward_rates | qualifier added: 3x airline [booked_direct]; 6x hotel [partner_only] | <https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-brilliant/> |
-| 271 | bank_of_america | Air France KLM Visa Signature® Credit Card | reward_rates | + 1.5x other; 3x airline [partner_only]; 3x dining | <https://www.bankofamerica.com/credit-cards/products/air-france-credit-card/> |
-| 272 | bank_of_america | Atmos™ Rewards Ascent Visa Signature® | reward_rates | + 3x partner | <https://www.bankofamerica.com/credit-cards/products/alaska-airlines-credit-card/> |
-| 273 | bank_of_america | Bank of America® Customized Cash Rewards Credit Card | reward_rates | + 3% choice cap $2,500/quarterly | <https://www.bankofamerica.com/credit-cards/products/cash-back-credit-card/> |
-| 274 | bank_of_america | Bank of America® Customized Cash Rewards Secured Credit Card | reward_rates | + 3% choice cap $2,500/quarterly | <https://www.bankofamerica.com/credit-cards/products/cash-back-secured-credit-card/> |
-| 275 | bank_of_america | Norwegian Cruise Line® World Mastercard® | reward_rates | + 1x other; 2x hotel | <https://www.bankofamerica.com/credit-cards/products/norwegian-cruise-lines-credit-card/> |
-| 276 | bank_of_america | Royal ONE™ Visa Signature® Credit Card | reward_rates | + 1x other; 2x ev_charging; 2x gas; 2x groceries; 3x partner | <https://www.bankofamerica.com/credit-cards/products/royal-one-credit-card/> |
-| 277 | bank_of_america | Royal ONE Plus™ Visa Signature® Credit Card | reward_rates | + 1x other; 2x airline; 2x dining; 2x ev_charging; 2x gas; 2x groceries; 2x hotel; 4x partner | <https://www.bankofamerica.com/credit-cards/products/royal-one-plus-credit-card/> |
-| 278 | bank_of_america | Bank of America® Customized Cash Rewards Credit Card for Students | reward_rates | + 3% choice cap $2,500/quarterly | <https://www.bankofamerica.com/credit-cards/products/student-cash-back-credit-card/> |
-| 279 | bank_of_america | Susan G. Komen® Customized Cash Rewards Visa® credit card from Bank of America | reward_rates | + 3% choice cap $2,500/quarterly | <https://www.bankofamerica.com/credit-cards/products/susan-komen-credit-card/> |
-| 280 | bank_of_america | Bank of America® Premium Rewards® Elite Credit Card | reward_rates | (wording only) | <https://www.bankofamerica.com/credit-cards/products/premium-rewards-elite-credit-card/> |
-| 281 | bank_of_america | Atmos™ Rewards Summit Visa Infinite® Credit Card | reward_rates | + 1x other; 3x foreign_purchases; 3x partner | <https://www.bankofamerica.com/credit-cards/products/alaska-airlines-infinite-credit-card/> |
-| 315 | bank_of_america | Allways Rewards Visa® Credit Card | reward_rates | + 3x partner | <https://www.bankofamerica.com/credit-cards/products/allegiant-credit-card/> |
-| 314 | capital_one | Spark 1.5% Cash Select | reward_rates | + 5% car_rental (portal); 5% hotel (portal) | <https://www.capitalone.com/small-business/credit-cards/spark-cash-select/> |
-| 323 | capital_one | Venture X | reward_rates | + 10x car_rental (portal)<br>− 5x travel (portal) | <https://www.capitalone.com/credit-cards/venture-x/> |
-| 324 | capital_one | Venture Rewards from Capital One | reward_rates | + 5x car_rental (portal) | <https://www.capitalone.com/credit-cards/venture/> |
-| 325 | capital_one | VentureOne Rewards from Capital One | reward_rates | + 5x car_rental (portal)<br>− 5x travel (portal) | <https://www.capitalone.com/credit-cards/ventureone/> |
-| 326 | capital_one | Savor Rewards from Capital One | reward_rates | + 5% car_rental (portal)<br>qualifier added: 3% groceries [excludes_superstores]<br>− 5% travel (portal) | <https://www.capitalone.com/credit-cards/savor/> |
-| 327 | capital_one | VentureOne Rewards for Good Credit from Capital One | reward_rates | + 5x car_rental (portal)<br>− 5x travel (portal) | <https://www.capitalone.com/credit-cards/ventureone-good-credit/> |
-| 328 | capital_one | Spark Cash | reward_rates | + 5% car_rental (portal)<br>− 5% travel (portal) | <https://www.capitalone.com/small-business/credit-cards/spark-cash/> |
-| 329 | capital_one | Spark Cash Plus | reward_rates | + 5% car_rental (portal)<br>− 5% travel (portal) | <https://www.capitalone.com/small-business/credit-cards/spark-cash-plus/> |
-| 330 | capital_one | Venture Business | reward_rates | + 5x car_rental (portal)<br>− 5x travel (portal) | <https://www.capitalone.com/small-business/credit-cards/venture-business/> |
-| 334 | capital_one | Venture X Business | reward_rates | + 10x car_rental (portal); 10x hotel (portal); 5x airline (portal) | <https://www.capitalone.com/small-business/credit-cards/venture-x-business/> |
-| 335 | capital_one | VentureOne Business | reward_rates | − 5x travel (portal) | <https://www.capitalone.com/small-business/credit-cards/ventureone-business/> |
-| 345 | capital_one | SavorOne Rewards from Capital One | reward_rates | qualifier added: 3% groceries [excludes_superstores] | <https://www.capitalone.com/credit-cards/savorone/> |
-| 346 | capital_one | Savor Rewards for Students | reward_rates | qualifier added: 3% groceries [excludes_superstores] | <https://www.capitalone.com/credit-cards/savor-student/> |
-| 347 | capital_one | Savor Rewards for Good Credit from Capital One | reward_rates | qualifier added: 3% groceries [excludes_superstores] | <https://www.capitalone.com/credit-cards/savor-good-credit/> |
-| 206 | chase | Instacart Mastercard® | reward_rates | + 5% partner cap $6,000/annual | <https://creditcards.chase.com/cash-back-credit-cards/instacart> |
-| 207 | chase | British Airways Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline [partner_only] | <https://creditcards.chase.com/travel-credit-cards/avios/british-airways> |
-| 284 | chase | IHG One Rewards Business Credit Card | reward_rates | + 10x hotel [partner_only]; 5x advertising; 5x car_rental; 5x office_supply until 2026-12-31; 5x travel until 2026-12-31<br>qualifier added: 5x airline [booked_direct] | <https://creditcards.chase.com/business-credit-cards/IHG/business> |
-| 285 | chase | Ink Business Cash® Credit Card | reward_rates | + 5% merchant until 2027-09-30; 5% office_supply cap $25,000/annual; 5% telecom cap $25,000/annual | <https://creditcards.chase.com/business-credit-cards/ink/cash> |
-| 286 | chase | Sapphire Reserve for Business℠ Credit Card | reward_rates | + 3x advertising; 5x merchant until 2027-09-30<br>qualifier added: 4x airline [booked_direct]; 4x hotel [booked_direct] | <https://creditcards.chase.com/business-credit-cards/sapphire/reserve> |
-| 289 | chase | DoorDash Rewards Mastercard® | reward_rates | + 4% partner | <https://creditcards.chase.com/cash-back-credit-cards/doordash> |
-| 290 | chase | Chase Freedom Flex® Credit Card | reward_rates | + 2% merchant until 2027-09-30; 5% rotating cap $1,500/quarterly [enrollment_required] | <https://creditcards.chase.com/cash-back-credit-cards/freedom/flex> |
-| 291 | chase | Chase Freedom Rise® Credit Card | reward_rates | + 2% merchant | <https://creditcards.chase.com/cash-back-credit-cards/freedom/rise> |
-| 292 | chase | Chase Freedom Unlimited® Credit Card | reward_rates | + 2% merchant | <https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited> |
-| 295 | chase | Chase Sapphire Preferred® Credit Card | reward_rates | + 5x merchant until 2027-09-30; 5x merchant until 2027-12-31; 5x travel (portal) | <https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred> |
-| 297 | chase | Aer Lingus Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline [partner_only] | <https://creditcards.chase.com/travel-credit-cards/avios/aer-lingus> |
-| 298 | chase | Iberia Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline [partner_only] | <https://creditcards.chase.com/travel-credit-cards/avios/iberia> |
-| 299 | chase | Marriott Bonvoy Bold® Credit Card | reward_rates | + 1x other; 2x telecom<br>qualifier added: 3x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/bold> |
-| 300 | chase | Southwest Rapid Rewards® Plus Credit Card | reward_rates | + 2x partner cap $5,000/annual | <https://creditcards.chase.com/travel-credit-cards/southwest/plus> |
-| 301 | chase | Southwest Rapid Rewards® Premier Credit Card | reward_rates | + 3x partner | <https://creditcards.chase.com/travel-credit-cards/southwest/premier> |
-| 302 | chase | Southwest Rapid Rewards® Priority Credit Card | reward_rates | + 4x partner | <https://creditcards.chase.com/travel-credit-cards/southwest/priority> |
-| 321 | chase | Ink Business Premier® Credit Card | reward_rates | + 5% merchant | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
-| 322 | chase | Southwest Rapid Rewards® Premier Business Credit Card | reward_rates | + 3x partner | <https://creditcards.chase.com/business-credit-cards/southwest/premier-business> |
-| 333 | chase | IHG One Rewards Premier Credit Card | reward_rates | + 10x hotel [partner_only]; 5x car_rental; 5x travel until 2026-12-31<br>qualifier added: 5x airline [booked_direct] | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier> |
-| 337 | chase | Ink Business Preferred® Credit Card | reward_rates | + 3x advertising cap $150,000/annual; 3x shipping cap $150,000/annual; 3x telecom cap $150,000/annual; 3x travel cap $150,000/annual; 5x merchant until 2027-09-30 | <https://creditcards.chase.com/business-credit-cards/ink/business-preferred> |
-| 338 | chase | Chase Sapphire Reserve® Credit Card | reward_rates | + 10x merchant until 2027-12-31<br>qualifier added: 4x airline [booked_direct]; 4x hotel [booked_direct] | <https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve> |
-| 339 | chase | IHG One Rewards Credit Card | reward_rates | + 3x streaming until 2026-12-31; 3x telecom until 2026-12-31; 3x utilities until 2026-12-31; 5x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/one-rewards> |
-| 340 | chase | IHG One Rewards Premier Select Credit Card | reward_rates | + 12x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier-select> |
-| 341 | chase | Marriott Bonvoy Boundless® Credit Card | reward_rates | qualifier added: 6x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless> |
-| 342 | chase | Marriott Bonvoy Bountiful® Credit Card | reward_rates | qualifier added: 6x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/bountiful> |
-| 354 | chase | Ink Business Unlimited® Credit Card | reward_rates | + 5% merchant until 2027-09-30 | <https://creditcards.chase.com/business-credit-cards/ink/unlimited> |
-| 262 | us_bank | U.S. Bank Altitude® Connect Visa Signature® Card | reward_rates | + 5x travel (portal) | <https://www.usbank.com/credit-cards/altitude-connect-visa-signature-credit-card.html> |
-| 263 | us_bank | U.S. Bank Smartly™ Visa Signature® Card | reward_rates | + 2% other | <https://www.usbank.com/credit-cards/bank-smartly-visa-signature-credit-card.html> |
-| 264 | us_bank | U.S. Bank Cash+® Secured Visa® Card | reward_rates | + 2% choice_everyday; 5% choice cap $2,000/quarterly | <https://www.usbank.com/credit-cards/cash-plus-secured-visa-credit-card.html> |
-| 265 | us_bank | U.S. BANK CASH+® VISA SIGNATURE® CARD | reward_rates | + 2% choice_everyday; 5% choice cap $2,000/quarterly; 5% hotel (portal) | <https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html> |
-| 269 | us_bank | U.S. Bank Business Altitude® Connect Visa Signature® Card | reward_rates | + 2x telecom; 4x ev_charging; 5x car_rental; 5x travel (portal) | <https://www.usbank.com/business-banking/business-credit-cards/business-altitude-connect-credit-card.html> |
-| 270 | us_bank | U.S. BANK BUSINESS SHIELD™ VISA® CARD | reward_rates | + 5% car_rental (portal); 5% hotel (portal)<br>− 5% travel (portal) | <https://www.usbank.com/business-banking/business-credit-cards/business-shield-credit-card.html> |
