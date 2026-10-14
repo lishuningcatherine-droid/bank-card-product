@@ -157,9 +157,12 @@ def card_fees_and_rates(doc: PageDoc, ctx: ExtractionContext) -> dict[str, Sourc
             if sched.intro_cents is not None:
                 out["intro_annual_fee_cents"] = ctx.field(sched.intro_cents, af[1], method=af[2])
                 p = parse_period(sched.intro_text or "") if sched.intro_text else None
-                months = (p.months if p else None) or (
-                    12 if sched.intro_text and "first year" in sched.intro_text else None
-                )
+                # An annual fee is billed per year, so "first year" / "first 2 years" are exact month counts.
+                months = (
+                    (p.value if p.unit == "months" else p.value * 12 if p.unit == "years" else None)
+                    if p
+                    else None
+                ) or (12 if sched.intro_text and "first year" in sched.intro_text else None)
                 out["intro_annual_fee_months"] = ctx.field(months, af[1], method=af[2])
             else:
                 out["intro_annual_fee_cents"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
@@ -481,6 +484,9 @@ def offer(
                     requirement_min_cents=tp.requirement_min_cents,
                     requirement_max_cents=tp.requirement_max_cents,
                     text=t,
+                    window_days=tp.window.days if tp.window else None,
+                    window_count=tp.window.value if tp.window else None,
+                    window_unit=tp.window.unit if tp.window else None,
                 )
             )
             # A headline without its own requirement/window inherits them from the explicit tiers.
@@ -490,13 +496,6 @@ def offer(
                 po.window, po.window_text = tp.window, tp.window_text
             if po.required_dd_count is None:
                 po.required_dd_count = tp.required_dd_count
-    window_days = window_months = None
-    if po.window is not None:
-        if po.window.unit == "days":
-            window_days = po.window.value
-        else:
-            window_months = po.window.months
-            window_days = po.window.days
     exp = re.search(
         r"(?:expires?|ends?|offer (?:ends|expires))\s+(?:on\s+)?(january|february|march|april|may|june|"
         r"july|august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})",
@@ -545,10 +544,14 @@ def offer(
             requirement_min_cents=po.requirement_min_cents,
             requirement_max_cents=po.requirement_max_cents,
             required_dd_count=po.required_dd_count,
-            qualification_window_days=window_days,
-            qualification_window_months=window_months,
+            qualification_window_days=po.window.days if po.window else None,
+            qualification_window_months=po.window.months if po.window else None,
+            qualification_window_count=po.window.value if po.window else None,
+            qualification_window_unit=po.window.unit if po.window else None,
             qualification_window_text=po.window_text,
             holding_period_days=po.holding.days if po.holding else None,
+            holding_period_count=po.holding.value if po.holding else None,
+            holding_period_unit=po.holding.unit if po.holding else None,
             expiration_date=_d(exp) or _numeric_date(exp_numeric),
             open_by_date=_d(open_by),
             promo_code=promo.group(1) if promo else None,
@@ -590,22 +593,21 @@ def _spend_tiers(block: str) -> list[OfferTier]:
         if m.group("other"):
             out.append(OfferTier(amount=amt, requirement_min_cents=None, text=m.group(0).strip()))
             continue
-        days = None
         end = block.find(".", m.end())
         w = re.search(
-            r"(?:within|in)\s+(?:the\s+|your\s+)?(?:first\s+)?(\d+)\s*(days?|months?)",
+            r"(?:within|in)\s+(?:the\s+|your\s+)?(?:first\s+)?\d+\s*(?:days?|months?|billing\s+cycles?)",
             block[m.start() : end if end != -1 else len(block)],
             re.IGNORECASE,
         )
-        if w:
-            n = int(w.group(1))
-            days = n if w.group(2).lower().startswith("day") else n * 30
+        p = parse_period(w.group(0)) if w else None
         out.append(
             OfferTier(
                 amount=amt,
                 requirement_min_cents=int(m.group("req").replace(",", "")) * 100,
                 text=m.group(0).strip(),
-                window_days=days,
+                window_days=p.days if p else None,
+                window_count=p.value if p else None,
+                window_unit=p.unit if p else None,
                 incremental=bool(m.group("inc")),
             )
         )

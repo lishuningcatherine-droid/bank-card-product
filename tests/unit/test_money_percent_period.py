@@ -79,10 +79,10 @@ def test_percent_range_property(a: Decimal, b: Decimal) -> None:
 @pytest.mark.parametrize(
     ("text", "value", "unit", "days"),
     [
-        ("in the first 3 months", 3, "months", 90),
+        ("in the first 3 months", 3, "months", None),  # never converted to 90 days
         ("within 90 days", 90, "days", 90),
         ("15 billing cycles", 15, "billing_cycles", None),
-        ("first two years", 2, "years", 730),
+        ("first two years", 2, "years", None),
         ("ninety days", 90, "days", 90),
     ],
 )
@@ -102,3 +102,15 @@ def test_period_none() -> None:
 def test_period_property(n: int, unit: str) -> None:
     p = parse_period(f"for {n} {unit}")
     assert p is not None and p.value == n
+
+
+def test_period_units_are_never_converted() -> None:
+    # spot-check round 2 (C): "3 months" is not 90 days, "15 billing cycles" is not 15 months
+    m, d, c = (
+        parse_period("first 3 months"),
+        parse_period("within 90 days"),
+        parse_period("15 billing cycles"),
+    )
+    assert m is not None and (m.value, m.unit, m.days, m.months) == (3, "months", None, 3)
+    assert d is not None and (d.value, d.unit, d.days, d.months) == (90, "days", 90, None)
+    assert c is not None and (c.value, c.unit, c.days, c.months) == (15, "billing_cycles", None, None)

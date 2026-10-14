@@ -8,3 +8,4 @@ us-credit-cards-card-gold-card.rendered.html | https://www.americanexpress.com/u
 us-credit-cards-card-marriott-bonvoy-bevy.rendered.html | https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-bevy/ | playwright | 200 | 2026-10-13T20:10:41Z
 static-hilton-honors.html | https://www.americanexpress.com/us/credit-cards/card/hilton-honors/ | http | 200 | 2026-10-13T20:25:51Z
 static-marriott-bonvoy-brilliant.html | https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-brilliant/ | http | 200 | 2026-10-13T20:25:57Z
+hilton-surpass-2026-10-14.html | https://www.americanexpress.com/us/credit-cards/card/hilton-honors-surpass/ | https://www.americanexpress.com/us/credit-cards/card/hilton-honors-surpass/ | 200 | text/html; charset=utf-8 | 4020020 | 2026-10-14T16:49:59Z

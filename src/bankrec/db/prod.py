@@ -250,6 +250,16 @@ class Offer(ProdBase):
         CheckConstraint(
             "qualification_window_days IS NULL OR qualification_window_days > 0", name="window_pos"
         ),
+        CheckConstraint(
+            "qualification_window_unit IS NULL OR qualification_window_unit IN "
+            "('days', 'weeks', 'months', 'years', 'billing_cycles')",
+            name="qualification_window_unit",
+        ),
+        CheckConstraint(
+            "holding_period_unit IS NULL OR holding_period_unit IN "
+            "('days', 'weeks', 'months', 'years', 'billing_cycles')",
+            name="holding_period_unit",
+        ),
         UniqueConstraint("offer_key", name="offer_key"),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
@@ -269,8 +279,12 @@ class Offer(ProdBase):
     required_dd_count: Mapped[int | None] = mapped_column(Integer)
     qualification_window_days: Mapped[int | None] = mapped_column(Integer)
     qualification_window_months: Mapped[int | None] = mapped_column(Integer)
+    qualification_window_count: Mapped[int | None] = mapped_column(Integer)  # as stated; unit below
+    qualification_window_unit: Mapped[str | None] = mapped_column(String(16))
     qualification_window_text: Mapped[str | None] = mapped_column(Text)
     holding_period_days: Mapped[int | None] = mapped_column(Integer)
+    holding_period_count: Mapped[int | None] = mapped_column(Integer)
+    holding_period_unit: Mapped[str | None] = mapped_column(String(16))
     open_by_date: Mapped[date | None] = mapped_column(Date)
     promo_code: Mapped[str | None] = mapped_column(Text)
     start_date: Mapped[date | None] = mapped_column(Date)

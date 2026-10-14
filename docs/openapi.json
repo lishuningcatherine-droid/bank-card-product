@@ -822,6 +822,17 @@
       ],
       "title": "Expiration Date"
      },
+     "holding_period_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Holding Period Count"
+     },
      "holding_period_days": {
       "anyOf": [
        {
@@ -832,6 +843,17 @@
        }
       ],
       "title": "Holding Period Days"
+     },
+     "holding_period_unit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Holding Period Unit"
      },
      "id": {
       "title": "Id",
@@ -861,6 +883,17 @@
       "title": "Offer Url",
       "type": "string"
      },
+     "qualification_window_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Qualification Window Count"
+     },
      "qualification_window_days": {
       "anyOf": [
        {
@@ -882,6 +915,17 @@
        }
       ],
       "title": "Qualification Window Months"
+     },
+     "qualification_window_unit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Qualification Window Unit"
      },
      "required_dd_count": {
       "anyOf": [

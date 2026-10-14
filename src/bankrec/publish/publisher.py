@@ -349,6 +349,11 @@ def publish_offer(
         row.verified_at = row.last_confirmed_at = now
         row.status, row.recheck_reason = "current", None
         row.capture_conditions = o.meta.capture_conditions
+        # Same offer (same key): descriptive columns follow the current reading, so a representation fix (e.g. a
+        # window kept in its stated unit) reaches existing rows without a new offer version.
+        for k, v in offer_values(o).items():
+            setattr(row, k, v)
+        row.tiers = jsonable([t.model_dump() for t in o.rec.tiers])
     session.add(
         P.FieldProvenance(
             product_id=product.id,

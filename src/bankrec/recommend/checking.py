@@ -11,6 +11,7 @@ from bankrec.recommend.common import (
     completeness,
     components,
     eligible_offers,
+    holding_days,
     minmax,
     usd,
     window_months,
@@ -174,8 +175,8 @@ def recommend(
         raw = {
             "net_value": net_n[i],
             "achievability_margin": r["margin"],
-            "qualification_time": clip(1 - (o.qualification_window_days or 90) / 180) if r["bonus"] else 0.0,
-            "holding_requirement": clip(1 - (o.holding_period_days or 0) / 365) if o else 1.0,
+            "qualification_time": clip(1 - window_months(o) * 30 / 180) if r["bonus"] else 0.0,
+            "holding_requirement": clip(1 - holding_days(o) / 365) if o else 1.0,
             "balance_burden": 1.0
             if r["eff"] == 0 and (r["monthly"] == 0 or "balance" not in (r["waiver"] or ""))
             else 0.5,
@@ -186,8 +187,12 @@ def recommend(
         lim = []
         if not p.details.get("eligible_states"):
             lim.append("State availability is not stated on the source page; confirm with the bank.")
-        if o and o.holding_period_days:
-            lim.append(f"Bonus requires keeping the account open/funded for {o.holding_period_days} days.")
+        if o and (o.holding_period_count or o.holding_period_days):
+            n, unit = (
+                o.holding_period_count or o.holding_period_days,
+                (o.holding_period_unit or "days").replace("_", " "),
+            )
+            lim.append(f"Bonus requires keeping the account open/funded for {n} {unit}.")
         if r["unknown"] and r["eff"]:
             lim.append("You may qualify for a fee waiver we could not check: " + "; ".join(r["unknown"]))
         fee_text = (

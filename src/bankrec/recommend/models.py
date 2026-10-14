@@ -146,7 +146,11 @@ class OfferView(BaseModel):
     required_dd_count: int | None = None
     qualification_window_days: int | None = None
     qualification_window_months: int | None = None
+    qualification_window_count: int | None = None
+    qualification_window_unit: str | None = None
     holding_period_days: int | None = None
+    holding_period_count: int | None = None
+    holding_period_unit: str | None = None
     expiration_date: date | None = None
     tiers: list[dict[str, Any]] = Field(default_factory=list)
     offer_url: str

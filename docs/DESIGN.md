@@ -1169,3 +1169,16 @@ admits the card only for low-interest, balance-transfer and credit-building goal
   add a `partner` rate; footnote digits glued to words ("cash back2on") no longer hide a rate; `foreign_purchases`
   added. The change policy held every representation change as major (`recheck_pending`), so prod kept the previous
   values until review; this is intended, and the held items are listed for the owner instead of auto-approved.
+
+### 24.17 Spot-check round 2: qualifiers, completeness, units, stated absence (owner check 2026-10-14)
+
+Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, each tested from the stored snapshot
+(`tests/adapters/test_spot_check_round2.py`):
+
+- **C. Time units are never converted.** Offer windows, tier windows and holding periods are stored as stated
+  (`*_count` + `*_unit`: days | weeks | months | years | billing_cycles); `qualification_window_days` /
+  `_months` are set only when the page says days / months ("first 3 months" was stored as 90 days). Scoring converts
+  at request time only (30 days a month, one billing cycle ≈ one month). The offer identity key keeps its previous
+  value for the same offer, so the fix changes no offer keys; same-key offers refresh their descriptive columns on
+  publish, and migration 0005 rewrote existing rows. The intro annual fee keeps "first year" = 12 months (an annual
+  fee is billed per year).

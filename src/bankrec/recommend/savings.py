@@ -6,7 +6,16 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from typing import Any
 
-from bankrec.recommend.common import DISCLAIMER, clip, completeness, components, eligible_offers, minmax, usd
+from bankrec.recommend.common import (
+    DISCLAIMER,
+    clip,
+    completeness,
+    components,
+    eligible_offers,
+    holding_days,
+    minmax,
+    usd,
+)
 from bankrec.recommend.common import worst_case_requirement as wcr
 from bankrec.recommend.config import scoring
 from bankrec.recommend.models import (
@@ -89,7 +98,7 @@ def recommend(
         bonus, ach = 0, None
         if o is not None:
             need = wcr(o)
-            hold_days = o.holding_period_days or 0
+            hold_days = holding_days(o)
             reasons = []
             if o.requirement_type == "new_money_deposit" and need is not None and dep_c < need:
                 reasons.append(
@@ -121,7 +130,7 @@ def recommend(
         liq = 1.0
         if req.liquidity_need == "high":
             liq -= 0.4 if limit else 0.0
-            liq -= 0.4 if o and (o.holding_period_days or 0) > 90 else 0.0
+            liq -= 0.4 if o and holding_days(o) > 90 else 0.0
         elif req.liquidity_need == "medium":
             liq -= 0.2 if limit else 0.0
         rows.append(

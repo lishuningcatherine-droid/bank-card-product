@@ -40,19 +40,15 @@ class Period:
     start: int
     end: int
 
+    # Time units are never converted (spot-check round 2, finding C): "3 months" is not 90 days and "15 billing
+    # cycles" is not 15 months. ``days`` / ``months`` are set only when the page states that unit.
     @property
     def days(self) -> int | None:
-        """Day count where well defined. Months use 30 days (flagged by unit); billing cycles return None."""
-        return {
-            "days": self.value,
-            "weeks": self.value * 7,
-            "months": self.value * 30,
-            "years": self.value * 365,
-        }.get(self.unit)
+        return self.value if self.unit == "days" else None
 
     @property
     def months(self) -> int | None:
-        return {"months": self.value, "billing_cycles": self.value, "years": self.value * 12}.get(self.unit)
+        return self.value if self.unit == "months" else None
 
 
 def _num(token: str) -> int:

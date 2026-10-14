@@ -34,6 +34,18 @@ def canonical_key(
     return f"{bank_id}:{product_type}:{seg}:{norm_name(name, bank_display_name)}:{var}"
 
 
+def _window_identity(o: dict[str, Any]) -> int | None:
+    """The window's part of the offer identity. Kept equal to the identity used before windows kept their stated
+    unit (a "3 months" window was keyed as 90), so the same offer keeps its key; an identity hash only, never a
+    stored value."""
+    if o.get("qualification_window_days") is not None:
+        return int(o["qualification_window_days"])
+    n, unit = o.get("qualification_window_count"), o.get("qualification_window_unit")
+    if n is None:
+        return None
+    return {"months": n * 30, "weeks": n * 7, "years": n * 365}.get(str(unit))
+
+
 def offer_key(product_key: str, o: dict[str, Any]) -> str:
     parts = [
         product_key,
@@ -45,7 +57,7 @@ def offer_key(product_key: str, o: dict[str, Any]) -> str:
         o.get("requirement_type"),
         o.get("requirement_min_cents"),
         o.get("requirement_max_cents"),
-        o.get("qualification_window_days"),
+        _window_identity(o),
         o.get("audience"),
         tuple(t.get("amount") for t in o.get("tiers") or []),
     ]

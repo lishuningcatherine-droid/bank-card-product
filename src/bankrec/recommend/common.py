@@ -82,12 +82,33 @@ def eligible_offers(p: ProductView) -> list[OfferView]:
     return [o for o in p.offers if o.state == "current"]
 
 
+# Scoring-time approximations only (stored values keep the page's unit): a month is 30 days, a billing cycle or
+# statement closing about one month.
+_MONTHS_PER = {"days": 1 / 30, "weeks": 7 / 30, "months": 1.0, "years": 12.0, "billing_cycles": 1.0}
+
+
+def period_months(count: int | None, unit: str | None) -> float | None:
+    if not count or unit not in _MONTHS_PER:
+        return None
+    return count * _MONTHS_PER[unit]
+
+
 def window_months(o: OfferView, default: int = 3) -> float:
+    m = period_months(o.qualification_window_count, o.qualification_window_unit)
+    if m is not None:
+        return m
     if o.qualification_window_months:
         return float(o.qualification_window_months)
     if o.qualification_window_days:
         return o.qualification_window_days / 30.0
     return float(default)
+
+
+def holding_days(o: OfferView) -> int:
+    m = period_months(o.holding_period_count, o.holding_period_unit)
+    if m is not None:
+        return round(m * 30)
+    return o.holding_period_days or 0
 
 
 def worst_case_requirement(o: OfferView) -> int | None:

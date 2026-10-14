@@ -39,13 +39,13 @@ def test_blue_cash_preferred() -> None:
         o.amount_max,
         o.reward_unit,
         o.requirement_min_cents,
-        o.qualification_window_days,
+        (o.qualification_window_count, o.qualification_window_unit),
     ) == (
         "exact",
         25000,
         "cents",
         300000,
-        180,
+        (6, "months"),
     )
     assert o.note == OFFER_NOTE
 

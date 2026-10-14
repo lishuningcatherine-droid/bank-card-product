@@ -266,8 +266,11 @@ class OfferTier(BaseModel):
     # Tiered welcome offers (spot-check round 1, finding 10): each tier's own spend and window. ``incremental``: the
     # requirement is "another/additional $X" on top of the previous tiers' spend. requirement None = non-spend tier
     # (e.g. "add an authorized user"), never counted in value.
-    window_days: int | None = None
+    window_days: int | None = None  # set only when the page states days
     incremental: bool = False
+    # The tier's window as stated: count + unit (days | weeks | months | years | billing_cycles), never converted.
+    window_count: int | None = None
+    window_unit: str | None = None
 
 
 class OfferRec(BaseModel):
@@ -282,10 +285,16 @@ class OfferRec(BaseModel):
     requirement_min_cents: int | None = None
     requirement_max_cents: int | None = None
     required_dd_count: int | None = None
+    # Windows keep the unit the page states (spot-check round 2, finding C): count + unit, and the days / months
+    # columns only when the page says days / months. "3 months" is never stored as 90 days.
     qualification_window_days: int | None = None
     qualification_window_months: int | None = None
+    qualification_window_count: int | None = None
+    qualification_window_unit: str | None = None
     qualification_window_text: str | None = None
     holding_period_days: int | None = None
+    holding_period_count: int | None = None
+    holding_period_unit: str | None = None
     open_by_date: date | None = None
     promo_code: str | None = None
     start_date: date | None = None

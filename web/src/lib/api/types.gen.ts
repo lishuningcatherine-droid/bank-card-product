@@ -570,8 +570,12 @@ export interface components {
             eligibility_restrictions?: string | null;
             /** Expiration Date */
             expiration_date?: string | null;
+            /** Holding Period Count */
+            holding_period_count?: number | null;
             /** Holding Period Days */
             holding_period_days?: number | null;
+            /** Holding Period Unit */
+            holding_period_unit?: string | null;
             /** Id */
             id: string;
             /**
@@ -585,10 +589,14 @@ export interface components {
             offer_type: string;
             /** Offer Url */
             offer_url: string;
+            /** Qualification Window Count */
+            qualification_window_count?: number | null;
             /** Qualification Window Days */
             qualification_window_days?: number | null;
             /** Qualification Window Months */
             qualification_window_months?: number | null;
+            /** Qualification Window Unit */
+            qualification_window_unit?: string | null;
             /** Required Dd Count */
             required_dd_count?: number | null;
             /** Requirement Max Cents */

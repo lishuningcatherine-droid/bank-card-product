@@ -14,6 +14,7 @@ from bankrec.recommend.common import (
     components,
     eligible_offers,
     minmax,
+    period_months,
     usd,
     window_months,
     worst_case_requirement,
@@ -207,8 +208,15 @@ def _tiered_bonus(o: OfferView, req: CardRequest, cpp: Decimal) -> tuple[int, Ac
             parts.append(f"{t['amount']:,} not counted (no spending requirement to check)")
             continue
         cum = cum + need if t.get("incremental") else need
+        wm = period_months(t.get("window_count"), t.get("window_unit"))
         days = t.get("window_days")
-        months = Decimal(days) / Decimal(30) if days else Decimal(str(default_m))
+        months = (
+            Decimal(str(round(wm, 2)))
+            if wm is not None
+            else Decimal(days) / Decimal(30)
+            if days
+            else Decimal(str(default_m))
+        )
         if monthly * months >= cum:
             total += t["amount"]
             parts.append(f"{t['amount']:,} counted ({usd(cum)} within {months:g} months)")

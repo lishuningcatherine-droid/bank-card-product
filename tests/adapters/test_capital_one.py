@@ -42,7 +42,10 @@ def test_venture_name_from_eyebrow_and_static_offer() -> None:
     assert c.value("foreign_tx_fee_pct") == Decimal("0")
     [o] = [o.value for o in c.offers if o.value]
     assert (o.amount_qualifier, o.amount_max, o.reward_unit) == ("exact", 75000, "miles")
-    assert (o.requirement_min_cents, o.qualification_window_days) == (400000, 90)
+    assert (o.requirement_min_cents, (o.qualification_window_count, o.qualification_window_unit)) == (
+        400000,
+        (3, "months"),
+    )
 
 
 def test_venture_classifies_as_product_with_heading_selector() -> None:
@@ -94,11 +97,16 @@ def test_spark_cash_business_segment_and_intro_fee() -> None:
     assert c.value("purchase_apr_min_pct") == Decimal("24.74")
     assert c.value("base_rate") == Decimal("2") and c.value("reward_currency") == "cashback"
     [o] = [o.value for o in c.offers if o.value]
-    assert (o.amount_max, o.reward_unit, o.requirement_min_cents, o.qualification_window_days) == (
+    assert (
+        o.amount_max,
+        o.reward_unit,
+        o.requirement_min_cents,
+        (o.qualification_window_count, o.qualification_window_unit),
+    ) == (
         100000,
         "cents",
         1000000,
-        90,
+        (3, "months"),
     )
 
 

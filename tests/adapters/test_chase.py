@@ -49,7 +49,11 @@ def test_sapphire_preferred() -> None:
     assert c.value("earn_rates_complete") is True  # every earn statement on the page is represented
     [o] = [o.value for o in c.offers if o.value]
     assert (o.amount_qualifier, o.amount_max, o.reward_unit) == ("exact", 75000, "points")
-    assert (o.requirement_type, o.requirement_min_cents, o.qualification_window_days) == ("spend", 500000, 90)
+    assert (
+        o.requirement_type,
+        o.requirement_min_cents,
+        (o.qualification_window_count, o.qualification_window_unit),
+    ) == ("spend", 500000, (3, "months"))
 
 
 def test_freedom_unlimited_has_no_fee_claim_from_tag_cloud() -> None:
@@ -114,11 +118,16 @@ def test_ink_business_cash_caps() -> None:
     caps = [x.value for x in c.reward_rates if x.value and x.value.category == "gas"]
     assert caps[0].cap_period == "annual" and caps[0].cap_combined is True
     [o] = [o.value for o in c.offers if o.value]
-    assert (o.amount_max, o.reward_unit, o.requirement_min_cents, o.qualification_window_days) == (
+    assert (
+        o.amount_max,
+        o.reward_unit,
+        o.requirement_min_cents,
+        (o.qualification_window_count, o.qualification_window_unit),
+    ) == (
         75000,
         "cents",
         600000,
-        90,
+        (3, "months"),
     )
 
 
@@ -144,9 +153,9 @@ def test_united_explorer_co_brand_and_intro_fee() -> None:
         80000,
         "miles",
     )
-    assert [(t.amount, t.requirement_min_cents, t.window_days) for t in o.tiers] == [
-        (70000, 300000, 90),
-        (10000, None, None),
+    assert [(t.amount, t.requirement_min_cents, t.window_count, t.window_unit) for t in o.tiers] == [
+        (70000, 300000, 3, "months"),
+        (10000, None, None, None),
     ]
 
 

@@ -24,11 +24,16 @@ def test_f1_sapphire_preferred_bonus_is_75000_and_portal_5x_is_kept() -> None:
         "chase", "chase-sapphire-preferred", "creditcards-rewards-credit-cards-sapphire-preferred.html"
     )
     [o] = offers(c)
-    assert (o.amount_max, o.reward_unit, o.requirement_min_cents, o.qualification_window_days) == (
+    assert (
+        o.amount_max,
+        o.reward_unit,
+        o.requirement_min_cents,
+        (o.qualification_window_count, o.qualification_window_unit),
+    ) == (
         75000,
         "points",
         500000,
-        90,
+        (3, "months"),
     )
     assert "60,000" not in o.verbatim_text  # the page's only 60,000 is "$60,000" of auto rental coverage
     r = rates(c)
@@ -132,11 +137,16 @@ def test_f8_triple_cash_bonus_requirement_from_footnote_and_business_categories(
     )
     [o] = offers(c)
     # "Get rewarded with a $750 cash back bonus." + "... Net Purchases totaling $6,000 or more ... within 180 days"
-    assert (o.amount_qualifier, o.amount_max, o.requirement_min_cents, o.qualification_window_days) == (
+    assert (
+        o.amount_qualifier,
+        o.amount_max,
+        o.requirement_min_cents,
+        (o.qualification_window_count, o.qualification_window_unit),
+    ) == (
         "exact",
         75000,
         600000,
-        180,
+        (180, "days"),
     )
     r = rates(c)
     assert r["gas"] == r["dining"] == r["office_supply"] == r["telecom"] == ("3pct", None)
@@ -308,11 +318,16 @@ def test_d_chase_summary_block_template_offer_and_apr() -> None:
     # "APRFlex for Business variable APR: 17.99%–28.74%.†" (spans run together in the page text).
     c = run_official("chase", "ink-business-premier", "ink-premier-summary-block.rendered.html")
     [o] = offers(c)
-    assert (o.amount_max, o.reward_unit, o.requirement_min_cents, o.qualification_window_days) == (
+    assert (
+        o.amount_max,
+        o.reward_unit,
+        o.requirement_min_cents,
+        (o.qualification_window_count, o.qualification_window_unit),
+    ) == (
         100000,
         "cents",
         1000000,
-        90,
+        (3, "months"),
     )
     assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
         Decimal("17.99"),

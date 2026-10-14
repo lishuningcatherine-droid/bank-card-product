@@ -10,3 +10,5 @@ www-small-business-credit-cards-spark-cash.html | https://www.capitalone.com/sma
 venture-2026-10-14.html | https://www.capitalone.com/credit-cards/venture/ | https://www.capitalone.com/credit-cards/venture/ | 200 | text/html | 1004908 | 2026-10-14T10:53:59Z
 spark-cash-select-2026-10-14.html | https://www.capitalone.com/small-business/credit-cards/spark-cash-select/ | https://www.capitalone.com/small-business/credit-cards/spark-cash-select/ | 200 | text/html | 573170 | 2026-10-14T11:09:50Z
 venture-x-business-2026-10-14.html | https://www.capitalone.com/small-business/credit-cards/venture-x-business/ | https://www.capitalone.com/small-business/credit-cards/venture-x-business/ | 200 | text/html | 710400 | 2026-10-14T16:36:19Z
+quicksilver-student-2026-10-14.html | https://www.capitalone.com/credit-cards/quicksilver-student/ | https://www.capitalone.com/credit-cards/quicksilver-student/ | 200 | text/html | 954380 | 2026-10-14T16:48:51Z
+savor-good-credit-2026-10-14.html | https://www.capitalone.com/credit-cards/savor-good-credit/ | https://www.capitalone.com/credit-cards/savor-good-credit/ | 200 | text/html | 936754 | 2026-10-14T16:49:03Z
