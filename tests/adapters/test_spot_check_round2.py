@@ -463,3 +463,17 @@ def test_restricted_currency_counts_only_for_the_preferred_partner() -> None:
     on = cards.calc(p, req(monthly_spend=sp, preferred_partner="Disney"), NOW)
     assert off.rewards_cents == 0 and on.rewards_cents == 2400
     assert any("Disney Rewards Dollars" in n and "not counted" in n for n in off.limitations)
+
+
+def test_disney_visa_currency_name_is_not_a_partner_purchase() -> None:
+    # «Earn 1% in Disney Rewards Dollars on all card purchases»: the 1% is the base rate; "Disney" here names the
+    # currency, not a Disney purchase (it had been read as a 1% partner rate).
+    c = run_official("chase", "disney-visa", "disney-visa-2026-10-14.rendered.html")
+    assert [(r.value.category, r.value.rate) for r in c.reward_rates if r.value] == [("other", Decimal("1"))]
+    assert (
+        c.value("reward_currency") == "restricted" and c.value("redemption_value_cents") is None
+    )  # not stated
+    assert (
+        c.value("redemption_restriction")
+        == "Redeem toward most anything Disney at most Disney U.S. locations."
+    )

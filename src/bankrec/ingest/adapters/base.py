@@ -184,9 +184,9 @@ class DeclarativeAdapter:
         words = self._partner_words(partner[0])
         out: list[Sourced[RewardRateRec]] = []
         for st in lines:
-            if not any(re.search(rf"\b{re.escape(w)}\b", st, re.I) for w in words):
-                continue
-            probe = _partner_probe(st, words)
+            if not any(re.search(rf"\b{re.escape(w)}\b", self._mask_currency(st), re.I) for w in words):
+                continue  # "Earn 1% in Disney Rewards Dollars on all card purchases" names the currency, not Disney
+            probe = _partner_probe(self._mask_currency(st), words)
             rr = parse_reward_statement(probe) if probe != st else None
             # "3 points on eligible dining, foreign transaction, Alaska Airlines and Hawaiian Airlines purchases":
             # the partner part is a partner rate; dining stays a dining rate (from the ordinary parse).
@@ -312,6 +312,12 @@ class DeclarativeAdapter:
                     unrep.append(span)
         return added, unrep
 
+    def _mask_currency(self, text: str) -> str:
+        """``text`` without the names of restricted currencies ("Disney Rewards Dollars" is not a Disney purchase)."""
+        for spec in self.rules.get("restricted_currencies") or []:
+            text = re.sub(spec["detect"], "Rewards Dollars", text)
+        return text
+
     def _restricted_currency(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         na = NullReason.not_applicable
         for spec in self.rules.get("restricted_currencies") or []:
@@ -369,9 +375,8 @@ class DeclarativeAdapter:
             v = r.value
             if v is None:
                 continue
-            named = strip_exclusions(
-                v.text
-            )  # "travel (excluding ... hotels participating in IHG ...)" is not IHG's
+            # "travel (excluding ... hotels participating in IHG ...)" is not IHG's; "Disney Rewards Dollars" is not Disney
+            named = self._mask_currency(strip_exclusions(v.text))
             if v.category not in ("other", "partner") and any(
                 re.search(rf"\b{re.escape(w)}\b", named, re.I) for w in words
             ):

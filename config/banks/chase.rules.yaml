@@ -32,4 +32,4 @@ restricted_currencies:
   - name: Disney Rewards Dollars
     detect: "Disney Rewards Dollars"
     value: "Each Disney Rewards Dollar you redeem for a statement credit toward qualifying purchases with Pay Yourself Back is worth \\$(\\d+(?:\\.\\d{2})?)\\."
-    restriction: "(?:(?:You can use |Use )?Pay Yourself Back® to redeem Rewards Dollars|Cardmembers can also redeem Rewards Dollars) for a statement credit toward (?:[^.]|\\.(?=[A-Za-z]|\\s+[a-z]))+\\."
+    restriction: "(?:(?:(?:You can use |Use )?Pay Yourself Back® to redeem Rewards Dollars|Cardmembers can also redeem Rewards Dollars) for a statement credit toward|Redeem toward) (?:[^.]|\\.(?=[A-Za-z]|\\s+[a-z]))+\\."
