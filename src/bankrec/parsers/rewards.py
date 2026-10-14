@@ -130,7 +130,14 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     nxt = _RATE.search(rest)
     if nxt is not None:
         rest = rest[: nxt.start()]
-    cats = categories_in(rest) or categories_in(text[: m.start()])
+    # The portal's own name ("booked through Capital One Travel") is not the category "travel".
+    # When nothing else is named ("5x on Chase Travel"), the portal stands for travel booked through it.
+    cats = (
+        categories_in(_PORTAL.sub(" ", rest))
+        or categories_in(_PORTAL.sub(" ", text[: m.start()]))
+        or categories_in(rest)
+        or categories_in(text[: m.start()])
+    )
     if not cats and re.search(r"\+\s*$", rest):
         # "3% cash back + 3% first-year cash back bonus in the category of your choice": the category after the
         # added (temporary) bonus also belongs to the ongoing rate; the added bonus itself is not counted.
@@ -168,3 +175,10 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     if not rr.categories:
         return None
     return rr
+
+
+def portal_lead(text: str) -> bool:
+    """True when the issuer portal is named before the statement's first rate ("Book through Capital One Business
+    Travel to earn 10X miles on hotels ..., and 5X miles on flights ..."): it then covers every rate clause."""
+    m = _RATE.search(text)
+    return m is not None and _PORTAL.search(text[: m.start()]) is not None

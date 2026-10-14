@@ -26,7 +26,7 @@ from bankrec.parsers.offers import Qualifier, parse_offer_block
 from bankrec.parsers.percent import parse_percent, parse_percent_range
 from bankrec.parsers.period import parse_period
 from bankrec.parsers.placeholders import contains_placeholder, is_placeholder
-from bankrec.parsers.rewards import _MONTHS, parse_reward_statement
+from bankrec.parsers.rewards import _MONTHS, parse_reward_statement, portal_lead
 
 US_STATES = [
     "AL",
@@ -320,11 +320,12 @@ def split_rate_clauses(text: str) -> list[str]:
 def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[RewardRateRec]]:
     out: list[Sourced[RewardRateRec]] = []
     # One clause per rate: "1.5% on every purchase ... Plus, earn unlimited 5% on hotels ..." holds two rates.
-    pieces = [p.strip() for st in statements for p in split_rate_clauses(st)]
-    for st in pieces:
+    pieces = [(p.strip(), portal_lead(st)) for st in statements for p in split_rate_clauses(st)]
+    for st, lead in pieces:
         rr = parse_reward_statement(st)
         if rr is None:
             continue
+        rr.portal_only = rr.portal_only or lead
         for cat in rr.categories:
             rec = RewardRateRec(
                 category=cat,

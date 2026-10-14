@@ -289,3 +289,15 @@ def test_d_two_rates_in_one_sentence_and_portal_flag_per_clause() -> None:
     assert r["other"] == ("1.5pct", None)  # general, not portal-only
     assert r["hotel@portal"] == ("5pct", None)
     assert c.value("earn_rates_complete") is True
+
+
+def test_d_portal_named_before_the_rates_covers_every_clause() -> None:
+    # "Book through Capital One Business Travel to earn 10X miles on hotels and rental cars, and 5X miles on flights
+    # and vacation rentals." The portal's name is not the category "travel".
+    c = run_official("capital_one", "venture-x-business", "venture-x-business-2026-10-14.html")
+    r = rates(c)
+    assert r["hotel@portal"] == r["car_rental@portal"] == ("10x", None) and r["airline@portal"] == (
+        "5x",
+        None,
+    )
+    assert r["other"] == ("2x", None) and "travel@portal" not in r and "airline" not in r

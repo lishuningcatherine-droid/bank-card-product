@@ -35,7 +35,10 @@ _RATE_HEAD = re.compile(
     r"^(?:earn\s+|unlimited\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:x\b|%)", re.IGNORECASE
 )  # "10X", "Earn 5% cash back", "Unlimited 2X miles", "5% in card rewards"
 _EARN_LINE = re.compile(
-    r"^(?:earn|get)\s+(?:unlimited\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:%|x\b|\s+miles?\s+per)", re.IGNORECASE
+    r"^(?:earn|get)\s+(?:unlimited\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:%|x\b|\s+miles?\s+per)"
+    # "Book through Capital One Business Travel to earn 10X miles on hotels and rental cars, and 5X miles on ..."
+    r"|^book\s+through\s+[^.]{0,60}?\bto\s+earn\s+\d",
+    re.IGNORECASE,
 )
 _NOT_EARN = re.compile(
     r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|\bdiscount|\bcould earn|statement\s+credit|\bpromo", re.IGNORECASE
