@@ -27,7 +27,7 @@ def test_unlimited_cash_rewards() -> None:
         "unlimited-cash-back-credit-card",
         "credit-cards-products-unlimited-cash-back-credit-card.rendered.html",
     )
-    assert c.parser_version == "bank_of_america/1.1.0"
+    assert c.parser_version == "bank_of_america/1.1.1"
     assert c.name == "Bank of America® Unlimited Cash Rewards Credit Card"
     assert c.value("annual_fee_cents") == 0
     assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
@@ -163,6 +163,41 @@ def test_boilerplate_does_not_make_the_rendered_page_blocked() -> None:
         boilerplate=bank.boilerplate_phrases,
     )
     assert cl.page_type is PageType.official_product_detail
+
+
+def _terms(fixture: str, url: str, expected: str):  # type: ignore[no-untyped-def]
+    from datetime import UTC, datetime
+
+    from bankrec.ingest.adapters import get_adapter
+    from bankrec.ingest.adapters.base import ClassifiedPage
+    from bankrec.registry.schema import SourceEntry
+
+    reg = load_registry(require_sources=False)
+    bank = reg.bank("bank_of_america")
+    doc = parse_html((B / fixture).read_text())
+    src = SourceEntry(
+        bank_id="bank_of_america",
+        slug="t",
+        product_type="credit_card",
+        source_url=url,
+        source_kind="terms_page",
+        parser_name="bank_of_america",
+        expected_entity=expected,
+    )
+    cl = classify(url, doc, expected, source_kind="terms_page", boilerplate=bank.boilerplate_phrases)
+    return get_adapter("bank_of_america").extract(
+        ClassifiedPage(src, bank, url, cl.page_type, datetime.now(UTC), doc.text, doc)
+    )[0]
+
+
+def test_terms_fee_after_notice_paragraph() -> None:
+    # "Annual Fee" / "NOTICE: The annual fee is scheduled to be assessed ... $500 ..." / "$89"
+    c = _terms(
+        "terms-air-france.rendered.html",
+        "https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079102&productoffercode=8S&locale=en_US",
+        "Air France KLM Visa Signature® Credit Card",
+    )
+    assert c.name == "Air France KLM Visa Signature®" and c.value("annual_fee_cents") == 8900
 
 
 def test_terms_page_schumer_box() -> None:

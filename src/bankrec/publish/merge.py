@@ -80,6 +80,8 @@ def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> Mer
             cur = mp.fields.get(k)
             if cur is None or (not cur[0].present and s.present):
                 mp.fields[k] = (s, meta)
+            elif k == "official_name":
+                pass  # same canonical key by construction: a differently worded name is an alias (kept below)
             elif s.present and cur[0].present and jsonable(s.value) != jsonable(cur[0].value):
                 mp.conflicts.append(
                     {

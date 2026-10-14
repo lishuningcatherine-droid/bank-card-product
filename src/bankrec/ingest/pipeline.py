@@ -31,7 +31,7 @@ from bankrec.ingest.common.html import parse_html
 from bankrec.ingest.common.pdf import pdf_to_text
 from bankrec.ingest.fetch import FetchResult
 from bankrec.ingest.snapshot import store
-from bankrec.model import EXTRACTABLE_PAGE_TYPES
+from bankrec.model import EXTRACTABLE_PAGE_TYPES, NullReason
 from bankrec.publish.changes import diff_offers, diff_product, jsonable
 from bankrec.publish.merge import MergedOffer, Meta, merge, meta_priority
 from bankrec.publish.publisher import (
@@ -108,6 +108,9 @@ class RunResult:
     review_items: list[int] = field(default_factory=list)
     alerts: list[dict[str, Any]] = field(default_factory=list)
     registry_gaps: list[str] = field(default_factory=list)
+
+
+_SUPPLEMENTARY_OK = {"R-REQ", "R-CONFIDENCE"}
 
 
 def new_run_id(now: datetime) -> str:
@@ -767,11 +770,25 @@ class Pipeline:
                 so = c.offers[ov.index]
                 assert so.value is not None
                 mp.offers.append(MergedOffer(so.value, so, meta, ov.status))
-        status = (
-            "valid" if all(v.status == "valid" for v in verdicts) and not mp.conflicts else "needs_review"
+        # The merged record is judged by its primary (highest-priority) candidate. Supplementary sources (e.g. a
+        # terms page, which never reaches the confidence threshold on its own) may fill gaps; they block only
+        # through rules other than "required fields"/"confidence", e.g. a comparison page that needs confirming
+        # (DESIGN §24.13). Missing fields are those absent from the merged record, not the union over candidates.
+        prim = next(v for c, _, v, _ in items if c is mp.primary)
+        supplementary_ok = all(
+            r.rule_id in _SUPPLEMENTARY_OK for c, _, v, _ in items if c is not mp.primary for r in v.failed
         )
-        missing_key = sorted({f for v in verdicts for f in v.missing_key})
-        missing_all = sorted(set(items[0][0].missing_fields))
+        status = (
+            "valid" if prim.status == "valid" and supplementary_ok and not mp.conflicts else "needs_review"
+        )
+
+        def _present(f: str) -> bool:
+            got = mp.fields.get(f)
+            return got is not None and (got[0].present or got[0].null_reason is NullReason.not_applicable)
+
+        key_fields = policy()["key"][mp.product_type]
+        missing_key = sorted(f for f in key_fields if f != "apy" and not _present(f))
+        missing_all = sorted(f for f in set(mp.primary.missing_fields) if not _present(f))
         po = ProductOutcome(key, mp.bank_id, mp.product_type, mp.name, "", status, missing=missing_key)
         self.result.products.append(po)
         existing = self.s.scalar(select(P.Product).where(P.Product.canonical_key == key))

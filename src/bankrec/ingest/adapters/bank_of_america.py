@@ -67,7 +67,7 @@ def _after(lines: list[str], label: str, stop: tuple[str, ...]) -> list[str]:
 
 class Adapter(DeclarativeAdapter):
     bank_id = "bank_of_america"
-    parser_version = "bank_of_america/1.1.0"
+    parser_version = "bank_of_america/1.1.1"
 
     @staticmethod
     def _is_terms(page: ClassifiedPage) -> bool:
@@ -89,11 +89,15 @@ class Adapter(DeclarativeAdapter):
         out: dict[str, Sourced[Any]] = {}
         na = NullReason.not_applicable
         fee = _after(lines, "Annual Fee", ("Transaction Fees", "Penalty", "•"))
-        if fee:
-            v = fee[0]
+        # The value is the line that is only an amount or "None" (a "NOTICE: ..." paragraph may come first).
+        val = next(
+            (ln for ln in fee if re.fullmatch(r"(?:\$\d[\d,]*(?:\.\d{2})?|none)\.?", ln.strip(), re.I)), None
+        )
+        if val is not None:
+            v = val
             cents = 0 if re.fullmatch(r"none\.?", v.strip(), re.I) else parse_money(v)
             if cents is not None and not re.search(r"\bintro|first year\b", " ".join(fee), re.I):
-                out["annual_fee_cents"] = ctx.field(cents, f"Annual Fee\n{v}", method="table_cell")
+                out["annual_fee_cents"] = ctx.field(cents, v, method="table_cell")
                 out["intro_annual_fee_cents"] = ctx.field(None, None, null_reason=na)
                 out["intro_annual_fee_months"] = ctx.field(None, None, null_reason=na)
         pur = _after(lines, "Annual Percentage Rate (APR) for Purchases", ("APR for Balance Transfers",))

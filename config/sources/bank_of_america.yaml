@@ -2,6 +2,9 @@
 # (/credit-cards/products/...), retrieved 2026-10-13. The static HTML holds only the page shell; every source is
 # rendered in a fresh context and waits for the rates table (.rates-table-body). Fixtures: tests/fixtures/bank_of_america.
 # Not listed: the cash-back category-choices pages under /products/cash-back-credit-card/ (explanatory pages).
+# *-terms: the card's "View complete list of rates and fees" page (source_kind terms_page, DESIGN §24.12). The
+# campaignid/productoffercode/locale parameters come from the card page's own link; a rotated campaign makes the
+# page render empty → the run reports a timeout for that source (fix: copy the new link from the card page).
 bank_id: bank_of_america
 sources:
 - bank_id: bank_of_america
@@ -290,3 +293,289 @@ sources:
   has_offers: true
   render_ready_selector: .rates-table-body
   notes: 'rendered: the static HTML holds no product details'
+- bank_id: bank_of_america
+  slug: air-france-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079102&productoffercode=8S&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Air France KLM Visa Signature® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: alaska-airlines-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082302&productoffercode=YB&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Atmos™ Rewards Ascent Visa Signature®
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: alaska-airlines-infinite-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4080616&productoffercode=EK&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Atmos™ Rewards Summit Visa Infinite® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: allegiant-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079148&productoffercode=MP&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Allways Rewards Visa® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: bankamericard-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079406&productoffercode=5Y&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: BankAmericard® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: cash-back-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079537&productoffercode=8H&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Customized Cash Rewards Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: cash-back-secured-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079151&productoffercode=6S&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Customized Cash Rewards Secured Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: low-interest-student-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079408&productoffercode=42&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: BankAmericard® Credit Card for Students
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: norwegian-cruise-lines-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079074&productoffercode=9Y&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Norwegian Cruise Line® World Mastercard®
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: premium-rewards-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079485&productoffercode=UN&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Premium Rewards® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: premium-rewards-elite-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079322&productoffercode=R9&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Premium Rewards® Elite Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: royal-one-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4081180&productoffercode=E3&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Royal ONE™ Visa Signature® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: royal-one-plus-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4081136&productoffercode=7F&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Royal ONE Plus™ Visa Signature® Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: secured-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079410&productoffercode=SP&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: BankAmericard® Secured Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: student-cash-back-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079543&productoffercode=V7&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Customized Cash Rewards Credit Card for Students
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: student-rewards-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079335&productoffercode=A4&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Travel Rewards Credit Card for Students
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: susan-komen-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079144&productoffercode=WH&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Susan G. Komen® Customized Cash Rewards Visa® credit card from Bank of America
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: travel-rewards-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079333&productoffercode=75&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Travel Rewards Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: travel-rewards-secured-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079337&productoffercode=5S&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Travel Rewards Secured Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: unlimited-cash-back-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082058&productoffercode=6E&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Unlimited Cash Rewards Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: unlimited-cash-back-secured-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4081896&productoffercode=9J&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Unlimited Cash Rewards Secured Credit Card
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: unlimited-cash-back-student-credit-card-terms
+  product_type: credit_card
+  source_url: https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082120&productoffercode=WV&locale=en_US
+  source_kind: terms_page
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank of America® Unlimited Cash Rewards Credit Card for Students
+  refresh_tier: terms
+  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  notes: terms page linked from the card page, retrieved 2026-10-13

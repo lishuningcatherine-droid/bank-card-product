@@ -157,3 +157,42 @@ def test_product_label() -> None:
     assert product_label(**{**kw, "provider_only_fields": ["network"]})[0] == "partially_verified"
     assert product_label(**{**kw, "terms_confirmed_at": NOW - timedelta(days=61)})[0] == "partially_verified"
     assert product_label(**{**kw, "published": False})[0] == "under_review"
+
+
+def test_merge_treats_differently_worded_names_as_aliases() -> None:
+    """A terms page titled "X" and the product page "X Credit Card" share a canonical key: alias, not conflict."""
+    from datetime import UTC, datetime
+
+    from bankrec.candidate import ProductCandidate
+    from bankrec.model import PageType, ProductType, Sourced
+    from bankrec.publish.merge import Meta, merge
+
+    def cand(name: str, fee: int, pt: PageType) -> ProductCandidate:
+        c = ProductCandidate(
+            bank_id="example_bank",
+            product_type=ProductType.credit_card,
+            source_id=name,
+            url="https://www.examplebank.example/x",
+            page_type=pt,
+            parser_name="example_bank",
+            parser_version="t",
+            retrieved_at=datetime.now(UTC),
+        )
+        c.fields["official_name"] = Sourced(value=name, span_text=name)
+        c.fields["annual_fee_cents"] = Sourced(value=fee, span_text="x")
+        return c
+
+    now = datetime.now(UTC)
+    a = cand("Example Bank Card Credit Card", 0, PageType.official_product_detail)
+    b = cand("Example Bank Card", 0, PageType.terms_page)
+    mp = merge(
+        [(a, Meta("a", None, "u", "p", "v", now, 100)), (b, Meta("b", None, "u", "p", "v", now, 80))], "k"
+    )
+    assert mp.conflicts == [] and mp.aliases == {"Example Bank Card Credit Card", "Example Bank Card"}
+    c = cand("Example Bank Card", 9500, PageType.terms_page)
+    mp = merge(
+        [(a, Meta("a", None, "u", "p", "v", now, 100)), (c, Meta("c", None, "u", "p", "v", now, 80))], "k"
+    )
+    assert [x["field"] for x in mp.conflicts] == [
+        "annual_fee_cents"
+    ]  # a real difference still goes to review

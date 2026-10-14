@@ -12,3 +12,4 @@ credit-cards-products-air-france-credit-card.rendered.html | https://www.bankofa
 credit-cards-products-secured-credit-card.rendered.html | https://www.bankofamerica.com/credit-cards/products/secured-credit-card/ | playwright | 200 | 2026-10-13T09:36:39Z
 static-unlimited-cash-back-credit-card.html | https://www.bankofamerica.com/credit-cards/products/unlimited-cash-back-credit-card/ | http | 200 | 2026-10-13T09:34:47Z
 terms-unlimited-cash-back.rendered.html | https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082058&productoffercode=6E&locale=en_US | playwright | 200 | 2026-10-13T20:46:43Z
+terms-air-france.rendered.html | https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079102&productoffercode=8S&locale=en_US | playwright | 200 | 2026-10-14T06:49:37Z

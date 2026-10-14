@@ -1106,3 +1106,12 @@ change (no values change). Effect on 2026-10-13: Verified 38 → 68.
 link's `campaignid`, `productoffercode`, `locale` parameters (now `meaningful_query_params`); stripping them gave an
 empty page. The BoA adapter reads only fees, APRs and the foreign transaction fee from it; values merge into the
 product by canonical key, product-page values keep priority, disagreements become review items.
+
+### 24.13 Multi-source merge: judged by the primary candidate
+
+When several sources share a canonical key (e.g. a product page and its terms page), the merged record's status
+comes from the primary (highest-priority) candidate. Supplementary candidates fill missing fields and block
+publication only through rules other than `R-REQ` / `R-CONFIDENCE` (a terms page alone never reaches the
+confidence threshold, by design). Missing fields are computed on the merged record (previously the union over
+candidates, which charged a terms page's missing reward fields to the product). Differently worded names that share
+the canonical key are aliases, not `official_name` conflicts. Real value differences still go to review.
