@@ -50,6 +50,7 @@ _STRUCK_TAGS = {"s", "del", "strike"}
 _NON_VISUAL_CLASS = re.compile(
     r"(?:^|\s)(?:strike-?through|visually-hidden|sr-only|screen-reader-only)(?:\s|$)", re.IGNORECASE
 )
+_LAYOUT_CLASS = re.compile(r"(?:^|\s)(?:flex|inline-flex|grid|inline-grid)(?:\s|$)")
 _MARKS = {"SM": "\u2120", "TM": "\u2122"}  # <sup>SM</sup> → ℠, <sup>TM</sup> → ™
 
 
@@ -107,7 +108,7 @@ class PageDoc:
 def render_text(node: Node, expandable: frozenset[str] = frozenset()) -> str:
     parts: list[str] = []
 
-    def walk(n: Node) -> None:
+    def walk(n: Node, item: bool = False) -> None:
         if n.tag in {"script", "style", "noscript", "template", "svg", "iframe"} or _is_hidden(n, expandable):
             return
         if n.tag == "-text":
@@ -116,12 +117,15 @@ def render_text(node: Node, expandable: frozenset[str] = frozenset()) -> str:
         if n.tag == "sup" and (mark := _MARKS.get((n.text(deep=True) or "").strip())):
             parts.append(mark)
             return
-        block = n.tag in _BLOCK
+        block = n.tag in _BLOCK or item
         if block:
             parts.append("\n")
+        # Children of a flex / grid container are separate boxes (CSS blockifies them), even when they are spans:
+        # "NEW CARDMEMBER OFFER" / "Earn 100,000 bonus points" / "after you spend $8,000 ..." are three lines.
+        items = bool(_LAYOUT_CLASS.search(n.attributes.get("class") or "")) if n.tag != "-text" else False
         child = n.child
         while child is not None:
-            walk(child)
+            walk(child, items and child.tag not in {"-text", "sup", "sub", "a", "br"})
             child = child.next
         if n.tag in {"td", "th"}:
             parts.append(" \t ")

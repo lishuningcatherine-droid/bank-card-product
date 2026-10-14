@@ -117,7 +117,18 @@ class Adapter(DeclarativeAdapter):
                 out[key] = doc.node_text(h).strip() + "\n" + doc.node_text(sib).replace("\n", " ")
         # Newer card-marketplace template (seen 2026-10-13 on some cards): label and value on one line,
         # "ANNUAL FEE$0†" / "APR18.49%–27.99% variable APR.†".
-        for ln in doc.text.split("\n"):
+        lines = doc.text.split("\n")
+        for i, ln in enumerate(lines):
+            nxt = lines[i + 1] if i + 1 < len(lines) else ""
+            # the same blocks laid out as flex items: "ANNUAL FEE" / "$0†", "APR" / "18.49%–27.99% variable APR.†"
+            if "fee" not in out and ln.strip() == "ANNUAL FEE" and re.match(r"^\$\d", nxt):
+                out["fee"] = f"{ln}\n{nxt}"
+            if (
+                "apr" not in out
+                and ln.strip() == "APR"
+                and re.match(r"^(?:[A-Z][^:\n]{0,40}APR:\s*)?\d{1,2}(?:\.\d+)?%", nxt)
+            ):
+                out["apr"] = f"{ln}\n{nxt}"
             if "fee" not in out and re.match(r"^ANNUAL FEE\s*\$\d", ln):
                 out["fee"] = ln
             # third template (2026-10-14, Sapphire Reserve for Business): "$795 annual fee†; Employee Cards at no ..."

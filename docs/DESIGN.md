@@ -1259,3 +1259,6 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   undated heading that repeats a dated rate ("5x on Lyft rides") is dropped in favour of the dated one. Ink Business
   Premier's "Earn 5% cash back now through September 30, 2027 with your … card" does not name the merchant, so its
   Lyft rate stays undated.
+  Text extraction: children of a flex / grid container (Tailwind `flex`, `grid` classes) are separate lines, as CSS
+  lays them out as separate boxes; Chase's newest summary blocks are spans in a flex column and their words ran
+  together ("OFFEREarn 100,000 bonus pointsafter you spend"). No other extraction changed on the stored snapshots.

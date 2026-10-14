@@ -369,3 +369,20 @@ def test_merchant_promotions_keep_their_end_dates() -> None:
     )
     got = sorted(r.value.ends_on for r in c.reward_rates if r.value and r.value.category == "merchant")
     assert got == [date(2027, 9, 30), date(2027, 12, 31)]
+
+
+def test_flex_items_are_separate_lines() -> None:
+    # Chase's summary blocks as spans in a flex column (Ink Business Preferred, 2026-10-14 20:19): the text read
+    # «NEW CARDMEMBER OFFEREarn 100,000 bonus pointsafter you spend $8,000 ...» and the offer was not read.
+    c = run_official("chase", "ink-business-preferred", "ink-preferred-flex-spans.rendered.html")
+    [o] = offers(c)
+    assert (o.amount_max, o.requirement_min_cents) == (100000, 800000)
+    assert c.value("annual_fee_cents") == 9500
+    assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
+        Decimal("17.99"),
+        Decimal("26.99"),
+    )
+    t = parse_html(
+        "<div class='flex flex-col'><span>NEW OFFER</span><span>Earn 5</span></div><p>a <span>b</span></p>"
+    ).text
+    assert t.split("\n") == ["NEW OFFER", "Earn 5", "a b"]
