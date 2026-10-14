@@ -59,7 +59,7 @@ def rates(c: ProductCandidate) -> dict[str, tuple[str, int | None]]:
         v = r.value
         assert v is not None
         out[v.category + ("@portal" if v.portal_only else "")] = (
-            f"{v.rate.normalize()}{v.rate_unit}",
+            f"{format(v.rate.normalize(), 'f')}{v.rate_unit}",
             v.cap_cents,
         )
     return out

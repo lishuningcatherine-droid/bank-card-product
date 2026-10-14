@@ -6,3 +6,5 @@
 us-credit-cards-card-blue-cash-preferred.rendered.html | https://www.americanexpress.com/us/credit-cards/card/blue-cash-preferred/ | playwright | 200 | 2026-10-13T20:07:48Z
 us-credit-cards-card-gold-card.rendered.html | https://www.americanexpress.com/us/credit-cards/card/gold-card/ | playwright | 200 | 2026-10-13T20:09:32Z
 us-credit-cards-card-marriott-bonvoy-bevy.rendered.html | https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-bevy/ | playwright | 200 | 2026-10-13T20:10:41Z
+static-hilton-honors.html | https://www.americanexpress.com/us/credit-cards/card/hilton-honors/ | http | 200 | 2026-10-13T20:25:51Z
+static-marriott-bonvoy-brilliant.html | https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-brilliant/ | http | 200 | 2026-10-13T20:25:57Z
