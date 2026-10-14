@@ -35,6 +35,11 @@ from bankrec.recommend.models import (
 PROFILE_RANK = {"limited": 1, "fair": 2, "good": 3, "excellent": 4}
 PERIODS = {"monthly": 12, "quarterly": 4, "annual": 1}
 TRAVEL_BENEFITS = {"travel", "airline", "hotel"}
+NO_REWARDS_GOALS = {
+    "low_interest",
+    "balance_transfer",
+    "build_credit",
+}  # rewards_program == "none" (DESIGN §24.15)
 PERIOD_NOUN = {"monthly": "month", "quarterly": "quarter", "annual": "year"}
 
 
@@ -296,6 +301,10 @@ def _filters(p: ProductView, req: CardRequest) -> str | None:
         and d.get("intro_purchase_apr_months") is None
     ):
         return "no verified APR (needed for a low-interest goal)"
+    if d.get("rewards_program") == "none" and req.goal not in NO_REWARDS_GOALS:
+        return (
+            "no rewards program (eligible only for low-interest, balance-transfer and credit-building goals)"
+        )
     if req.avoid_foreign_fee and d.get("foreign_tx_fee_pct") is None:
         return "no verified foreign transaction fee (you asked to avoid foreign transaction fees)"
     if req.goal == "balance_transfer" and d.get("intro_bt_apr_months") is None:

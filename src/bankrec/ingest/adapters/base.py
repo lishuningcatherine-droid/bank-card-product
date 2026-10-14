@@ -24,6 +24,7 @@ from bankrec.model import (
     RewardRateRec,
     Sourced,
 )
+from bankrec.registry.no_rewards import confirmed as no_rewards_confirmed
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.settings import CONFIG_DIR
 
@@ -147,6 +148,22 @@ class DeclarativeAdapter:
                 r = r.model_copy(update={"value": v.model_copy(update={"category": kind})})
             rates.append(r)
         c.reward_rates = rates
+
+    def _no_rewards(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
+        """Owner-confirmed, evidence-backed "no rewards program" (config/no_rewards.yaml, DESIGN §24.15)."""
+        if (page.bank.bank_id, page.source.slug) not in no_rewards_confirmed():
+            return
+        if c.reward_rates or page.page_type is not PageType.official_product_detail:
+            if c.reward_rates:
+                c.notes.append("no-rewards entry ignored: the product page states earn rates")
+            return
+        na = NullReason.not_applicable
+        c.fields["rewards_program"] = ctx.field(
+            "none", c.name, method="manual_review", name="rewards_program"
+        )
+        if c.fields["rewards_program"].present:
+            c.fields["base_rate"] = ctx.field(None, None, null_reason=na)
+            c.fields["reward_currency"] = ctx.field(None, None, null_reason=na)
 
     def fees_and_rates(self, page: ClassifiedPage, ctx: ExtractionContext) -> dict[str, Sourced[Any]]:
         """Card fees and APRs. The default reads pricing tables and "Label: value" lines."""
@@ -294,6 +311,7 @@ class DeclarativeAdapter:
         )
         self._offers(page, ctx, c, "card_welcome")
         self.card_extras(page, ctx, c)
+        self._no_rewards(page, ctx, c)
 
     def _checking(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         doc = page.doc

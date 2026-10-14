@@ -1,0 +1,25 @@
+# Verbatim official pages used as evidence for rewards_program = "none" (config/no_rewards.yaml).
+# http: raw response bytes (plain GET, no cookies, robots.txt checked, >= 3 s per host).
+# playwright: DOM after rendering in a fresh context (no cookies/login, en-US, America/New_York, project UA,
+#   robots-disallowed requests aborted). Not modified.
+# columns: file | url | method | retrieved_at_utc
+boa-low-interest.html | https://www.bankofamerica.com/credit-cards/low-interest-credit-cards/ | playwright | 2026-10-14T07:46:00Z
+boa-build-credit.html | https://www.bankofamerica.com/credit-cards/credit-cards-to-build-credit/ | playwright | 2026-10-14T07:46:05Z
+boa-cash-back.html | https://www.bankofamerica.com/credit-cards/cash-back-credit-cards/ | playwright | 2026-10-14T07:46:09Z
+boa-travel.html | https://www.bankofamerica.com/credit-cards/travel-credit-cards/ | playwright | 2026-10-14T07:46:13Z
+boa-points.html | https://www.bankofamerica.com/credit-cards/point-rewards-credit-cards/ | playwright | 2026-10-14T07:46:17Z
+boa-terms-bankamericard.html | https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079406&productoffercode=5Y&locale=en_US | playwright | 2026-10-14T07:47:03Z
+boa-terms-bankamericard-students.html | https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079408&productoffercode=42&locale=en_US | playwright | 2026-10-14T07:47:24Z
+boa-terms-bankamericard-secured.html | https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079410&productoffercode=SP&locale=en_US | playwright | 2026-10-14T07:47:28Z
+chase-balance-transfer.html | https://creditcards.chase.com/balance-transfer-credit-cards | http | 2026-10-14T07:44:18Z
+chase-credit-building.html | https://creditcards.chase.com/credit-building-credit-cards | http | 2026-10-14T07:44:21Z
+chase-cash-back.html | https://creditcards.chase.com/cash-back-credit-cards | http | 2026-10-14T07:44:27Z
+chase-rewards.html | https://creditcards.chase.com/rewards-credit-cards | http | 2026-10-14T07:44:31Z
+chase-travel.html | https://creditcards.chase.com/travel-credit-cards | http | 2026-10-14T07:44:34Z
+capital-one-fair-and-building.html | https://www.capitalone.com/credit-cards/fair-and-building/ | http | 2026-10-14T07:44:37Z
+capital-one-cash-back.html | https://www.capitalone.com/credit-cards/cash-back/ | http | 2026-10-14T07:44:47Z
+capital-one-travel-and-miles.html | https://www.capitalone.com/credit-cards/travel-and-miles/ | http | 2026-10-14T07:44:53Z
+us-bank-credit-building.html | https://www.usbank.com/credit-cards/credit-building-credit-cards.html | http | 2026-10-14T07:45:00Z
+us-bank-cash-back.html | https://www.usbank.com/credit-cards/cash-back-credit-cards.html | http | 2026-10-14T07:45:03Z
+us-bank-rewards.html | https://www.usbank.com/credit-cards/rewards-credit-cards.html | http | 2026-10-14T07:45:06Z
+us-bank-travel.html | https://www.usbank.com/credit-cards/travel-rewards-credit-cards.html | http | 2026-10-14T07:45:09Z

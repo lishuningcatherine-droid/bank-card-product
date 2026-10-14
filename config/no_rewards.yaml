@@ -1,0 +1,107 @@
+# Cards with no rewards program, by positive evidence only (owner rule 2026-10-14; DESIGN §24.15).
+# Never inferred from silence. Each entry needs:
+#   listed_on     (a) a quote, found verbatim in the fixture, placing the card on the issuer's low-interest /
+#                     balance-transfer / credit-building category page;
+#   absent_from   (b) issuer rewards / cash-back / travel / points category pages where the card's name pattern does
+#                     NOT occur, each with `lists` = another card's name that does occur (the page really lists cards);
+#   terms         (c) optional: the card's terms page, which must contain no rewards-program wording.
+# Fixture files live in tests/fixtures/evidence/ (RETRIEVED.txt). The loader verifies every quote and absence.
+# An entry takes effect only with confirmed: true + confirmed_by + confirmed_on (owner decision in chat).
+# Effect: rewards_program = "none"; base_rate and reward_currency become not_applicable; the card is eligible only
+# for low-interest, balance-transfer and credit-building goals. If the product page states any earn rate, the
+# entry is ignored and the run notes the contradiction.
+cards:
+  - bank_id: bank_of_america
+    slug: bankamericard-credit-card
+    name_pattern: "BankAmericard® credit card"
+    listed_on:
+      - {file: boa-low-interest.html, quote: "BankAmericard® credit cardNo annual fee"}
+    absent_from:
+      - {file: boa-cash-back.html, lists: "Unlimited Cash Rewards"}
+      - {file: boa-travel.html, lists: "Travel Rewards"}
+      - {file: boa-points.html, lists: "Premium Rewards"}
+    terms: {file: boa-terms-bankamericard.html, quote: "Terms and Conditions for BankAmericard®"}
+    confirmed: false
+  - bank_id: bank_of_america
+    slug: low-interest-student-credit-card
+    name_pattern: "BankAmericard® Credit Card for Students"
+    listed_on:
+      - {file: boa-low-interest.html, quote: "BankAmericard® Credit Card for StudentsNo annual fee"}
+    absent_from:
+      - {file: boa-cash-back.html, lists: "Unlimited Cash Rewards"}
+      - {file: boa-travel.html, lists: "Travel Rewards"}
+      - {file: boa-points.html, lists: "Premium Rewards"}
+    terms: {file: boa-terms-bankamericard-students.html, quote: "Terms and Conditions for BankAmericard® for Students"}
+    confirmed: false
+  - bank_id: bank_of_america
+    slug: secured-credit-card
+    name_pattern: "BankAmericard® secured credit card"
+    listed_on:
+      - {file: boa-build-credit.html, quote: "BankAmericard® secured credit cardNo annual fee"}
+    absent_from:
+      - {file: boa-cash-back.html, lists: "Unlimited Cash Rewards"}
+      - {file: boa-travel.html, lists: "Travel Rewards"}
+      - {file: boa-points.html, lists: "Premium Rewards"}
+    terms: {file: boa-terms-bankamericard-secured.html, quote: "Terms and Conditions for BankAmericard® Secured"}
+    confirmed: false
+  - bank_id: chase
+    slug: slate
+    name_pattern: "Slate®(?! Edge)"
+    listed_on:
+      - {file: chase-balance-transfer.html, quote: "Slate® Credit Card"}
+    absent_from:
+      - {file: chase-cash-back.html, lists: "Freedom Unlimited"}
+      - {file: chase-rewards.html, lists: "Sapphire Preferred"}
+      - {file: chase-travel.html, lists: "United"}
+    terms: null   # sites.chase.com Pricing & Terms is robots-disallowed
+    notes: >-
+      The Slate page also says "Eligible Chase credit card customers are targeted with cash back offers in the Chase
+      Mobile app" (Chase Offers merchant deals, not an earn program). Owner to decide whether that counts as rewards.
+    confirmed: false
+  - bank_id: chase
+    slug: slate-edge
+    name_pattern: "Slate Edge"
+    listed_on:
+      - {file: chase-credit-building.html, quote: "Explore Chase Slate Edge® credit card"}
+    absent_from:
+      - {file: chase-cash-back.html, lists: "Freedom Unlimited"}
+      - {file: chase-rewards.html, lists: "Sapphire Preferred"}
+      - {file: chase-travel.html, lists: "United"}
+    terms: null   # robots-disallowed
+    notes: Same Chase Offers wording as Slate.
+    confirmed: false
+  - bank_id: capital_one
+    slug: platinum
+    name_pattern: "\\bPlatinum\\b(?! Secured)"
+    listed_on:
+      - {file: capital-one-fair-and-building.html, quote: "Platinum"}
+    absent_from:
+      - {file: capital-one-cash-back.html, lists: "Quicksilver"}
+      - {file: capital-one-travel-and-miles.html, lists: "Venture"}
+    terms: null   # rates and disclosures are reached only through the application flow (/apply/...)
+    notes: >-
+      The fair-and-building page also lists rewards cards (Quicksilver, Savor): placement there is weaker evidence
+      than a low-interest-only page. The Capital One rewards page lists no cards in its static HTML (not usable).
+    confirmed: false
+  - bank_id: capital_one
+    slug: platinum-secured
+    name_pattern: "Platinum Secured"
+    listed_on:
+      - {file: capital-one-fair-and-building.html, quote: "Platinum Secured"}
+    absent_from:
+      - {file: capital-one-cash-back.html, lists: "Quicksilver"}
+      - {file: capital-one-travel-and-miles.html, lists: "Venture"}
+    terms: null
+    notes: Same limitation as Platinum.
+    confirmed: false
+  - bank_id: us_bank
+    slug: secured-visa-credit-card
+    name_pattern: "Secured Visa®"
+    listed_on:
+      - {file: us-bank-credit-building.html, quote: "U.S. Bank Secured Visa® Card"}
+    absent_from:
+      - {file: us-bank-cash-back.html, lists: "Cash+"}
+      - {file: us-bank-rewards.html, lists: "Altitude® Go"}
+      - {file: us-bank-travel.html, lists: "Altitude® Connect"}
+    terms: null   # terms are inside the application gateway (onboarding.usbank.com ... page=terms): not fetched
+    confirmed: false

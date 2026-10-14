@@ -1123,3 +1123,15 @@ source publishes as a new version (logged as a change event and version row). A 
 (review). Open major-change review items for a product are closed as `superseded` (logged in `review_decisions`,
 reviewer `pipeline`) when a later run publishes or confirms the product. `bankrec ingest --reprocess` re-applies
 extraction and the change policy to pages whose content is unchanged (used after a policy change).
+
+### 24.15 rewards_program = "none" (evidence-backed, owner-confirmed)
+
+`prod.credit_card_details.rewards_program` (migration 0003; `"none"` or null). Never inferred from silence. Each
+candidate in `config/no_rewards.yaml` carries quoted evidence verified against verbatim fixtures in
+`tests/fixtures/evidence/`: (a) listed on the issuer's low-interest / balance-transfer / credit-building category page;
+(b) absent from the issuer's rewards / cash-back / travel / points category pages, each of which must list some other
+card; (c) when reachable, a terms page without rewards-program wording. An entry takes effect only after the owner
+confirms it (`confirmed: true`, `confirmed_by`, `confirmed_on`); a product page that states any earn rate overrides
+it. Effect: `base_rate` and `reward_currency` become not_applicable (the card can be Verified), and the recommender
+admits the card only for low-interest, balance-transfer and credit-building goals. Distinct from `reward_program`
+(the program's name).

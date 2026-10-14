@@ -20,7 +20,7 @@ export function keyFacts(p: Product): { label: string; value: React.ReactNode }[
       .map((r) => `${rateText(r.rate, r.rate_unit)} ${CATEGORY_LABEL[r.category] ?? r.category}`);
     return [
       { label: "Annual fee", value: fee == null ? missing : <span className="tabular">{usd(fee)}{intro != null && intro !== fee ? ` (${usd(intro)} first year)` : ""}</span> },
-      { label: "Rewards", value: top.length ? top.join(" · ") : missing },
+      { label: "Rewards", value: top.length ? top.join(" · ") : d.rewards_program === "none" ? "No rewards program" : missing },
       { label: "Purchase APR", value: aprRange(d.purchase_apr_min_pct, d.purchase_apr_max_pct) ?? "See issuer" },
       { label: "Foreign transaction fee", value: d.foreign_tx_fee_pct == null ? "See issuer" : val(d.foreign_tx_fee_pct, (x) => (Number(x) === 0 ? "None" : pct(x as string))) },
     ];

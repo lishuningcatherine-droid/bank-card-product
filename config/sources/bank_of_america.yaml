@@ -304,7 +304,7 @@ sources:
   priority: 80
   expected_entity: Air France KLM Visa Signature® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: alaska-airlines-credit-card-terms
@@ -317,7 +317,7 @@ sources:
   priority: 80
   expected_entity: Atmos™ Rewards Ascent Visa Signature®
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: alaska-airlines-infinite-credit-card-terms
@@ -330,7 +330,7 @@ sources:
   priority: 80
   expected_entity: Atmos™ Rewards Summit Visa Infinite® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: allegiant-credit-card-terms
@@ -343,7 +343,7 @@ sources:
   priority: 80
   expected_entity: Allways Rewards Visa® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: bankamericard-credit-card-terms
@@ -356,7 +356,7 @@ sources:
   priority: 80
   expected_entity: BankAmericard® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: cash-back-credit-card-terms
@@ -369,7 +369,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Customized Cash Rewards Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: cash-back-secured-credit-card-terms
@@ -382,7 +382,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Customized Cash Rewards Secured Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: low-interest-student-credit-card-terms
@@ -395,7 +395,7 @@ sources:
   priority: 80
   expected_entity: BankAmericard® Credit Card for Students
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: norwegian-cruise-lines-credit-card-terms
@@ -408,7 +408,7 @@ sources:
   priority: 80
   expected_entity: Norwegian Cruise Line® World Mastercard®
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: premium-rewards-credit-card-terms
@@ -421,7 +421,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Premium Rewards® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: premium-rewards-elite-credit-card-terms
@@ -434,7 +434,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Premium Rewards® Elite Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: royal-one-credit-card-terms
@@ -447,7 +447,7 @@ sources:
   priority: 80
   expected_entity: Royal ONE™ Visa Signature® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: royal-one-plus-credit-card-terms
@@ -460,7 +460,7 @@ sources:
   priority: 80
   expected_entity: Royal ONE Plus™ Visa Signature® Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: secured-credit-card-terms
@@ -473,7 +473,7 @@ sources:
   priority: 80
   expected_entity: BankAmericard® Secured Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: student-cash-back-credit-card-terms
@@ -486,7 +486,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Customized Cash Rewards Credit Card for Students
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: student-rewards-credit-card-terms
@@ -499,7 +499,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Travel Rewards Credit Card for Students
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: susan-komen-credit-card-terms
@@ -512,7 +512,7 @@ sources:
   priority: 80
   expected_entity: Susan G. Komen® Customized Cash Rewards Visa® credit card from Bank of America
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: travel-rewards-credit-card-terms
@@ -525,7 +525,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Travel Rewards Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: travel-rewards-secured-credit-card-terms
@@ -538,7 +538,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Travel Rewards Secured Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: unlimited-cash-back-credit-card-terms
@@ -551,7 +551,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Unlimited Cash Rewards Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: unlimited-cash-back-secured-credit-card-terms
@@ -564,7 +564,7 @@ sources:
   priority: 80
   expected_entity: Bank of America® Unlimited Cash Rewards Secured Credit Card
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
 - bank_id: bank_of_america
   slug: unlimited-cash-back-student-credit-card-terms
@@ -577,5 +577,5 @@ sources:
   priority: 80
   expected_entity: Bank of America® Unlimited Cash Rewards Credit Card for Students
   refresh_tier: terms
-  render_ready_selector: '#termsAndConditions h2, #termsAndConditions table, #termsAndConditions p'
+  render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
