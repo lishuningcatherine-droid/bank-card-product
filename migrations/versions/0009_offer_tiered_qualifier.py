@@ -19,7 +19,9 @@ _OLD = (
     "(amount_qualifier = 'up_to' AND amount_min IS NULL AND amount_max IS NOT NULL) OR "
     "(amount_qualifier = 'starting_at' AND amount_min IS NOT NULL AND amount_max IS NULL)"
 )
-_NEW = _OLD + " OR (amount_qualifier = 'tiered' AND amount_max IS NOT NULL AND jsonb_array_length(tiers) >= 2)"
+_NEW = (
+    _OLD + " OR (amount_qualifier = 'tiered' AND amount_max IS NOT NULL AND jsonb_array_length(tiers) >= 2)"
+)
 
 
 def upgrade() -> None:
@@ -29,4 +31,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_constraint("ck_offers_amount_qualifier_shape", "offers", schema="prod")
+    # the old shape has no tiers: keep the maximum as an "up to" amount
+    op.execute(
+        "UPDATE prod.offers SET amount_qualifier = 'up_to', amount_min = NULL WHERE amount_qualifier = 'tiered'"
+    )
     op.create_check_constraint("ck_offers_amount_qualifier_shape", "offers", _OLD, schema="prod")
