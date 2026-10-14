@@ -196,3 +196,27 @@ def test_merge_treats_differently_worded_names_as_aliases() -> None:
     assert [x["field"] for x in mp.conflicts] == [
         "annual_fee_cents"
     ]  # a real difference still goes to review
+
+
+def test_filling_a_missing_field_is_minor_but_removing_one_is_major() -> None:
+    """config/change_policy.yaml: previously_missing_filled: minor (DESIGN §24.14)."""
+    from bankrec.publish.changes import diff_product
+
+    old = {
+        "fields": {"foreign_tx_fee_pct": None, "annual_fee_cents": 9500},
+        "reward_rates": [],
+        "benefits": [],
+    }
+    new = {
+        "fields": {"foreign_tx_fee_pct": "3", "annual_fee_cents": 9500},
+        "reward_rates": [],
+        "benefits": [],
+    }
+    [ch] = diff_product(old, new)
+    assert (ch.field, ch.change_class, ch.rule) == (
+        "foreign_tx_fee_pct",
+        "minor",
+        "previously_missing_filled",
+    )
+    [ch] = diff_product(new, old)
+    assert (ch.change_class, ch.rule) == ("major", "value_added_or_removed")

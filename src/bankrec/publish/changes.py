@@ -59,6 +59,8 @@ def classify_field(name: str, old: Any, new: Any, all_apr_deltas: dict[str, Deci
     pol = policy()
     if name in pol.get("ignore", []):
         return "info", "ignored_field"
+    if old is None and new is not None and pol.get("previously_missing_filled") == "minor":
+        return "minor", "previously_missing_filled"
     if old is None or new is None:
         return "major", "value_added_or_removed"
     if name == "apy_pct":

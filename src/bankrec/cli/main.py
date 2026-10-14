@@ -100,6 +100,9 @@ def ingest(
     allow_empty: Annotated[bool, typer.Option("--allow-empty", help="CI smoke runs only")] = False,
     render: Annotated[bool, typer.Option(help="use Playwright for requires_render sources")] = True,
     trigger: Annotated[str, typer.Option(help="manual | cron | github")] = "manual",
+    reprocess: Annotated[
+        bool, typer.Option("--reprocess", help="re-apply extraction and change policy to unchanged pages")
+    ] = False,
 ) -> None:
     """Run the pipeline for enabled sources (optionally one tier/bank) and write reports."""
     from bankrec.ingest.fetch import Fetcher, FixtureFetcher
@@ -172,6 +175,7 @@ def ingest(
                 trigger=trigger,
                 tier=tier,
                 repo_root=REPO_ROOT,
+                reprocess=reprocess,
             )
             result = p.run(sources, manual=manual_items)
             s.commit()

@@ -1115,3 +1115,11 @@ publication only through rules other than `R-REQ` / `R-CONFIDENCE` (a terms page
 confidence threshold, by design). Missing fields are computed on the merged record (previously the union over
 candidates, which charged a terms page's missing reward fields to the product). Differently worded names that share
 the canonical key are aliases, not `official_name` conflicts. Real value differences still go to review.
+
+### 24.14 Filling a missing field is a minor change
+
+`config/change_policy.yaml: previously_missing_filled: minor`. A field that was null and is now found on an official
+source publishes as a new version (logged as a change event and version row). A value that disappears stays major
+(review). Open major-change review items for a product are closed as `superseded` (logged in `review_decisions`,
+reviewer `pipeline`) when a later run publishes or confirms the product. `bankrec ingest --reprocess` re-applies
+extraction and the change policy to pages whose content is unchanged (used after a policy change).

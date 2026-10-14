@@ -8,3 +8,7 @@ minor:
 ignore: [rate_type_note, overdraft_summary, eligibility_restrictions, credit_profile_guidance]
 # New offers on existing products go to review. This can be relaxed once parsers have a track record.
 new_offer_on_existing_product: review
+# A field that was missing (null) and is now found on an official source publishes as a new version without review
+# (owner request 2026-10-14: fill gaps from terms pages). Logged as a change event and a version row like any change.
+# A value that disappears (value → null) is still major (review). Set to "major" to review fills too.
+previously_missing_filled: minor

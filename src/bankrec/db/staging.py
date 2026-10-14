@@ -221,7 +221,7 @@ class ManualReviewItem(StagingBase):
     context: Mapped[dict[str, Any]] = mapped_column(J, default=dict)
     state: Mapped[str] = mapped_column(
         String(12), default="open"
-    )  # open | approved | rejected | merged | edited
+    )  # open | approved | rejected | merged | edited | superseded
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     run_id: Mapped[str | None] = mapped_column(Text)
 

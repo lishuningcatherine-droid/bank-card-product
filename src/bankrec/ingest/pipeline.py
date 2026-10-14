@@ -159,8 +159,12 @@ class Pipeline:
         trigger: str = "manual",
         tier: str | None = None,
         repo_root: Path | None = None,
+        reprocess: bool = False,
     ) -> None:
         self.s, self.settings, self.reg = session, settings, registry
+        # reprocess: re-run extraction and the change policy even when content and parser are unchanged (after a
+        # policy change). Values are still diffed against the published version; nothing is overwritten silently.
+        self.reprocess = reprocess
         self.fetcher, self.renderer = fetcher, renderer
         self.now = now or (lambda: datetime.now(UTC))
         self.trigger, self.tier = trigger, tier
@@ -398,7 +402,8 @@ class Pipeline:
 
         # ---- change detection
         unchanged = (
-            sp.last_content_sha256 == snap.content_sha256
+            not self.reprocess
+            and sp.last_content_sha256 == snap.content_sha256
             and sp.last_parser_version == parser_version
             and sp.health == "healthy"
         )
@@ -656,6 +661,27 @@ class Pipeline:
             enqueue_revalidation(self.s, product_tags(p), at)
 
     # ------------------------------------------------------------------------------------------------ resolve/publish
+    def _supersede_reviews(self, key: str, now: datetime, why: str) -> None:
+        """Close open major-change items for ``key`` that a later run made moot (logged as a decision)."""
+        for it in self.s.scalars(
+            select(S.ManualReviewItem).where(
+                S.ManualReviewItem.canonical_key == key,
+                S.ManualReviewItem.state == "open",
+                S.ManualReviewItem.reason_code == "major_change",
+            )
+        ):
+            it.state = "superseded"
+            self.s.add(
+                S.ReviewDecision(
+                    queue_id=it.id,
+                    action="superseded",
+                    reviewer="pipeline",
+                    decided_at=now,
+                    note=why,
+                    payload={"run_id": self.result.run_id},
+                )
+            )
+
     def _review(
         self,
         kind: str,
@@ -940,12 +966,14 @@ class Pipeline:
                 existing=existing,
             )
             po.decision = "published_version"
+            self._supersede_reviews(key, now, "a later run published every change as minor")
         else:
             existing.last_confirmed_at = existing.last_checked_at = existing.verified_at = now
             if existing.product_type == "savings":
                 existing.apy_confirmed_at = now
             existing.missing_fields, existing.critical_missing = missing_all, missing_key
             existing.recheck_pending, existing.recheck_reason, existing.recheck_fields = False, None, []
+            self._supersede_reviews(key, now, "a later run confirmed the published values")
             for r in self.s.scalars(
                 select(P.FieldProvenance).where(P.FieldProvenance.product_id == existing.id)
             ):
