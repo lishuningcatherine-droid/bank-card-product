@@ -41,7 +41,8 @@ _INTRO = re.compile(
 _PLACEHOLDER_APR = re.compile(r"currently \$\s*\.?$|^\$ annual fee$", re.IGNORECASE)
 _TILE = re.compile(r"^\d{1,2}(?:\.\d{1,2})?\s*(?:x\s+points?|%\s+cash\s+back)\d?$", re.IGNORECASE)
 _RATE_LEAD = re.compile(
-    r"^(?:plus,?\s+)?(?:earn\s+)?(?:a\s+total\s+of\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:x\b|%)", re.IGNORECASE
+    r"^(?:plus,?\s+)?(?:earn\s+)?(?:a\s+total\s+of\s+)?(?:unlimited\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:x\b|%)",
+    re.IGNORECASE,
 )
 _NOT_EARN = re.compile(
     r"\bup\s+to\s+\d|you choose|of your choice|\bsave\b|%\s+off\b|statement credit|\bbonus\b", re.IGNORECASE

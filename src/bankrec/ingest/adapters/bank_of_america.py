@@ -30,7 +30,8 @@ _INTRO = re.compile(
     r"(\d{1,2}(?:\.\d+)?)% for (\d{1,2}) billing cycles(?P<rest>.*)", re.IGNORECASE
 )  # "0% for 15 billing cycles Applies to purchases, and to any balance transfers made within 60 days ..."
 _RATE_LEAD = re.compile(
-    r"^(?:automatic\s+)?(?:earn\s+)?(?:unlimited\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:%|x\b|\s+(?:points?|miles?)\s+(?:per|for\s+(?:each|every)))",
+    r"^(?:automatic\s+)?(?:plus,\s+)?(?:earn\s+)?(?:unlimited\s+)?\d{1,2}(?:\.\d{1,2})?\s*(?:%|x\b|"
+    r"\s+(?:[A-Z][A-Za-z]*®?\s+)?(?:points?|miles?)\s+(?:per|for\s+(?:each|every)))",
     re.IGNORECASE,
 )
 _NOT_EARN = re.compile(
@@ -40,6 +41,12 @@ _NOT_EARN = re.compile(
 )
 # "Earn 6% and 2% cash back on the first $2,500 in combined purchases each quarter in the choice category, and at
 # grocery stores and wholesale clubs": one quarterly cap shared by the choice category and the grocery rate.
+# Rewards-tab lines: "Automatic 2% ...", "Unlimited 1% ...", "Plus, earn 1.5 Miles for every $1 ...",
+# "Earn 1 WorldPoints® point per $1 ...", "1 point per dollar spent on all other purchases".
+_EXTRA_EARN = re.compile(
+    r"^(?:(?:automatic|unlimited)\s+\d|(?:plus,\s+)?earn\s+(?:unlimited\s+)?\d|\d{1,2}(?:\.\d+)?\s+(?:points?|miles?)\s+(?:per|for)\b)",
+    re.IGNORECASE,
+)
 _SHARED_CAP = re.compile(r"on the first \$([\d,]+) in combined purchases each (quarter|year)", re.IGNORECASE)
 _OFFER_REQ = re.compile(r"\b(?:make|making|spend|spending)\s+(?:at\s+least\s+)?\$[\d,]+", re.IGNORECASE)
 _OFFER_AMT = re.compile(
@@ -242,11 +249,11 @@ class Adapter(DeclarativeAdapter):
             out: list[str] = []
             # Card-detail paragraphs, plus the rewards tab's one-line statements ("Automatic 2% cash back at grocery
             # stores and wholesale clubs", "Unlimited 1% cash back on all other purchases").
-            lines = [b for _, b in feats] + [
-                ln for ln in page.doc.text.split("\n") if re.match(r"^(?:automatic|unlimited)\s+\d", ln, re.I)
-            ]
+            lines = [b for _, b in feats] + [ln for ln in page.doc.text.split("\n") if _EXTRA_EARN.match(ln)]
             for body in lines:
-                for clause in X.split_rate_clauses(body):
+                # one sentence at a time: "... on all other purchases. Plus, earn a 10% rewards bonus ..."
+                sentences = re.split(r"(?<=[a-z*®])\.\s+(?=[A-Z])", body)
+                for clause in (c for sent in sentences for c in X.split_rate_clauses(sent)):
                     clause = re.sub(r"^(?:and|plus)\s+(?:unlimited\s+)?", "", clause, flags=re.I)
                     if _RATE_LEAD.search(clause) and not _NOT_EARN.search(clause) and clause not in out:
                         out.append(clause)

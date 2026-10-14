@@ -18,7 +18,9 @@ from bankrec.parsers.placeholders import contains_placeholder
 _RATE = re.compile(
     r"(?P<num>\d{1,2}(?:\.\d{1,2})?)\s*(?:(?P<pct>%)\s*(?:cash\s*back|back|cash\s*rewards?)?|"
     r"\s*(?P<x>[xX])\b(?:\s*(?:membership\s+rewards®?\s+)?(?:points|miles))?|"
-    r"\s+(?P<per>points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\s+(?:\$1\b|dollar))",
+    # "1 Avios for every $1", "3 Miles for every $1", "3 WorldPoints® points per $1" (issuer-branded unit word)
+    r"\s+(?:[A-Z][A-Za-z]*®?\s+)?(?P<per>(?i:points?|miles?|avios))\s+(?i:per|for\s+(?:each|every))\s+"
+    r"(?:\$1\b|(?i:dollar)))",
 )
 _CAP = re.compile(
     r"(?:on\s+)?(?:up\s+to|(?:the|your)\s+first)\s+\$\s*(?P<amt>[\d,]+(?:\.\d{1,2})?)(?P<k>[Kk])?\s+(?:spent\s+)?"

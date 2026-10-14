@@ -85,8 +85,10 @@ def test_freedom_flex_struck_out_amount_is_ignored() -> None:
     # Headline "Earn a $200 [struck] $250 bonus": only the current $250 counts.
     [o] = [o.value for o in c.offers if o.value]
     assert (o.amount_qualifier, o.amount_max, o.requirement_min_cents) == ("exact", 25000, 50000)
-    # Rotating 5% categories: the page states no cap next to them, so the rate is left out rather than uncapped.
-    assert "rotating" not in rates(c)
+    # "Earn 5% cash back on up to $1,500 in rotating categories each quarter you activate": capped, activation.
+    assert rates(c)["rotating"] == ("5pct", 150000)
+    [rot] = [x.value for x in c.reward_rates if x.value and x.value.category == "rotating"]
+    assert rot.cap_period == "quarterly" and rot.requires_activation is True
     assert c.value("foreign_tx_fee_pct") == Decimal(
         "0"
     )  # "Now enjoy all this with no foreign transaction fee.†"

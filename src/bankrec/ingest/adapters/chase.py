@@ -24,6 +24,7 @@ from typing import Any
 from bankrec.candidate import ProductCandidate
 from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter, lowest_rate_per_category
 from bankrec.ingest.common import extract as X
+from bankrec.ingest.common.html import scoped
 from bankrec.model import ExtractionContext, NullReason, PageType, RewardRateRec, Sourced
 from bankrec.parsers.money import parse_fee_schedule, parse_money
 
@@ -223,14 +224,24 @@ class Adapter(DeclarativeAdapter):
                     out += paras[1:]
             # A line starting in lower case continues the previous one ("3X on Travel and Business" /
             # "categories on $150K combined spend.").
-            for line in doc.text.split("\n"):
+            # Earn statements come from the marketing content, never the "Offer Details" legal overlay
+            # (cmp-popup--cardofferdetails), whose long paragraphs mention categories in exclusions.
+            body = scoped(
+                doc, "body", "[class*='cmp-popup--cardofferdetails'], [class*='experiencefragment-modal']"
+            )
+            for line in body.text.split("\n"):
                 if out and line[:1].islower() and not out[-1].endswith((".", "*", "†")):
                     out[-1] = f"{out[-1]} {line}"
                 else:
                     out.append(line)
             stmts: list[str] = []
             for line in out:
-                for part in _MULTI_RATE.split(line.strip()):
+                # one sentence, then one rate clause at a time ("Earn 3 Avios ... In addition earn 2 Avios ...")
+                sentences = re.split(r"(?<=[a-z*®])\.\s+(?=[A-Z])", line.strip())
+                parts = [
+                    p for sent in sentences for c in X.split_rate_clauses(sent) for p in _MULTI_RATE.split(c)
+                ]
+                for part in parts:
                     part = part.strip()
                     if _RATE_LEAD.search(part) and not _NOT_EARN.search(part) and part not in stmts:
                         stmts.append(part)
