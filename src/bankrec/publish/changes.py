@@ -113,7 +113,8 @@ def diff_product(old: dict[str, Any], new: dict[str, Any]) -> list[Change]:
 
 
 def _canon(items: list[dict[str, Any]] | None) -> list[str]:
-    return sorted(repr(sorted(i.items())) for i in items or [])
+    # An absent key and an empty / null value are the same record (a field added later, e.g. rate conditions).
+    return sorted(repr(sorted((k, v) for k, v in i.items() if v not in (None, []))) for i in items or [])
 
 
 def diff_offers(

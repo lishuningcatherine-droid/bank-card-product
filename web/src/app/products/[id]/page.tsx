@@ -11,7 +11,7 @@ import { StatusLabel } from "@/components/StatusLabel";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { ApiError, getHistory, getProduct } from "@/lib/api/server";
 import type { Product } from "@/lib/api/types";
-import { CATEGORY_LABEL, TYPE_LABEL, usd } from "@/lib/format";
+import { CATEGORY_LABEL, CONDITION_LABEL, RESTRICTIVE, TYPE_LABEL, usd } from "@/lib/format";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -101,8 +101,15 @@ export default async function ProductPage({ params }: Props) {
               <li key={i} className="rounded-md border border-border p-3">
                 <span className="font-medium text-ink-900">{CATEGORY_LABEL[r.category] ?? r.category}</span>: {r.text}
                 <span className="mt-1 flex flex-wrap gap-2">
-                  {r.portal_only ? <StatusLabel status="missing">Portal only — not counted in estimates</StatusLabel> : null}
-                  {r.requires_activation ? <StatusLabel status="stale">Activation required</StatusLabel> : null}
+                  {r.portal_only ? <StatusLabel status="missing">Portal only — counted only if you opt in</StatusLabel> : null}
+                  {(r.conditions ?? []).filter((c) => c.kind !== "portal_only").map((c, j) => (
+                    <span key={j} title={`“${c.text}”`}>
+                      <StatusLabel status={RESTRICTIVE.has(c.kind) ? "missing" : "stale"}>
+                        {CONDITION_LABEL[c.kind] ?? c.kind}{c.detail ? ` (${c.detail})` : ""}
+                      </StatusLabel>
+                    </span>
+                  ))}
+                  {r.requires_activation && !(r.conditions ?? []).some((c) => c.kind === "enrollment_required") ? <StatusLabel status="stale">Activation required</StatusLabel> : null}
                   {r.ends_on ? <StatusLabel status="stale">Ends {r.ends_on}</StatusLabel> : null}
                 </span>
               </li>

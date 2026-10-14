@@ -21,7 +21,7 @@ function CardQuiz({ go }: { go: (r: CardRequest) => void }) {
     product_type: "credit_card", goal: "cashback", monthly_spend: { groceries: 400, dining: 200, travel: 100, gas: 100, entertainment: 50, transit: 0, online_shopping: 100, other: 500 },
     travel_frequency: "occasional", preferred_reward: "any", max_annual_fee: 100, exclude_over_max_fee: true, avoid_foreign_fee: false,
     credit_profile: "unknown", segment: "consumer", include_co_branded: true, card_kind: "any", bonus_importance: "medium",
-    selected_credit_ids: [], opt_in_rotating: false,
+    selected_credit_ids: [], opt_in_rotating: false, opt_in_portal: false, opt_in_booked_direct: false,
   });
   const up = (p: Partial<CardRequest>) => set((x) => ({ ...x, ...p }));
   const spend = r.monthly_spend ?? { groceries: 0, dining: 0, travel: 0, gas: 0, entertainment: 0, transit: 0, online_shopping: 0, other: 0 };
@@ -53,6 +53,10 @@ function CardQuiz({ go }: { go: (r: CardRequest) => void }) {
           <Toggle label="Include co-branded cards (airline, hotel, retail)" checked={r.include_co_branded ?? true} onChange={(include_co_branded) => up({ include_co_branded })} />
           <Toggle label="Count rotating bonus categories" checked={r.opt_in_rotating ?? false} onChange={(opt_in_rotating) => up({ opt_in_rotating })}
             hint="Only up to each card's published quarterly cap, and only if you activate them." />
+          <Toggle label="I book travel through the card issuer's travel portal" checked={r.opt_in_portal ?? false} onChange={(opt_in_portal) => up({ opt_in_portal })}
+            hint="Counts portal-only rates (e.g. hotels booked through the issuer's travel site) on your travel spending." />
+          <Toggle label="I book flights and hotels directly with the airline or hotel" checked={r.opt_in_booked_direct ?? false} onChange={(opt_in_booked_direct) => up({ opt_in_booked_direct })}
+            hint="Counts rates that apply only to bookings made directly with the airline or hotel." />
         </div>
         <Choice legend="Credit profile (optional, broad)" name="credit" value={r.credit_profile ?? "unknown"} onChange={(credit_profile) => up({ credit_profile })}
           hint="Used only where the issuer publishes guidance." options={[["unknown", "Prefer not to say"], ["excellent", "Excellent"], ["good", "Good"], ["fair", "Fair"], ["limited", "Limited history"]] as const} />

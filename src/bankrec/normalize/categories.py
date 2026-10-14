@@ -28,18 +28,21 @@ def _patterns() -> list[tuple[re.Pattern[str], str]]:
     return [(re.compile(r"(?<![\w])" + re.escape(s) + r"(?![\w])", re.IGNORECASE), c) for s, c in pairs]
 
 
-def categories_in(text: str) -> list[str]:
-    """Categories mentioned in ``text``, longest synonym first, without overlap. Order of first appearance."""
-    taken: list[tuple[int, int]] = []
-    found: list[tuple[int, str]] = []
+def category_spans(text: str) -> list[tuple[int, int, str]]:
+    """(start, end, code) of every category mention, longest synonym first, without overlap, in text order."""
+    taken: list[tuple[int, int, str]] = []
     for pat, code in _patterns():
         for m in pat.finditer(text):
-            if any(s < m.end() and m.start() < e for s, e in taken):
+            if any(s < m.end() and m.start() < e for s, e, _ in taken):
                 continue
-            taken.append((m.start(), m.end()))
-            found.append((m.start(), code))
+            taken.append((m.start(), m.end(), code))
+    return sorted(taken)
+
+
+def categories_in(text: str) -> list[str]:
+    """Categories mentioned in ``text``, longest synonym first, without overlap. Order of first appearance."""
     seen: list[str] = []
-    for _, code in sorted(found):
+    for _, _, code in category_spans(text):
         if code not in seen:
             seen.append(code)
     return seen

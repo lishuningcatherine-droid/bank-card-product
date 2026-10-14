@@ -338,6 +338,16 @@ export interface components {
             max_annual_fee: number;
             monthly_spend?: components["schemas"]["MonthlySpend"];
             /**
+             * Opt In Booked Direct
+             * @default false
+             */
+            opt_in_booked_direct: boolean;
+            /**
+             * Opt In Portal
+             * @default false
+             */
+            opt_in_portal: boolean;
+            /**
              * Opt In Rotating
              * @default false
              */
@@ -713,6 +723,15 @@ export interface components {
              */
             verified_at: string;
         };
+        /** RateConditionView */
+        RateConditionView: {
+            /** Detail */
+            detail?: string | null;
+            /** Kind */
+            kind: string;
+            /** Text */
+            text: string;
+        };
         /** RateView */
         RateView: {
             /** Cap Cents */
@@ -728,6 +747,8 @@ export interface components {
             cap_period?: string | null;
             /** Category */
             category: string;
+            /** Conditions */
+            conditions?: components["schemas"]["RateConditionView"][];
             /** Ends On */
             ends_on?: string | null;
             /**

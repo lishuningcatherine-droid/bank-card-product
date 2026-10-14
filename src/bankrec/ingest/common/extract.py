@@ -18,6 +18,7 @@ from bankrec.model import (
     NullReason,
     OfferRec,
     OfferTier,
+    RateCondition,
     RewardRateRec,
     Sourced,
 )
@@ -323,13 +324,16 @@ def split_rate_clauses(text: str) -> list[str]:
 def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[RewardRateRec]]:
     out: list[Sourced[RewardRateRec]] = []
     # One clause per rate: "1.5% on every purchase ... Plus, earn unlimited 5% on hotels ..." holds two rates.
-    pieces = [(p.strip(), portal_lead(st)) for st in statements for p in split_rate_clauses(st)]
-    for st, lead in pieces:
+    pieces = [(p.strip(), portal_lead(st), st) for st in statements for p in split_rate_clauses(st)]
+    for st, lead, whole in pieces:
         rr = parse_reward_statement(st)
         if rr is None:
             continue
         rr.portal_only = rr.portal_only or lead
         for cat in rr.categories:
+            conds = rate_conditions(rr.conditions.get(cat, []), st)
+            if lead and not any(c.kind == "portal_only" for c in conds):
+                conds.insert(0, RateCondition(kind="portal_only", text=_lead_text(whole)))
             rec = RewardRateRec(
                 category=cat,
                 rate=rr.rate,
@@ -344,9 +348,65 @@ def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sour
                 portal_only=rr.portal_only,
                 ends_on=rr.ends_on,
                 text=rr.text,
+                conditions=conds,
             )
             out.append(ctx.field(rec, st, method="free_text", name=f"reward:{cat}"))
     return [s for s in out if s.present]
+
+
+def rate_conditions(found: list[tuple[str, str, str | None]], statement: str) -> list[RateCondition]:
+    """Parsed qualifiers as records. The stating words must be part of the statement (the located span), else the
+    statement itself is quoted."""
+    out: list[RateCondition] = []
+    st = norm_ws(statement).lower()
+    for kind, text, detail in found:
+        quote = text if norm_ws(text).lower() in st else statement
+        out.append(RateCondition(kind=kind, text=norm_ws(quote), detail=detail))
+    return out
+
+
+def _lead_text(statement: str) -> str:
+    """The words before the first rate ("Book through Capital One Business Travel to earn")."""
+    m = re.search(r"\d", statement)
+    return norm_ws(statement[: m.start()] if m else statement)
+
+
+_EXCL_SENTENCE = re.compile(
+    r"(?P<a>superstores|warehouse\s+clubs|discount\s+stores)[^.]{0,120}?\b(?:are\s+not|aren[’']t|is\s+not|do\s+not|don[’']t|"
+    r"not)\b[^.]{0,40}?\b(?:considered|included|qualify|count)[^.]{0,40}?\b(?P<c>supermarkets?|grocery\s+stores?|gas\s+stations?)"
+    r"|(?P<c2>supermarkets?|grocery\s+stores?|gas\s+stations?)[^.]{0,40}?\b(?:do(?:es)?\s+not\s+include|exclud(?:e|es|ing))\b"
+    r"[^.]{0,100}?(?P<a2>superstores|warehouse\s+clubs|discount\s+stores)",
+    re.IGNORECASE,
+)
+
+
+def category_exclusions(text: str) -> list[tuple[str, RateCondition]]:
+    """(category, condition) for each page sentence excluding superstores / warehouse clubs from groceries or gas
+    ("Superstores, warehouse clubs ... are not considered supermarkets"). Every store type the sentence names is a
+    separate condition on the categories it names."""
+    out: list[tuple[str, RateCondition]] = []
+    for ln in text.split("\n"):
+        for sent in re.split(r"(?<=[a-z0-9)][.!?])\s+", ln):
+            if not _EXCL_SENTENCE.search(sent):
+                continue
+            low = sent.lower()
+            cats = [
+                cat
+                for cat, words in (("groceries", ("supermarket", "grocery")), ("gas", ("gas station",)))
+                if any(w in low for w in words)
+            ]
+            kinds = [
+                k
+                for k, w in (
+                    ("excludes_superstores", "superstore"),
+                    ("excludes_warehouse_clubs", "warehouse club"),
+                )
+                if w in low
+            ]
+            for cat in cats:
+                for k in kinds:
+                    out.append((cat, RateCondition(kind=k, text=norm_ws(sent))))
+    return out
 
 
 def reward_currency(rates: list[Sourced[RewardRateRec]], text: str) -> tuple[str | None, str | None]:

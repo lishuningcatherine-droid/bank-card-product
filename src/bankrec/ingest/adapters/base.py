@@ -22,6 +22,7 @@ from bankrec.model import (
     PageType,
     ProductType,
     ProvenanceClass,
+    RateCondition,
     RewardRateRec,
     Sourced,
 )
@@ -206,6 +207,26 @@ class DeclarativeAdapter:
                 out.append(got)
         return out
 
+    def _category_exclusions(self, page: ClassifiedPage, c: ProductCandidate) -> None:
+        """Page sentences that take superstores / warehouse clubs out of a category ("Superstores and warehouse clubs
+        are not considered supermarkets") become conditions on that category's rates, quoting the sentence."""
+        found = X.category_exclusions(page.text)
+        if not found:
+            return
+        out = []
+        for r in c.reward_rates:
+            v = r.value
+            if v is not None and (
+                add := [
+                    x
+                    for cat, x in found
+                    if cat == v.category and x.kind not in {y.kind for y in v.conditions}
+                ]
+            ):
+                r = r.model_copy(update={"value": v.model_copy(update={"conditions": [*v.conditions, *add]})})
+            out.append(r)
+        c.reward_rates = out
+
     def _partner_words(self, partner: str) -> list[str]:
         return list((self.rules.get("partner_words") or {}).get(partner, [partner]))
 
@@ -238,7 +259,18 @@ class DeclarativeAdapter:
                     if v.category in categories_in(_partner_probe(v.text, words)):
                         rates.append(r)
                     continue
-                r = r.model_copy(update={"value": v.model_copy(update={"category": kind})})
+                v = v.model_copy(update={"category": kind})
+                r = r.model_copy(update={"value": v})
+            if v.category == kind and not any(x.kind == "partner_only" for x in v.conditions):
+                # "6X at hotels participating in Marriott Bonvoy": the rate is the partner's, not hotels in general
+                hit = next(
+                    (m for w in words if (m := re.search(rf"\b{re.escape(w)}\b[^,.;]*", v.text, re.I))), None
+                )
+                if hit is not None:
+                    cond = RateCondition(kind="partner_only", text=X.norm_ws(hit.group(0)), detail=partner)
+                    r = r.model_copy(
+                        update={"value": v.model_copy(update={"conditions": [*v.conditions, cond]})}
+                    )
             rates.append(r)
         c.reward_rates = rates
 
@@ -491,6 +523,7 @@ class DeclarativeAdapter:
                 "earn rates dropped without replacement: "
                 + " | ".join(f"{r.value.category}: {(r.span_text or '')[:100]}" for r in lost if r.value)
             )
+        self._category_exclusions(page, c)
         self._no_rewards(page, ctx, c)
 
     def _checking(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:

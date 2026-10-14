@@ -101,6 +101,10 @@ class CardRequest(Strict):
     bonus_importance: Importance = "medium"
     selected_credit_ids: Annotated[list[str], Field(max_length=50)] = Field(default_factory=list)
     opt_in_rotating: bool = False
+    # Rates limited to the issuer's travel portal / to booking directly with the airline or hotel count only when
+    # the user says they book that way (DESIGN §24.17 A).
+    opt_in_portal: bool = False
+    opt_in_booked_direct: bool = False
     cents_per_point: Annotated[Decimal, Field(ge=0, le=5)] | None = None
 
 
@@ -162,6 +166,12 @@ class OfferView(BaseModel):
     eligibility_restrictions: str | None = None
 
 
+class RateConditionView(BaseModel):
+    kind: str  # portal_only | booked_direct | partner_only | us_only | excludes_superstores | excludes_warehouse_clubs | enrollment_required
+    text: str
+    detail: str | None = None
+
+
 class RateView(BaseModel):
     category: str
     rate: Decimal
@@ -176,6 +186,7 @@ class RateView(BaseModel):
     portal_only: bool = False
     ends_on: date | None = None
     text: str = ""
+    conditions: list[RateConditionView] = Field(default_factory=list)
 
 
 class BenefitView(BaseModel):

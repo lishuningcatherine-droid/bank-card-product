@@ -218,6 +218,8 @@ class ProductRewardRate(ProdBase):
     portal_only: Mapped[bool] = mapped_column(Boolean, default=False)
     ends_on: Mapped[date | None] = mapped_column(Date)
     conditions_text: Mapped[str] = mapped_column(Text)
+    # [{kind, text, detail}]: qualifiers limiting where the rate applies, with the page words (DESIGN §24.17 A)
+    conditions: Mapped[list[dict[str, Any]]] = mapped_column(J, default=list)
 
 
 class ProductBenefit(ProdBase):

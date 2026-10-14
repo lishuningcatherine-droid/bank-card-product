@@ -1201,3 +1201,21 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   "minimum security deposit of $200 (maximum of $5,000)". Capital One Platinum Secured's "depositing more than the
   minimum amount (up to a maximum limit of $1000)" does not say whether the limit is the deposit or the credit line,
   so it stays ambiguous (Partially verified) with a note; Quicksilver Secured states only the minimum.
+- **A. Rate qualifiers are structured conditions.** `RewardRateRec.conditions` / `product_reward_rates.conditions`
+  (migration 0008): `{kind, text, detail}` with kind ∈ portal_only | booked_direct | partner_only | us_only |
+  excludes_superstores | excludes_warehouse_clubs | enrollment_required, and `text` the page words that state it
+  (part of the rate's located span). Scope is positional, per category: "U.S." limits the category it precedes ("at
+  U.S. gas stations and on transit": gas only); "booked direct(ly)" / "in the U.S." limit the list item they follow
+  ("flights booked directly, car rental agencies": flights only); an exclusion limits the category it follows
+  ("grocery stores (excluding superstores like Walmart® and Target®)"); mentions inside "including …" do not qualify
+  the main category ("restaurants, including takeout and delivery in the U.S." is not U.S.-only); "booked directly in
+  the Travel Center" is the issuer portal, not booked-direct; booked-direct applies to travel categories only. A
+  co-brand airline/hotel rate naming the partner is `partner_only` (detail = partner). Page sentences excluding
+  superstores / warehouse clubs from groceries or gas add the condition with that sentence. The UI shows each
+  condition as a label with the page words on hover. **Scoring:** portal-only rates count only with
+  `opt_in_portal`, booked-direct only with `opt_in_booked_direct` (both off by default; quiz toggles), partner-only
+  only when the partner is the user's preferred partner, never for generic category spend; U.S.-only, exclusions and
+  enrollment count with a note. Representation-only change: a missing `conditions` key equals an empty one in the
+  change diff, so only rates that gained a qualifier change. Known gap: conditions stated only on a supplementary
+  terms page (BoA "Excluded from this Bonus Category are superstores ...") are not carried to the product's rates,
+  which come from the product page.

@@ -130,6 +130,7 @@ def _write_children(session: Session, product: P.Product, mp: MergedProduct) -> 
                 portal_only=r.portal_only,
                 ends_on=r.ends_on,
                 conditions_text=r.text,
+                conditions=[c.model_dump() for c in r.conditions],
             )
         )
     for sb, _ in mp.benefits:

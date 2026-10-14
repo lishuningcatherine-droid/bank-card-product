@@ -216,6 +216,26 @@ class ApyTier(BaseModel):
     apy_pct: Decimal
 
 
+ConditionKind = Literal[
+    "portal_only",  # only when booked through the issuer's travel portal
+    "booked_direct",  # only when booked directly with the airline / hotel
+    "partner_only",  # only at the co-brand partner (detail = partner)
+    "us_only",  # U.S. merchants only
+    "excludes_superstores",  # superstores (e.g. Target, Walmart) are not in the category
+    "excludes_warehouse_clubs",  # warehouse clubs are not in the category
+    "enrollment_required",  # enrollment / activation required
+]
+
+
+class RateCondition(BaseModel):
+    """A qualifier that limits where a rate applies, with the page text that states it (spot-check round 2, A)."""
+
+    model_config = ConfigDict(frozen=True)
+    kind: ConditionKind
+    text: str
+    detail: str | None = None
+
+
 class RewardRateRec(BaseModel):
     model_config = ConfigDict(frozen=True)
     category: str
@@ -231,6 +251,7 @@ class RewardRateRec(BaseModel):
     portal_only: bool = False
     ends_on: date | None = None
     text: str
+    conditions: list[RateCondition] = Field(default_factory=list)
 
 
 class BenefitRec(BaseModel):

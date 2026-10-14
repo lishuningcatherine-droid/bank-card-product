@@ -36,6 +36,19 @@ export function relativeHours(iso: string, now: Date = new Date()): string {
   return `${d} days ago`;
 }
 
+/** Rate qualifiers (DESIGN §24.17 A); the stating page words are shown on hover. */
+export const CONDITION_LABEL: Record<string, string> = {
+  portal_only: "Issuer travel portal only",
+  booked_direct: "Only when booked directly",
+  partner_only: "Only at the partner",
+  us_only: "U.S. purchases only",
+  excludes_superstores: "Excludes superstores",
+  excludes_warehouse_clubs: "Excludes warehouse clubs",
+  enrollment_required: "Enrollment or activation required",
+};
+/** Qualifiers that keep a rate out of estimates unless the user opts in (or prefers the partner). */
+export const RESTRICTIVE = new Set(["portal_only", "booked_direct", "partner_only"]);
+
 export const CATEGORY_LABEL: Record<string, string> = {
   groceries: "Groceries", dining: "Dining", travel: "Travel", travel_portal: "Travel (portal)", airline: "Airline",
   hotel: "Hotel", gas: "Gas", ev_charging: "EV charging", entertainment: "Entertainment", streaming: "Streaming",

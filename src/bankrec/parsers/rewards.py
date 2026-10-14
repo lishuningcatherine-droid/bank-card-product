@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
-from bankrec.normalize.categories import categories_in
+from bankrec.normalize.categories import categories_in, category_spans
 from bankrec.parsers.money import _dollars_to_cents
 from bankrec.parsers.placeholders import contains_placeholder
 
@@ -52,6 +52,25 @@ _UNTIL = re.compile(
     re.IGNORECASE,
 )
 _CHOICE = {"choice", "choice_everyday"}
+# Qualifiers that limit where a rate applies (spot-check round 2, A). Each is kept with the words that state it.
+_DIRECT = re.compile(
+    # "booked directly in the Travel Center" is the issuer portal (portal_only), not booking with the merchant
+    r"\b(?:booked|purchased|bought|reserved|made)\s+direct(?:ly)?\b"
+    r"(?!\s+(?:in|through|via|on)\s+(?:the\s+)?(?:[\w.]+\s+){0,3}(?:travel\s+)?(?:center|centre|portal)\b)"
+    r"(?:\s+(?:with|from|through)\s+[^,.;]{1,80}?(?=[,.;]|$))?"
+    r"|\bdirect(?:ly)?\s+(?:with|from)\s+(?:the\s+)?(?:airlines?|hotels?|participating\s+hotels?)\b",
+    re.IGNORECASE,
+)
+_US_PREFIX = re.compile(r"\bU\.\s?S\.\s*$")
+_US_POST = re.compile(r"\b(?:in|within)\s+the\s+(?:U\.\s?S\.|United States)(?!\s*\w)", re.IGNORECASE)
+_EXCLUDING = re.compile(
+    r"\b(?:excluding|excludes|except(?:\s+for)?|not\s+including)\s+[^)]{0,80}?\b"
+    r"(?P<w>superstores|warehouse\s+clubs|target|walmart|costco|sam[’']s\s+club)\b[^),.;]*",
+    re.IGNORECASE,
+)
+_SUPERSTORE_WORDS = {"superstores", "target", "walmart"}
+# Clause separators: ; , and . but not inside "$6,000", "1.5" or "U.S."
+_SEP = re.compile(r";|,(?!\d{3})|(?<![A-Z])\.(?=\s|$)")
 _GLUED_NOTE = re.compile(r"(?<=[a-z])\d(?![\d,.%x])")
 _MONTHS = {
     m: i
@@ -101,6 +120,8 @@ class RewardRate:
     is_base: bool = False
     text: str = ""
     notes: list[str] = field(default_factory=list)
+    # category -> [(kind, stating text, detail)]
+    conditions: dict[str, list[tuple[str, str, str | None]]] = field(default_factory=dict)
 
 
 def parse_rate_only(text: str) -> tuple[Decimal, str] | None:
@@ -132,12 +153,10 @@ def parse_reward_statement(text: str) -> RewardRate | None:
         rest = rest[: nxt.start()]
     # The portal's own name ("booked through Capital One Travel") is not the category "travel".
     # When nothing else is named ("5x on Chase Travel"), the portal stands for travel booked through it.
-    cats = (
-        categories_in(_PORTAL.sub(" ", rest))
-        or categories_in(_PORTAL.sub(" ", text[: m.start()]))
-        or categories_in(rest)
-        or categories_in(text[: m.start()])
-    )
+    blank = lambda s: _PORTAL.sub(lambda p: " " * len(p.group(0)), s)  # noqa: E731 (keeps positions)
+    regions = [blank(rest), blank(text[: m.start()]), rest, text[: m.start()]]
+    region = next((r for r in regions if categories_in(r)), "")
+    cats = categories_in(region)
     if not cats and re.search(r"\+\s*$", rest):
         # "3% cash back + 3% first-year cash back bonus in the category of your choice": the category after the
         # added (temporary) bonus also belongs to the ongoing rate; the added bonus itself is not counted.
@@ -168,13 +187,78 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     rr.requires_activation = bool(_ACTIVATION.search(text))
     # Only this rate's own clause: "1.5% on every purchase ... Plus, 5% on hotels booked through Capital One
     # Business Travel" makes the 5% portal-only, not the 1.5%.
-    rr.portal_only = bool(_PORTAL.search(text[: m.end()] + rest))
+    portal = _PORTAL.search(text[: m.end()] + rest)
+    rr.portal_only = bool(portal)
+    for c in rr.categories:
+        found = _conditions_for(c, region, text[: m.end()] + rest)
+        if portal:
+            if not _DIRECT.search(
+                text[: m.end()] + rest
+            ):  # "booked directly in the Travel Center" is the portal
+                found = [f for f in found if f[0] != "booked_direct"]
+            found.insert(0, ("portal_only", portal.group(0).strip(), None))
+        if rr.requires_activation and (act := _ACTIVATION.search(text)):
+            found.append(("enrollment_required", _clause_around(text, act.start(), act.end()), None))
+        if found:
+            rr.conditions[c] = found
     until = _UNTIL.search(text)
     if until:
         rr.ends_on = date(int(until.group("y")), _MONTHS[until.group("m").lower()], int(until.group("d")))
     if not rr.categories:
         return None
     return rr
+
+
+def _clause_around(text: str, start: int, end: int) -> str:
+    """The clause of ``text`` holding [start, end): from the previous to the next , ; or . (the stating words)."""
+    seps = [mm.start() for mm in _SEP.finditer(text)]
+    lo = max([s + 1 for s in seps if s < start], default=0)
+    hi = min([s for s in seps if s >= end], default=len(text))
+    return text[lo:hi].strip()
+
+
+_DIRECT_CATEGORIES = {"airline", "hotel", "car_rental", "travel", "select_travel", "partner"}
+
+
+def _conditions_for(code: str, region: str, clause: str) -> list[tuple[str, str, str | None]]:
+    """Qualifiers that apply to category ``code`` in ``region`` (the text its categories were read from):
+    "U.S." right before a mention ("at U.S. gas stations and on transit": gas only); "booked direct" / "in the U.S."
+    after a mention before the next , ; or . ("flights and hotels booked direct": both; "flights booked directly,
+    car rental agencies": flights only); an exclusion right after it ("grocery stores (excluding Target® and
+    Walmart® purchases)")."""
+    out: list[tuple[str, str, str | None]] = []
+    spans = [(s, e) for s, e, c in category_spans(region) if c == code]
+
+    def extra(s: int) -> bool:  # a mention inside "including ..." after the same category's own mention
+        prev = max([mm.end() for mm in _SEP.finditer(region, 0, s)], default=0)
+        return bool(re.search(r"\bincluding\b", region[prev:s], re.I))
+
+    own_mentions = [sp for sp in spans if not extra(sp[0])]
+    for s, e in spans:
+        if own_mentions and (s, e) not in own_mentions:
+            continue  # "restaurants, including takeout and delivery in the U.S.": the qualifier limits the extras only
+        own = region[s:e]  # synonyms may carry the qualifier ("U.S. supermarkets", "flights booked direct")
+        pre = _US_PREFIX.search(region[max(0, s - 8) : s])
+        if (pre or re.match(r"U\.\s?S\.", own)) and not any(k == "us_only" for k, _, _ in out):
+            out.append(("us_only", region[max(0, s - 8) + pre.start() if pre else s : e].strip(), None))
+        nxt = _SEP.search(region, e)
+        tail = own + region[e : nxt.start() if nxt else len(region)]
+        for pat, kind in ((_DIRECT, "booked_direct"), (_US_POST, "us_only")):
+            if kind == "booked_direct" and code not in _DIRECT_CATEGORIES:
+                continue  # "dining when purchased directly from a restaurant" is not a travel booking channel
+            if kind == "us_only" and re.search(r"\bworldwide\b", clause, re.I):
+                continue  # "restaurants worldwide, including takeout and delivery in the U.S."
+            if (q := pat.search(tail)) and not any(k == kind for k, _, _ in out):
+                out.append((kind, _clause_around(region, s, s + q.end()), None))
+        ex = _EXCLUDING.search(region[e : e + 120])
+        if ex and not _SEP.search(region[e : e + ex.start()]):
+            w = ex.group("w").lower()
+            kind = "excludes_superstores" if w in _SUPERSTORE_WORDS else "excludes_warehouse_clubs"
+            if not any(k == kind for k, _, _ in out):
+                out.append((kind, ex.group(0).strip(), None))
+    if not spans and code in _DIRECT_CATEGORIES and (q := _DIRECT.search(clause)):
+        out.append(("booked_direct", q.group(0).strip(), None))
+    return out
 
 
 def portal_lead(text: str) -> bool:

@@ -258,6 +258,16 @@
      "monthly_spend": {
       "$ref": "#/components/schemas/MonthlySpend"
      },
+     "opt_in_booked_direct": {
+      "default": false,
+      "title": "Opt In Booked Direct",
+      "type": "boolean"
+     },
+     "opt_in_portal": {
+      "default": false,
+      "title": "Opt In Portal",
+      "type": "boolean"
+     },
      "opt_in_rotating": {
       "default": false,
       "title": "Opt In Rotating",
@@ -1249,6 +1259,35 @@
     "title": "ProductView",
     "type": "object"
    },
+   "RateConditionView": {
+    "properties": {
+     "detail": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Detail"
+     },
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "text"
+    ],
+    "title": "RateConditionView",
+    "type": "object"
+   },
    "RateView": {
     "properties": {
      "cap_cents": {
@@ -1292,6 +1331,13 @@
      "category": {
       "title": "Category",
       "type": "string"
+     },
+     "conditions": {
+      "items": {
+       "$ref": "#/components/schemas/RateConditionView"
+      },
+      "title": "Conditions",
+      "type": "array"
      },
      "ends_on": {
       "anyOf": [

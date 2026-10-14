@@ -103,6 +103,37 @@ def _months_active(r: RateView, now: datetime) -> Decimal:
     return Decimal(max(0, min(12, months)))
 
 
+_RESTRICTIVE = {"portal_only", "booked_direct", "partner_only"}
+_NOTE_KINDS = {
+    "us_only": "U.S. purchases only",
+    "excludes_superstores": "superstores are excluded",
+    "excludes_warehouse_clubs": "warehouse clubs are excluded",
+    "enrollment_required": "enrollment or activation required",
+}
+
+
+def condition_kinds(r: RateView) -> set[str]:
+    return {c.kind for c in r.conditions} | ({"portal_only"} if r.portal_only else set())
+
+
+def rate_applies(r: RateView, req: CardRequest, d: dict[str, object]) -> bool:
+    """Whether a rate's qualifiers let it count for this user (DESIGN §24.17 A): portal-only and booked-direct
+    rates need the user's opt-in, a partner-only rate needs that partner as the preferred partner. Other qualifiers
+    (U.S. only, superstore exclusions, enrollment) count, with a note."""
+    kinds = condition_kinds(r)
+    if "portal_only" in kinds and not req.opt_in_portal:
+        return False
+    if "booked_direct" in kinds and not req.opt_in_booked_direct:
+        return False
+    if "partner_only" in kinds:
+        partner = str(
+            d.get("co_brand_partner") or next((c.detail for c in r.conditions if c.detail), "") or ""
+        )
+        if not (req.preferred_partner and partner and req.preferred_partner.lower() in partner.lower()):
+            return False
+    return True
+
+
 def annual_rewards(
     p: ProductView, req: CardRequest, cpp: Decimal, now: datetime
 ) -> tuple[int, dict[str, int], float, list[str]]:
@@ -115,10 +146,17 @@ def annual_rewards(
     total = sum(annual.values(), Decimal(0))
     notes: list[str] = []
     rates = [r for r in p.reward_rates if r.category not in {"other"}]
-    portal = [r for r in rates if r.portal_only]
-    if portal:
+    left_out = [r for r in rates if not rate_applies(r, req, p.details)]
+    kinds_out = set().union(*(condition_kinds(r) for r in left_out)) if left_out else set()
+    if "portal_only" in kinds_out:
         notes.append("Portal-only rates are not included in estimates (valued at the base rate).")
-    rates = [r for r in rates if not r.portal_only]
+    if "booked_direct" in kinds_out:
+        notes.append(
+            "Rates for booking directly with the airline or hotel are not included (you didn't opt in)."
+        )
+    if "partner_only" in kinds_out:
+        notes.append("Rates at the co-brand partner are not included unless it is your preferred partner.")
+    rates = [r for r in rates if rate_applies(r, req, p.details)]
     remaining = dict(annual)
     value = Decimal(0)
     per_cat: dict[str, int] = {}
@@ -159,6 +197,8 @@ def annual_rewards(
             matched += in_cap
         if best.requires_activation:
             notes.append(f"{best.category.replace('_', ' ').capitalize()} rate requires activation.")
+        for k in sorted(condition_kinds(best) & set(_NOTE_KINDS) - {"enrollment_required"}):
+            notes.append(f"{best.category.replace('_', ' ').capitalize()}: {_NOTE_KINDS[k]}.")
         if cap is not None:
             notes.append(
                 f"{best.category.replace('_', ' ').capitalize()}: {_r(best.rate, best.rate_unit)} up to "
@@ -353,7 +393,8 @@ def _goal(c: CardCalc, req: CardRequest) -> float:
         return 1.0 if d.get("reward_currency") == "cashback" else 0.3
     if req.goal == "travel":
         travel_rate = any(
-            r.category in TRAVEL_BENEFITS and r.rate > base and not r.portal_only for r in c.p.reward_rates
+            r.category in TRAVEL_BENEFITS and r.rate > base and rate_applies(r, req, d)
+            for r in c.p.reward_rates
         )
         no_ftf = d.get("foreign_tx_fee_pct") is not None and Decimal(str(d["foreign_tx_fee_pct"])) == 0
         perks = any(b.benefit_type in TRAVEL_BENEFITS for b in c.p.benefits)
@@ -384,7 +425,7 @@ def _break_even(c: CardCalc) -> str | None:
     if c.annual_fee_cents <= 0:
         return "No annual fee."
     best = max(
-        (r for r in c.p.reward_rates if not r.portal_only and not r.is_rotating),
+        (r for r in c.p.reward_rates if not condition_kinds(r) & _RESTRICTIVE and not r.is_rotating),
         key=lambda r: r.rate,
         default=None,
     )

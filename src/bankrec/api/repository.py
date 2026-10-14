@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, selectinload
 from bankrec.db import prod as P
 from bankrec.freshness import offer_state, product_label
 from bankrec.publish.changes import jsonable
-from bankrec.recommend.models import BenefitView, OfferView, ProductView, RateView
+from bankrec.recommend.models import BenefitView, OfferView, ProductView, RateConditionView, RateView
 
 __all__ = ["Filters", "Repository", "to_view"]
 
@@ -108,6 +108,7 @@ def to_view(p: P.Product, now: datetime, bank_name: str) -> ProductView:
             portal_only=r.portal_only,
             ends_on=r.ends_on,
             text=r.conditions_text,
+            conditions=[RateConditionView(**c) for c in r.conditions or []],
         )
         for r in p.reward_rates
     ]

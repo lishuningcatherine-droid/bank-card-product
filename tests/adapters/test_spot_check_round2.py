@@ -8,7 +8,11 @@ from decimal import Decimal
 from bankrec.ingest.common import extract as X
 from bankrec.ingest.common.html import parse_html
 from bankrec.model import NullReason
+from bankrec.parsers.rewards import parse_reward_statement
+from bankrec.recommend import cards
+from bankrec.recommend.models import MonthlySpend, RateConditionView, RateView
 from tests.adapters._helpers import run_official
+from tests.unit.test_recommend_cards import NOW, card, rate, req
 
 
 def offers(c):  # type: ignore[no-untyped-def]
@@ -131,3 +135,108 @@ def test_f_secured_deposits_are_key_fields_and_not_applicable_when_unsecured() -
     c = run_official("chase", "chase-sapphire-reserve", "sapphire-reserve-2026-10-14.rendered.html")
     for f in ("secured_min_deposit_cents", "secured_max_deposit_cents"):
         assert c.fields[f].null_reason is NullReason.not_applicable
+
+
+def conds(c, cat, rate=None):  # type: ignore[no-untyped-def]
+    """{kind: text} of the conditions on the ``cat`` rate (the one with ``rate`` when given)."""
+    [v] = [
+        r.value
+        for r in c.reward_rates
+        if r.value and r.value.category == cat and (rate is None or r.value.rate == Decimal(rate))
+    ]
+    return {x.kind: x.text for x in v.conditions}
+
+
+def test_a_sapphire_reserve_booked_direct_and_portal_qualifiers() -> None:
+    # «4x points on flights booked direct*» / «4x points on hotels booked direct*» / «8x points on all purchases
+    # through Chase Travel, including The Edit℠*»: the qualifiers are stored with their words, not dropped.
+    c = run_official("chase", "chase-sapphire-reserve", "sapphire-reserve-2026-10-14.rendered.html")
+    assert conds(c, "airline") == {"booked_direct": "on flights booked direct*"}
+    assert conds(c, "hotel") == {"booked_direct": "on hotels booked direct*"}
+    assert conds(c, "travel") == {"portal_only": "on all purchases through Chase Travel"}
+    assert conds(c, "dining") == {}  # «3x points on dining worldwide»
+
+
+def test_a_surpass_us_only_and_partner_qualifiers() -> None:
+    # «6X Points on Dining At U.S. restaurants» / «6X Points on Groceries At U.S. supermarkets» / «6X Points on Gas At
+    # U.S. gas stations» / «4X Points on U.S. Online Retail Purchases» / «12X Points on Hotels & Resorts For eligible
+    # purchases made directly with hotels and resorts within the Hilton portfolio»
+    c = run_official("american_express", "hilton-honors-surpass", "hilton-surpass-2026-10-14.html")
+    assert conds(c, "dining") == {"us_only": "U.S. restaurants"}
+    assert conds(c, "groceries") == {"us_only": "U.S. supermarkets"}
+    assert conds(c, "gas") == {"us_only": "U.S. gas stations"}
+    assert conds(c, "online_shopping") == {"us_only": "U.S. Online Retail Purchases"}
+    h = conds(c, "hotel")
+    assert (
+        set(h) == {"booked_direct", "partner_only"}
+        and "made directly with hotels and resorts" in h["booked_direct"]
+    )
+    [hv] = [r.value for r in c.reward_rates if r.value and r.value.category == "hotel"]
+    assert next(x.detail for x in hv.conditions if x.kind == "partner_only") == "Hilton"
+
+
+def test_a_savor_good_credit_grocery_excludes_superstores() -> None:
+    # «Earn unlimited 3% cash back at grocery stores (excluding superstores like Walmart® and Target®), ...»
+    c = run_official("capital_one", "savor-good-credit", "savor-good-credit-2026-10-14.html")
+    assert "excluding superstores like Walmart® and Target®" in conds(c, "groceries")["excludes_superstores"]
+
+
+def test_a_qualifier_scope_in_lists() -> None:
+    # "U.S." limits only the category it precedes; "booked directly" only the item it follows; "worldwide" and
+    # "including ... in the U.S." do not make the main category U.S.-only; the portal's "booked directly in the Travel
+    # Center" is portal-only, not booked-direct.
+    def c_of(t: str) -> dict[str, set[str]]:
+        rr = parse_reward_statement(t)
+        assert rr is not None
+        return {k: {x[0] for x in v} for k, v in rr.conditions.items()}
+
+    assert c_of("3% cash back at U.S. gas stations and on transit") == {"gas": {"us_only"}}
+    assert c_of("Earn 5X points on flights booked directly, car rental agencies, on dining") == {
+        "airline": {"booked_direct"}
+    }
+    assert c_of("2X Miles at restaurants, including takeout and delivery in the U.S.") == {}
+    assert c_of(
+        "Earn 5% cash back on prepaid hotels and car rentals booked directly in the Travel Center."
+    ) == {"travel": {"portal_only"}}
+
+
+def test_a_recommender_counts_restricted_rates_only_with_opt_in() -> None:
+    # A booked-direct airline/hotel rate never counts for generic travel spend; a portal-only travel rate counts only
+    # when the user says they book through the portal.
+    portal = RateView(
+        category="travel",
+        rate=Decimal("5"),
+        rate_unit="x",
+        portal_only=True,
+        conditions=[RateConditionView(kind="portal_only", text="booked through Example Bank Travel")],
+    )
+    p = card(rates=[portal, rate("travel", "2", "x"), rate("other", "1", "x")], reward_currency="points")
+    sp = MonthlySpend(travel=100)
+    off, _, _, notes = cards.annual_rewards(p, req(monthly_spend=sp), Decimal("1"), NOW)
+    on, _, _, _ = cards.annual_rewards(p, req(monthly_spend=sp, opt_in_portal=True), Decimal("1"), NOW)
+    assert (off, on) == (2400, 6000) and any("Portal-only" in n for n in notes)
+    direct = RateView(
+        category="travel",
+        rate=Decimal("4"),
+        rate_unit="x",
+        conditions=[RateConditionView(kind="booked_direct", text="on flights booked direct")],
+    )
+    p2 = card(rates=[direct, rate("other", "1", "x")], reward_currency="points")
+    assert cards.annual_rewards(p2, req(monthly_spend=sp), Decimal("1"), NOW)[0] == 1200
+    assert (
+        cards.annual_rewards(p2, req(monthly_spend=sp, opt_in_booked_direct=True), Decimal("1"), NOW)[0]
+        == 4800
+    )
+    us = RateView(
+        category="dining",
+        rate=Decimal("6"),
+        rate_unit="x",
+        conditions=[RateConditionView(kind="us_only", text="U.S. restaurants")],
+    )
+    v, _, _, notes = cards.annual_rewards(
+        card(rates=[us, rate("other", "1", "x")], reward_currency="points"),
+        req(monthly_spend=MonthlySpend(dining=100)),
+        Decimal("1"),
+        NOW,
+    )
+    assert v == 7200 and "Dining: U.S. purchases only." in notes
