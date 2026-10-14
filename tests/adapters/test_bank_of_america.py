@@ -27,7 +27,7 @@ def test_unlimited_cash_rewards() -> None:
         "unlimited-cash-back-credit-card",
         "credit-cards-products-unlimited-cash-back-credit-card.rendered.html",
     )
-    assert c.parser_version == "bank_of_america/1.0.0"
+    assert c.parser_version == "bank_of_america/1.1.0"
     assert c.name == "Bank of America® Unlimited Cash Rewards Credit Card"
     assert c.value("annual_fee_cents") == 0
     assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
@@ -163,3 +163,43 @@ def test_boilerplate_does_not_make_the_rendered_page_blocked() -> None:
         boilerplate=bank.boilerplate_phrases,
     )
     assert cl.page_type is PageType.official_product_detail
+
+
+def test_terms_page_schumer_box() -> None:
+    """The rendered "Terms and Conditions for ..." page (its campaignid/productoffercode/locale kept)."""
+    from datetime import UTC, datetime
+
+    from bankrec.ingest.adapters import get_adapter
+    from bankrec.ingest.adapters.base import ClassifiedPage
+    from bankrec.registry.schema import SourceEntry
+
+    reg = load_registry(require_sources=False)
+    bank = reg.bank("bank_of_america")
+    url = "https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4082058&productoffercode=6E&locale=en_US"
+    doc = parse_html((B / "terms-unlimited-cash-back.rendered.html").read_text())
+    src = SourceEntry(
+        bank_id="bank_of_america",
+        slug="unlimited-cash-back-credit-card-terms",
+        product_type="credit_card",
+        source_url=url,
+        source_kind="terms_page",
+        parser_name="bank_of_america",
+        expected_entity="Bank of America® Unlimited Cash Rewards Credit Card",
+    )
+    cl = classify(
+        url, doc, src.expected_entity, source_kind="terms_page", boilerplate=bank.boilerplate_phrases
+    )
+    assert cl.page_type is PageType.terms_page
+    page = ClassifiedPage(src, bank, url, cl.page_type, datetime.now(UTC), doc.text, doc)
+    c = get_adapter("bank_of_america").extract(page)[0]
+    assert c.name == "Bank of America® Unlimited Cash Rewards"  # same canonical key as the product page
+    assert c.value("annual_fee_cents") == 0  # "Annual Fee / None"
+    assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
+        Decimal("17.74"),
+        Decimal("27.74"),
+    )
+    assert c.value("foreign_tx_fee_pct") == Decimal(
+        "3"
+    )  # "3% of the U.S. dollar amount of each transaction ..."
+    assert c.value("bt_fee_pct") == Decimal("5")
+    assert c.reward_rates == [] and not c.offers  # rewards and offers come from the product page only
