@@ -1,6 +1,6 @@
 # Held changes awaiting review
 
-Generated 2026-10-14 17:22 UTC from the open `major_change` review items. Prod keeps the previous values for these cards (shown Partially verified) until each item is approved or rejected with `bankrec review approve|reject <id>`. Recommendations are mine; nothing has been approved.
+Generated 2026-10-14 17:27 UTC from the open `major_change` review items. Prod keeps the previous values for these cards (shown Partially verified) until each item is approved or rejected with `bankrec review approve|reject <id>`. Recommendations are mine; nothing has been approved.
 
 | Review id | Bank | Card | Field | Change | Recommendation | Page |
 |---|---|---|---|---|---|---|
@@ -47,7 +47,7 @@ Generated 2026-10-14 17:22 UTC from the open `major_change` review items. Prod k
 | 330 | capital_one | Venture Business | reward_rates | + 5x car_rental (portal)<br>− 5x travel (portal) | approve: drops 'travel' read from the portal's name (DESIGN §24.16) | <https://www.capitalone.com/small-business/credit-cards/venture-business/> |
 | 334 | capital_one | Venture X Business | reward_rates | + 10x car_rental (portal); 10x hotel (portal); 5x airline (portal) | approve: only adds rates the page states | <https://www.capitalone.com/small-business/credit-cards/venture-x-business/> |
 | 335 | capital_one | VentureOne Business | reward_rates | − 5x travel (portal) | approve: drops 'travel' read from the portal's name (DESIGN §24.16) | <https://www.capitalone.com/small-business/credit-cards/ventureone-business/> |
-| 206 | chase | Instacart Mastercard® | reward_rates | + 1% partner | approve: only adds rates the page states | <https://creditcards.chase.com/cash-back-credit-cards/instacart> |
+| 206 | chase | Instacart Mastercard® | reward_rates | + 5% partner cap $6,000 | approve: only adds rates the page states | <https://creditcards.chase.com/cash-back-credit-cards/instacart> |
 | 207 | chase | British Airways Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline | approve: only adds rates the page states | <https://creditcards.chase.com/travel-credit-cards/avios/british-airways> |
 | 284 | chase | IHG One Rewards Business Credit Card | reward_rates | + 5x advertising; 5x car_rental | approve: only adds rates the page states | <https://creditcards.chase.com/business-credit-cards/IHG/business> |
 | 285 | chase | Ink Business Cash® Credit Card | reward_rates | + 5% office_supply cap $25,000; 5% telecom cap $25,000 | approve: only adds rates the page states | <https://creditcards.chase.com/business-credit-cards/ink/cash> |
@@ -80,12 +80,7 @@ Generated 2026-10-14 17:22 UTC from the open `major_change` review items. Prod k
 | 305 | chase | United Gateway℠ Card | offer:card_welcome | — → offer | approve: offer now read | <https://creditcards.chase.com/travel-credit-cards/united/united-gateway> |
 | 306 | chase | United Quest℠ Card | reward_rates | + 2x car_rental; 4x partner | approve: only adds rates the page states | <https://creditcards.chase.com/travel-credit-cards/united/united-quest> |
 | 306 | chase | United Quest℠ Card | offer:card_welcome | — → offer | approve: offer now read | <https://creditcards.chase.com/travel-credit-cards/united/united-quest> |
-| 321 | chase | Ink Business Premier® Credit Card | offer_capture | True → — | reject: value missing from this capture | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
-| 321 | chase | Ink Business Premier® Credit Card | purchase_apr_max_pct | 28.74 → — | reject: value missing from this capture | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
-| 321 | chase | Ink Business Premier® Credit Card | purchase_apr_min_pct | 17.99 → — | reject: value missing from this capture | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
-| 321 | chase | Ink Business Premier® Credit Card | purchase_apr_variable | True → — | reject: value missing from this capture | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
-| 321 | chase | Ink Business Premier® Credit Card | reward_rates | + 2% travel; 5% merchant | approve: only adds rates the page states | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
-| 321 | chase | Ink Business Premier® Credit Card | offer:card_welcome | offer → — | reject: offer no longer read (check page) | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
+| 321 | chase | Ink Business Premier® Credit Card | reward_rates | + 2% travel; 5% merchant | reject: the 2% travel comes from legal text ("2% Cash Back rewards earned on each purchase)"), not a travel rate; the 5% Lyft rate is real | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
 | 322 | chase | Southwest Rapid Rewards® Premier Business Credit Card | reward_rates | + 3x partner | approve: only adds rates the page states | <https://creditcards.chase.com/business-credit-cards/southwest/premier-business> |
 | 333 | chase | IHG One Rewards Premier Credit Card | reward_rates | + 5x car_rental | approve: only adds rates the page states | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier> |
 | 262 | us_bank | U.S. Bank Altitude® Connect Visa Signature® Card | reward_rates | + 5x travel (portal) | approve: only adds rates the page states | <https://www.usbank.com/credit-cards/altitude-connect-visa-signature-credit-card.html> |

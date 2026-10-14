@@ -1,6 +1,6 @@
 # Spot check, round 2: 10 Verified cards
 
-Generated 2026-10-14 17:22 UTC from the `prod` schema (exactly what the API serves), after the stricter Verified rules of DESIGN §24.16. None of these cards was in round 1 (see `docs/SPOT_CHECK_TRIAGE.md`).
+Generated 2026-10-14 17:27 UTC from the `prod` schema (exactly what the API serves), after the stricter Verified rules of DESIGN §24.16. None of these cards was in round 1 (see `docs/SPOT_CHECK_TRIAGE.md`).
 
 How to read a row:
 - **Earn rates** lists every stored rate, including issuer-portal-only rates, with caps; `other` is the base rate.
