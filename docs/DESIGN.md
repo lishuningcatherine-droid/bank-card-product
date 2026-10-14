@@ -1254,3 +1254,8 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   purchase and 80,000 bonus miles after …" sentence, with a PQP explanation line between tiers, and are now tiered.
   U.S. Bank Shield's "$20 / $50 annual statement credit" (yearly benefits) were stored as welcome offers; annual
   statement credits are no longer read as offers.
+  Named-merchant promotions keep their end dates: "Earn a total of 5% cash back on Lyft rides through September 30,
+  2027" is no longer dropped as a stacked total, a dated rate is its own rate in the per-category dedupe, and an
+  undated heading that repeats a dated rate ("5x on Lyft rides") is dropped in favour of the dated one. Ink Business
+  Premier's "Earn 5% cash back now through September 30, 2027 with your … card" does not name the merchant, so its
+  Lyft rate stays undated.

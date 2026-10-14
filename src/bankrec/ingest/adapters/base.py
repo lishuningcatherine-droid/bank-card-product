@@ -74,7 +74,14 @@ def lowest_rate_per_category(rates: list[Sourced[RewardRateRec]]) -> list[Source
         lv = low[k].value if k in low else None
         if lv is None or v.rate < lv.rate or (v.rate == lv.rate and lv.cap_cents is None and v.cap_cents):
             low[k] = r
-    return list(low.values())
+    # "5x on Lyft rides" (a tile heading) and "Earn 5x on Lyft rides through 9/30/27" are one rate: the dated one.
+    dated = {(v.category, v.portal_only, v.rate) for r in low.values() if (v := r.value) and v.ends_on}
+    return [
+        r
+        for r in low.values()
+        if (v := r.value) is not None
+        and (v.ends_on is not None or (v.category, v.portal_only, v.rate) not in dated)
+    ]
 
 
 # Rate-like text that is never an earn statement: APRs, review percentages, bare numbers, calculator labels.

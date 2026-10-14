@@ -358,3 +358,14 @@ def test_annual_statement_credit_is_not_a_welcome_offer() -> None:
     # card.» is a yearly benefit.
     c = run_official("us_bank", "business-shield-credit-card", "business-shield-2026-10-14.rendered.html")
     assert offers(c) == []
+
+
+def test_merchant_promotions_keep_their_end_dates() -> None:
+    # «5x on Peloton purchases» / «Earn 5x total points on eligible Peloton equipment and accessory purchases over $150
+    # through 12/31/27.*» / «5x on Lyft rides» / «Earn 5x on Lyft rides through 9/30/27.*» (Sapphire Preferred,
+    # round-1 fixture): two dated promotions, not one undated 5x.
+    c = run_official(
+        "chase", "chase-sapphire-preferred", "creditcards-rewards-credit-cards-sapphire-preferred.html"
+    )
+    got = sorted(r.value.ends_on for r in c.reward_rates if r.value and r.value.category == "merchant")
+    assert got == [date(2027, 9, 30), date(2027, 12, 31)]

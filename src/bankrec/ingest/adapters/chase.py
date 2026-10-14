@@ -61,7 +61,7 @@ _NOT_EARN = re.compile(
     # "14X total points at Marriott hotels" / "9x total miles on eligible United flights" stack loyalty-program earn on
     # top of the card's own rate; a named-merchant promotion ("5% total cash back on Lyft rides", "10x total points on
     # eligible Peloton equipment") is the card's own rate.
-    r"\btotal\b(?!\s+(?:cash\s+back|points|miles)\s+on\s+(?:eligible\s+|qualifying\s+)?(?:lyft|peloton)\b)|"
+    r"\btotal\b(?!\s+(?:of\s+\S+\s+)?(?:cash\s+back|points|miles)\s+on\s+(?:eligible\s+|qualifying\s+)?(?:lyft|peloton)\b)|"
     # APR statements and airline-program earn ("6x miles on the fare ... as a MileagePlus member") are not card earn
     r"\bAPR\b|\bas an? [\w ]{0,40}member\b|\bon top of the\b|"
     # Points Boost: "up to 1.5x or 2x depending on your card and the offer" is a redemption value, not earn
@@ -301,7 +301,7 @@ class Adapter(DeclarativeAdapter):
             v = r.value
             if v is None or (v.cap_cents is None and (_UNPARSED_CAP.search(v.text) or v.is_rotating)):
                 continue
-            k = (v.category, v.rate, v.rate_unit)
+            k = (v.category, v.rate, v.rate_unit, v.ends_on)  # a dated promotion is its own rate
             cur = best[k].value if k in best else None
             if cur is None or (cur.cap_cents is None and v.cap_cents is not None):
                 best[k] = r
