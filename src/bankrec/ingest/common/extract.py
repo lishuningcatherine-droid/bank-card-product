@@ -615,6 +615,9 @@ def named_benefits(statements: Iterable[str], ctx: ExtractionContext) -> list[So
     return [s for s in out if s.present]
 
 
+_RECURRING_CREDIT = re.compile(r"\b(?:annual|yearly|each\s+year)\s+statement\s+credit\b", re.IGNORECASE)
+
+
 def offer(
     block: str,
     footnotes: str,
@@ -628,6 +631,8 @@ def offer(
     evidence: str | None = None,
 ) -> Sourced[OfferRec] | None:
     """``evidence``: the located span when ``block`` also carries context lines (see ``offer_context``)."""
+    if _RECURRING_CREDIT.search(block):
+        return None  # "Earn a $50 annual statement credit after $5,000 in purchases ..." is a yearly benefit
     po = parse_offer_block(block, footnotes)
     if po is None:
         return None
@@ -731,7 +736,8 @@ _NUMERIC_END = re.compile(
     re.IGNORECASE,
 )
 _TIER = re.compile(
-    r"(?:^|[.*†!]\s*|\bplus,?\s+|\band\s+)(?:earn|get)\s+(?:an?\s+)?(?P<add>additional\s+|another\s+)?"
+    # "... (PQP) Earn 90,000 bonus miles ..." and "Earn 500 PQP after first purchase and 80,000 bonus miles after ..."
+    r"(?:(?:^|[.*†!)]\s*|\bplus,?\s+|\band\s+)(?:earn|get)\s+|\band\s+)(?:an?\s+)?(?P<add>additional\s+|another\s+)?"
     r"(?P<amt>[\d,]{5,}|\$[\d,]+)\s*(?:bonus\s+)?(?:points|miles|avios|cash back|cash bonus|bonus)?[^.]*?"
     r"\b(?:after|once|when)\s+you\s+(?:"
     r"(?:spend|make)\s+(?:an?\s+)?(?P<inc>additional\s+|another\s+)?\$(?P<req>[\d,]+)"
@@ -920,6 +926,8 @@ def offer_context(text: str, block: str) -> str:
                 r"^plus,?\s+earn\b", nxt, re.I
             ):
                 extra.append(nxt)
+            elif re.match(r"^the\s+[\d,]+\s+(?:PQP|Premier qualifying points)\s+are\b", nxt, re.I):
+                continue  # "The 2,000 PQP are in addition to ...": an explanation between two tiers
             elif not _FOLLOW.search(nxt):
                 break
     seen: list[str] = []

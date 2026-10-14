@@ -1249,3 +1249,8 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   ongoing 2X had been stored as ending 2026-12-31 and the 3X promotion was missing. A "these purchases will earn"
   sentence now stays with the previous one and gives a dated rate for the same categories; a dated rate and the
   ongoing rate for one category are both kept by the per-category dedupe.
+  Offers found while preparing the review list: United Business / United Club Business / United Quest were stored
+  as "up to 100,000 (90,000) after $5,000 ($4,000)"; their tiers follow a "(PQP)" heading or an "… PQP after first
+  purchase and 80,000 bonus miles after …" sentence, with a PQP explanation line between tiers, and are now tiered.
+  U.S. Bank Shield's "$20 / $50 annual statement credit" (yearly benefits) were stored as welcome offers; annual
+  statement credits are no longer read as offers.

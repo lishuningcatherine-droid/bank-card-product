@@ -332,3 +332,29 @@ def test_time_bound_rate_referring_back_to_the_previous_categories() -> None:
         ("groceries", Decimal("2"), None),
         ("groceries", Decimal("3"), date(2026, 12, 31)),
     ]
+
+
+def test_united_tiers_after_pqp_lines() -> None:
+    # «Earn up to 100,000 bonus miles + 2,000 Premier qualifying points (PQP)» / «Earn 90,000 bonus miles + 2,000 PQP
+    # after you spend $5,000 ...» / «The 2,000 PQP are in addition to ...» / «Plus, earn 10,000 bonus miles after you
+    # add an employee card ...»: tiered, not "up to 100,000 after $5,000".
+    c = run_official("chase", "united-business", "united-business-2026-10-14.rendered.html")
+    [o] = offers(c)
+    assert o.amount_qualifier == "tiered" and [(t.amount, t.requirement_min_cents) for t in o.tiers] == [
+        (90000, 500000),
+        (10000, None),
+    ]
+    # «Earn 500 PQP after first purchase and 80,000 bonus miles after you spend $4,000 ...»
+    c = run_official("chase", "united-quest", "united-quest-2026-10-14.rendered.html")
+    [o] = offers(c)
+    assert o.amount_qualifier == "tiered" and [(t.amount, t.requirement_min_cents) for t in o.tiers] == [
+        (80000, 400000),
+        (10000, None),
+    ]
+
+
+def test_annual_statement_credit_is_not_a_welcome_offer() -> None:
+    # «Earn a $50 annual statement credit after $5,000 in purchases made through the Travel Center when you use your
+    # card.» is a yearly benefit.
+    c = run_official("us_bank", "business-shield-credit-card", "business-shield-2026-10-14.rendered.html")
+    assert offers(c) == []

@@ -10,3 +10,4 @@ credit-cards-altitude-go-secured-visa-credit-card-html.rendered.html | https://w
 static-cash-plus-visa-signature-credit-card.html | https://www.usbank.com/credit-cards/cash-plus-visa-signature-credit-card.html | http | 200 | 2026-10-13T18:03:45Z
 cash-plus-secured-2026-10-14.rendered.html | https://www.usbank.com/credit-cards/cash-plus-secured-visa-credit-card.html | playwright | 200 | 2026-10-14T08:39:41Z
 altitude-go-secured-2026-10-14.rendered.html | https://www.usbank.com/credit-cards/altitude-go-secured-visa-credit-card.html | playwright | 200 | 2026-10-14T17:13:14Z
+business-shield-2026-10-14.rendered.html | https://www.usbank.com/business-banking/business-credit-cards/business-shield-credit-card.html | playwright | 200 | 2026-10-14T19:48:11Z
