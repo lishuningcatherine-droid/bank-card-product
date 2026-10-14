@@ -8,6 +8,7 @@ categories:
   # "Select travel" (e.g. flights booked directly with airlines or the issuer's portal) is not travel in general.
   select_travel: {label: Select travel, synonyms: ["select travel"]}
   travel: {label: Travel, synonyms: ["travel", "travel purchases", "hotels and car rentals"]}
+  car_rental: {label: Car rental, synonyms: ["car rental agencies", "car rentals", "car rental", "rental cars", "rental car"]}
   # "Flights" are airline purchases, not travel in general (which would also cover hotels, cars, cruises).
   airline: {label: Airline, synonyms: ["flights booked directly with airlines", "flights booked directly",
                                        "flights booked direct", "airline purchases", "flight purchases", "airfare", "flights", "airline"]}

@@ -44,7 +44,7 @@ export const CATEGORY_LABEL: Record<string, string> = {
   online_grocery: "Online grocery", food_delivery: "Food delivery", select_travel: "Select travel",
   office_supply: "Office supply stores", telecom: "Internet, cable & phone", advertising: "Advertising",
   shipping: "Shipping", choice: "Category you choose", choice_everyday: "Everyday category you choose",
-  partner: "Partner purchases", merchant: "Specific merchant", foreign_purchases: "Foreign purchases",
+  partner: "Partner purchases", merchant: "Specific merchant", foreign_purchases: "Foreign purchases", car_rental: "Car rental",
 };
 
 export const TYPE_LABEL = { credit_card: "Credit card", checking: "Checking account", savings: "Savings account" } as const;
