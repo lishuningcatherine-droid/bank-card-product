@@ -668,6 +668,34 @@ def stated_no_ftf(text: str, name: str) -> str | None:
     return None
 
 
+_DEP_RANGE = re.compile(
+    r"security\s+deposit\s+of\s+(?P<lo>\$[\d,]+)\s+(?:to|-|–)\s+(?P<hi>\$[\d,]+)"
+    r"|minimum\s+(?:security\s+)?deposit\s+of\s+(?P<lo2>\$[\d,]+)\s*\(\s*maximum\s+of\s+(?P<hi2>\$[\d,]+)\s*\)"
+    r"|deposit[^.]{0,60}?\bbetween\s+(?P<lo3>\$[\d,]+)\s+and\s+(?P<hi3>\$[\d,]+)"
+    r"|\bmaximum\s+(?:security\s+)?deposit\s+(?:of\s+|is\s+)?(?P<hi4>\$[\d,]+)",
+    re.IGNORECASE,
+)
+_DEP_UNCLEAR = re.compile(r"deposit[^.]{0,80}?\bmaximum\s+limit\s+of\s+\$[\d,]+", re.IGNORECASE)
+
+
+def deposit_range(text: str) -> tuple[int | None, int | None, str | None, str | None]:
+    """(min cents, max cents, evidence sentence, note) of a secured card's security deposit: "security deposit of
+    $300 to $5,000", "minimum security deposit of $200 (maximum of $5,000)". "depositing more than the minimum
+    amount (up to a maximum limit of $1000)" does not say whether the limit is the deposit or the credit line, so it
+    is left ambiguous with a note."""
+    note = None
+    for ln in text.split("\n"):
+        for sent in re.split(r"(?<=[.!?])\s+", ln):
+            m = _DEP_RANGE.search(sent)
+            if m:
+                lo = m.group("lo") or m.group("lo2") or m.group("lo3")
+                hi = m.group("hi") or m.group("hi2") or m.group("hi3") or m.group("hi4")
+                return (parse_money(lo) if lo else None), parse_money(hi), sent.strip(), None
+            if note is None and _DEP_UNCLEAR.search(sent):
+                note = f"maximum deposit unclear (deposit or credit line?): {sent.strip()[:160]}"
+    return None, None, None, note
+
+
 _NO_OFFER = re.compile(
     r"\b(?:won[’']t|will\s+not|isn[’']t|is\s+not|aren[’']t|are\s+not)\s+(?:be\s+)?eligible\s+for\s+(?:a\s+|the\s+|any\s+)?"
     r"(?:new\s+card\s?member|welcome|sign[- ]?up)\s+(?:bonus|offer)"

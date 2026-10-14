@@ -353,9 +353,21 @@ class DeclarativeAdapter:
         secured = re.search(r"\bsecured\b", name, re.IGNORECASE)
         c.fields["is_secured"] = ctx.field(bool(secured), name)
         if not secured:
-            c.fields["secured_min_deposit_cents"] = ctx.field(
-                None, None, null_reason=NullReason.not_applicable
+            for f in ("secured_min_deposit_cents", "secured_max_deposit_cents"):
+                c.fields[f] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+        else:
+            # Secured cards need both ends of the deposit range (spot-check round 2, F).
+            lo, hi, ev, note = X.deposit_range(page.text)
+            cur = c.fields.get("secured_min_deposit_cents")
+            if lo is not None and (cur is None or not cur.present):
+                c.fields["secured_min_deposit_cents"] = ctx.field(lo, ev, method="free_text")
+            c.fields["secured_max_deposit_cents"] = (
+                ctx.field(hi, ev, method="free_text")
+                if hi is not None
+                else ctx.field(None, None, null_reason=NullReason.ambiguous if note else NullReason.not_found)
             )
+            if note:
+                c.notes.append(note)
         partner = None
         brand_map = {k: list(v) for k, v in co_brands().items()}
         for k, v in (self.rules.get("co_brands") or {}).items():

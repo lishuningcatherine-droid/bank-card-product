@@ -7,7 +7,9 @@ required:
   savings: [official_name, monthly_fee_cents, apy]          # apy = apy_pct or apy_tiers
 # Key fields for the "Verified" label. Missing → published as "Partially verified" (listed to users).
 key:
-  credit_card: [reward_currency, base_rate, earn_rates_complete, offer_capture]   # spot-check round 1
+  # spot-check round 1; secured deposits (round 2, F) are not applicable to unsecured cards
+  credit_card: [reward_currency, base_rate, earn_rates_complete, offer_capture, secured_min_deposit_cents,
+                secured_max_deposit_cents]
   checking: [fee_waivers]
   savings: [min_opening_deposit_cents]
 # Shown and used when verified, but their absence does not downgrade the label (owner decision 2026-10-13, same

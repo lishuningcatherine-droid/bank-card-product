@@ -71,6 +71,9 @@ export default async function ProductPage({ params }: Props) {
             {p.product_type === "credit_card" && d.secured_min_deposit_cents != null ? (
               <div className="flex justify-between gap-4 p-3"><dt className="text-ink-500">Minimum security deposit</dt><dd className="tabular">{usd(d.secured_min_deposit_cents as number)}</dd></div>
             ) : null}
+            {p.product_type === "credit_card" && d.secured_max_deposit_cents != null ? (
+              <div className="flex justify-between gap-4 p-3"><dt className="text-ink-500">Maximum security deposit</dt><dd className="tabular">{usd(d.secured_max_deposit_cents as number)}</dd></div>
+            ) : null}
             {p.product_type === "credit_card" && d.au_fee_cents != null ? (
               <div className="flex justify-between gap-4 p-3"><dt className="text-ink-500">Authorized users</dt><dd className="tabular">{d.au_fee_cents === 0 ? "No fee" : usd(d.au_fee_cents as number)}{d.au_free_count ? ` (up to ${String(d.au_free_count)} free)` : ""}</dd></div>
             ) : null}

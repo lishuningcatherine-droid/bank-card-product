@@ -1196,3 +1196,8 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   evidence, preferred over a bare "No Foreign Transaction Fees" heading. Effect on the 2026-10-14 snapshots: only
   Amex changed (FTF 0 on Surpass, Aspire, Delta Gold, Delta Platinum; annual fee from the FAQ answer on Gold, Platinum,
   Blue Cash Everyday, Delta Blue).
+- **F. Secured cards state both deposit ends.** `secured_max_deposit_cents` added (migration 0007); both deposit
+  fields are key fields, not applicable to unsecured cards. Parsed from "security deposit of $300 to $5,000" and
+  "minimum security deposit of $200 (maximum of $5,000)". Capital One Platinum Secured's "depositing more than the
+  minimum amount (up to a maximum limit of $1000)" does not say whether the limit is the deposit or the credit line,
+  so it stays ambiguous (Partially verified) with a note; Quicksilver Secured states only the minimum.

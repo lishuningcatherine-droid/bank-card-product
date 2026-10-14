@@ -50,6 +50,7 @@ CARD_FIELDS = [
     "cash_fee_min_cents",
     "foreign_tx_fee_pct",
     "secured_min_deposit_cents",
+    "secured_max_deposit_cents",
     "reward_currency",
     "reward_program",
     "base_rate",

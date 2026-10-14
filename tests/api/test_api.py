@@ -328,7 +328,8 @@ async def test_methodology_and_sources(client: httpx.AsyncClient) -> None:
     ids = {b["bank_id"] for b in s["banks"]}
     assert {"chase", "capital_one", "bank_of_america", "american_express", "us_bank", "example_bank"} <= ids
     eb = next(b for b in s["banks"] if b["bank_id"] == "example_bank")
-    assert eb["published_counts"]["credit_card"]["verified"] == 7
+    # 6: the Example Bank Secured Card states a minimum deposit only, so it is Partially verified (DESIGN §24.17 F)
+    assert eb["published_counts"]["credit_card"]["verified"] == 6
     assert any(x["product_type"] == "credit_card" and x["last_run_at"] for x in eb["summary"])
     assert s["cross_check_sources"][0]["name"].startswith("Consumer Financial Protection Bureau")
 

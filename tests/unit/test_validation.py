@@ -45,6 +45,8 @@ def test_valid_card() -> None:
         "earn_rates_complete",
         "offer_capture",
         "reward_currency",
+        "secured_max_deposit_cents",
+        "secured_min_deposit_cents",
     ]
 
 

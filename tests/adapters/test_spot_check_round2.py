@@ -103,3 +103,31 @@ def test_e_accordion_panels_are_text_but_hidden_tabs_are_not() -> None:
     )
     t = parse_html(html).text
     assert "It has no annual fee." in t and "Region answer." in t and "$95" not in t
+
+
+def test_f_altitude_go_secured_deposit_range() -> None:
+    # «Start with a security deposit of $300 to $5,000 and enjoy $0 annual fee.»
+    c = run_official(
+        "us_bank", "altitude-go-secured-visa-credit-card", "altitude-go-secured-2026-10-14.rendered.html"
+    )
+    assert c.value("is_secured") is True
+    assert (c.value("secured_min_deposit_cents"), c.value("secured_max_deposit_cents")) == (30000, 500000)
+
+
+def test_f_deposit_range_forms() -> None:
+    assert X.deposit_range(
+        "A minimum security deposit of $200 (maximum of $5,000) is required to open this account."
+    )[:2] == (20000, 500000)
+    lo, hi, _, note = X.deposit_range(
+        "You can raise your initial credit line by depositing more than the minimum amount (up to a maximum limit of $1000)."
+    )
+    assert (lo, hi) == (None, None) and note is not None and "unclear" in note
+
+
+def test_f_secured_deposits_are_key_fields_and_not_applicable_when_unsecured() -> None:
+    from bankrec.validation.rules import policy
+
+    assert {"secured_min_deposit_cents", "secured_max_deposit_cents"} <= set(policy()["key"]["credit_card"])
+    c = run_official("chase", "chase-sapphire-reserve", "sapphire-reserve-2026-10-14.rendered.html")
+    for f in ("secured_min_deposit_cents", "secured_max_deposit_cents"):
+        assert c.fields[f].null_reason is NullReason.not_applicable
