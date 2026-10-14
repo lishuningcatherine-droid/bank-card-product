@@ -69,6 +69,10 @@ _EXCLUDING = re.compile(
     re.IGNORECASE,
 )
 _SUPERSTORE_WORDS = {"superstores", "target", "walmart"}
+_EXCLUDED_PART = re.compile(
+    r"\((?:excluding|excludes|except|not\s+including)\b[^()]*\)|\b(?:excluding|not\s+including)\s+[^,;.()]*",
+    re.IGNORECASE,
+)
 # Clause separators: ; , and . but not inside "$6,000", "1.5" or "U.S."
 _SEP = re.compile(r";|,(?!\d{3})|(?<![A-Z])\.(?=\s|$)")
 _GLUED_NOTE = re.compile(r"(?<=[a-z])\d(?![\d,.%x])")
@@ -155,8 +159,12 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     # When nothing else is named ("5x on Chase Travel"), the portal stands for travel booked through it.
     blank = lambda s: _PORTAL.sub(lambda p: " " * len(p.group(0)), s)  # noqa: E731 (keeps positions)
     regions = [blank(rest), blank(text[: m.start()]), rest, text[: m.start()]]
-    region = next((r for r in regions if categories_in(r)), "")
-    cats = categories_in(region)
+    # Categories named only inside an exclusion ("online grocery purchases (excluding Target®, Walmart® and wholesale
+    # clubs)", "travel (excluding purchases made at hotels participating in IHG ...)") are not earning categories.
+    unexcl = [_EXCLUDED_PART.sub(lambda p: " " * len(p.group(0)), r) for r in regions]
+    i = next((i for i, r in enumerate(unexcl) if categories_in(r)), None)
+    region, cat_region = (regions[i], unexcl[i]) if i is not None else ("", "")
+    cats = categories_in(cat_region)
     if not cats and re.search(r"\+\s*$", rest):
         # "3% cash back + 3% first-year cash back bonus in the category of your choice": the category after the
         # added (temporary) bonus also belongs to the ongoing rate; the added bonus itself is not counted.
@@ -190,7 +198,7 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     portal = _PORTAL.search(text[: m.end()] + rest)
     rr.portal_only = bool(portal)
     for c in rr.categories:
-        found = _conditions_for(c, region, text[: m.end()] + rest)
+        found = _conditions_for(c, region, text[: m.end()] + rest, cat_region)
         if portal:
             if not _DIRECT.search(
                 text[: m.end()] + rest
@@ -209,6 +217,11 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     return rr
 
 
+def strip_exclusions(text: str) -> str:
+    """``text`` without its exclusion parts ("travel (excluding purchases made at hotels participating in IHG ...)")."""
+    return _EXCLUDED_PART.sub(" ", text)
+
+
 def _clause_around(text: str, start: int, end: int) -> str:
     """The clause of ``text`` holding [start, end): from the previous to the next , ; or . (the stating words)."""
     seps = [mm.start() for mm in _SEP.finditer(text)]
@@ -220,14 +233,18 @@ def _clause_around(text: str, start: int, end: int) -> str:
 _DIRECT_CATEGORIES = {"airline", "hotel", "car_rental", "travel", "select_travel", "partner"}
 
 
-def _conditions_for(code: str, region: str, clause: str) -> list[tuple[str, str, str | None]]:
+def _conditions_for(
+    code: str, region: str, clause: str, cat_region: str | None = None
+) -> list[tuple[str, str, str | None]]:
     """Qualifiers that apply to category ``code`` in ``region`` (the text its categories were read from):
     "U.S." right before a mention ("at U.S. gas stations and on transit": gas only); "booked direct" / "in the U.S."
     after a mention before the next , ; or . ("flights and hotels booked direct": both; "flights booked directly,
     car rental agencies": flights only); an exclusion right after it ("grocery stores (excluding Target® and
     Walmart® purchases)")."""
     out: list[tuple[str, str, str | None]] = []
-    spans = [(s, e) for s, e, c in category_spans(region) if c == code]
+    spans = [
+        (s, e) for s, e, c in category_spans(cat_region if cat_region is not None else region) if c == code
+    ]
 
     def extra(s: int) -> bool:  # a mention inside "including ..." after the same category's own mention
         prev = max([mm.end() for mm in _SEP.finditer(region, 0, s)], default=0)

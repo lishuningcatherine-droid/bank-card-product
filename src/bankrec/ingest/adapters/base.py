@@ -27,7 +27,7 @@ from bankrec.model import (
     Sourced,
 )
 from bankrec.normalize.categories import categories_in
-from bankrec.parsers.rewards import parse_rate_only, parse_reward_statement
+from bankrec.parsers.rewards import parse_rate_only, parse_reward_statement, strip_exclusions
 from bankrec.registry.no_rewards import confirmed as no_rewards_confirmed
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.settings import CONFIG_DIR
@@ -227,6 +227,81 @@ class DeclarativeAdapter:
             out.append(r)
         c.reward_rates = out
 
+    def _program_rates(
+        self,
+        page: ClassifiedPage,
+        ctx: ExtractionContext,
+        rates: list[Sourced[RewardRateRec]],
+        partner: tuple[str, str] | None,
+    ) -> tuple[list[Sourced[RewardRateRec]], list[str]]:
+        """Earn rates the page states outside the collected earn statements (spot-check round 2, B): "That's 5X points
+        with this card" tiles under a partner heading, and the rewards-program terms printed on the page ("You'll earn
+        3 points for each $1 spent on purchases that post to your account through December 31, 2026 in the following
+        rewards categories: utilities; ..."). A rate already represented (same rate and category; a co-brand partner
+        rate stands for its airline / hotel) is skipped; a missing one is added with the terms sentence as its span.
+        Returns (added rates, sentences that could not be represented). The latter make the card incomplete."""
+        words = self._partner_words(partner[0]) if partner else []
+        pool = list(rates)
+        added: list[Sourced[RewardRateRec]] = []
+        unrep: list[str] = []
+        twins = {"partner", "hotel", "airline"}
+
+        def represented(rate: Decimal, unit: str, cat: str, cap: int | None = None) -> bool:
+            # a page rate without the cap the terms state is not the same rate (and adapters drop such rates)
+            return any(
+                (v := r.value) is not None
+                and v.rate == rate
+                and v.rate_unit == unit
+                and (v.category == cat or (partner is not None and {v.category, cat} <= twins))
+                and (cap is None or v.cap_cents == cap)
+                for r in pool
+            )
+
+        sources = X.card_tiles(page.text) + X.program_statements(page.text)
+        for span, st in sources:
+            rr = parse_reward_statement(st)
+            if rr is None or not rr.categories:
+                only = parse_rate_only(st)
+                names_partner = any(re.search(rf"\b{re.escape(w)}\b", st, re.I) for w in words)
+                if only is not None and names_partner and represented(only[0], only[1], "partner"):
+                    continue  # "3 points ... on purchases made directly with Southwest Airlines®"
+                unrep.append(span)
+                continue
+            missing = [k for k in rr.categories if not represented(rr.rate, rr.rate_unit, k, rr.cap_cents)]
+            if not missing:
+                continue
+            if X.PURCHASE_SIZE.search(st) or (
+                missing == ["other"] and any(r.value and r.value.category == "other" for r in pool)
+            ):
+                unrep.append(
+                    span
+                )  # "2.5% ... on every purchase totaling $5,000 or more": no category to hold it
+                continue
+            for k in missing:
+                rec = RewardRateRec(
+                    category=k,
+                    rate=rr.rate,
+                    rate_unit=rr.rate_unit,
+                    cap_cents=rr.cap_cents,
+                    cap_period=rr.cap_period,
+                    cap_combined=rr.cap_combined,
+                    cap_group=(span if rr.cap_combined else None),
+                    post_cap_rate=rr.post_cap_rate,
+                    is_rotating=rr.is_rotating,
+                    requires_activation=rr.requires_activation,
+                    portal_only=rr.portal_only,
+                    ends_on=rr.ends_on,
+                    text=X.norm_ws(span),
+                    conditions=X.rate_conditions(rr.conditions.get(k, []), span),
+                )
+                got = ctx.field(rec, span, method="free_text", name=f"reward:{k}:program_terms")
+                if got.present:
+                    added.append(got)
+                    pool.append(got)
+                else:
+                    unrep.append(span)
+        return added, unrep
+
     def _partner_words(self, partner: str) -> list[str]:
         return list((self.rules.get("partner_words") or {}).get(partner, [partner]))
 
@@ -249,8 +324,11 @@ class DeclarativeAdapter:
             v = r.value
             if v is None:
                 continue
+            named = strip_exclusions(
+                v.text
+            )  # "travel (excluding ... hotels participating in IHG ...)" is not IHG's
             if v.category not in ("other", "partner") and any(
-                re.search(rf"\b{re.escape(w)}\b", v.text, re.I) for w in words
+                re.search(rf"\b{re.escape(w)}\b", named, re.I) for w in words
             ):
                 if v.category not in (kind, "travel"):
                     # A category the sentence lists besides the partner ("dining, ..., Alaska Airlines purchases")
@@ -264,10 +342,11 @@ class DeclarativeAdapter:
             if v.category == kind and not any(x.kind == "partner_only" for x in v.conditions):
                 # "6X at hotels participating in Marriott Bonvoy": the rate is the partner's, not hotels in general
                 hit = next(
-                    (m for w in words if (m := re.search(rf"\b{re.escape(w)}\b[^,.;]*", v.text, re.I))), None
+                    (m for w in words if (m := re.search(rf"\b{re.escape(w)}\b[^,.;]*", named, re.I))), None
                 )
                 if hit is not None:
-                    cond = RateCondition(kind="partner_only", text=X.norm_ws(hit.group(0)), detail=partner)
+                    quote = re.split(r"\s+That[’']s\b", X.norm_ws(hit.group(0)))[0]
+                    cond = RateCondition(kind="partner_only", text=quote, detail=partner)
                     r = r.model_copy(
                         update={"value": v.model_copy(update={"conditions": [*v.conditions, cond]})}
                     )
@@ -433,6 +512,8 @@ class DeclarativeAdapter:
         )
         rates = X.reward_rates(reward_lines, ctx)
         rates += self._partner_merchant_rates(reward_lines, rates, partner, ctx)
+        added, unrepresented = self._program_rates(page, ctx, rates, partner)
+        rates += added
         # Completeness (spot-check round 1): every rate-led earn statement the adapter collected must produce a rate.
         # Statements an adapter excludes on purpose (portal duplicates, "up to"/"total" stacked rates, discounts,
         # statement-credit rebates) never reach this list.
@@ -455,9 +536,35 @@ class DeclarativeAdapter:
             for st in unparsed
             if not (len(st) <= 90 and (h := parse_rate_only(st)) is not None and h in shown)
         ]
-        if unparsed:
+        # "Earn 3 points per $1 on the first $150,000 spent in combined purchases in the following categories ...": the
+        # categories are listed in the rewards-program terms, whose rates (same rate, same cap) now represent it.
+        unparsed = [
+            st
+            for st in unparsed
+            if not (
+                (h := parse_rate_only(st)) is not None
+                and any(
+                    (v := a.value) is not None
+                    and (v.rate, v.rate_unit) == h
+                    and v.cap_cents is not None
+                    and f"${v.cap_cents // 100:,}" in st
+                    for a in added
+                )
+            )
+        ]
+        if added:
+            c.notes.append(
+                "earn rates read from the rewards-program terms / card tiles on the page: "
+                + " | ".join(f"{r.value.rate} {r.value.category}" for r in added if r.value)
+            )
+        if unrepresented:
+            c.notes.append(
+                "rewards-program terms not represented: " + " | ".join(u[:120] for u in unrepresented)
+            )
+        if unparsed or unrepresented:
             c.fields["earn_rates_complete"] = ctx.field(None, None, null_reason=NullReason.ambiguous)
-            c.notes.append("earn statements not represented: " + " | ".join(u[:120] for u in unparsed))
+            if unparsed:
+                c.notes.append("earn statements not represented: " + " | ".join(u[:120] for u in unparsed))
         else:
             c.fields["earn_rates_complete"] = ctx.field(True, rates[0].span_text if rates else name)
         # Rewards paid in a merchant's own currency (e.g. "Disney Rewards Dollars") are not cash back or points the

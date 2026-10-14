@@ -56,7 +56,7 @@ export const CATEGORY_LABEL: Record<string, string> = {
   home_improvement: "Home improvement", rotating: "Rotating categories", other: "Everything else",
   online_grocery: "Online grocery", food_delivery: "Food delivery", select_travel: "Select travel",
   office_supply: "Office supply stores", telecom: "Internet, cable & phone", advertising: "Advertising",
-  shipping: "Shipping", choice: "Category you choose", choice_everyday: "Everyday category you choose",
+  shipping: "Shipping", utilities: "Utilities", choice: "Category you choose", choice_everyday: "Everyday category you choose",
   partner: "Partner purchases", merchant: "Specific merchant", foreign_purchases: "Foreign purchases", car_rental: "Car rental",
 };
 

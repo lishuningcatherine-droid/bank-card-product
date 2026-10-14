@@ -31,6 +31,8 @@ categories:
                                                "social media and search engine advertising", "social media & search engine advertising",
                                                "select advertising", "advertising purchases"]}
   shipping: {label: Shipping, synonyms: ["shipping purchases", "shipping"]}
+  # Utility bills (IHG One Rewards: "utilities; internet, cable, and phone services; select streaming services").
+  utilities: {label: Utilities, synonyms: ["utilities", "utility payments", "utility bills"]}
   # Cardholder-chosen category ("3% in the category of your choice", "5% on two categories you choose"): not a fixed
   # category; never applied to user spend unless the user opts in (like rotating).
   choice: {label: Category you choose, synonyms: ["category of your choice", "categories you choose", "category you choose",

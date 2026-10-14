@@ -1219,3 +1219,19 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   change diff, so only rates that gained a qualifier change. Known gap: conditions stated only on a supplementary
   terms page (BoA "Excluded from this Bonus Category are superstores ...") are not carried to the product's rates,
   which come from the product page.
+- **B. Completeness counts card tiles and the rewards-program terms.** Two more sources of stated earn rates are
+  checked against the extracted rates: "That's 5X points with this card" under a partner heading ("Up to 17X total
+  points at IHG® Hotels and Resorts"), and the rewards-program terms printed on the page (Chase's "Earning in the
+  Rewards Program" / "How you can earn points": one "You'll earn N … for each $1 spent on …" sentence per rate; the
+  clause headings are ignored because they can disagree with the sentence, and "(N additional points on top of …)"
+  asides are dropped). A rate already represented (same rate and category, same cap when the terms state one; a
+  co-brand partner rate stands for its airline/hotel) is skipped; a missing one is added with that sentence as its
+  span, keeping caps, end dates ("through December 31, 2026") and conditions. A sentence that cannot be represented
+  (e.g. "2.5% … on every purchase totaling $5,000 or more") makes the card incomplete. Categories named only inside
+  an exclusion ("travel (excluding purchases made at hotels participating in IHG …)") are not earning categories, and
+  partner words inside an exclusion do not make a rate the partner's. New category `utilities`. Effect on the
+  2026-10-14 snapshots: IHG One Rewards (5X IHG hotels; 3X utilities / internet, cable & phone / streaming through
+  2026-12-31), IHG Premier (10X IHG hotels; 5X travel through 2026-12-31), IHG Premier Select (12X), IHG Business (10X;
+  5X travel and office supply through 2026-12-31), Ink Business Preferred (3X shipping, advertising, travel, internet,
+  cable & phone on the first $150,000 a year; now complete), Marriott Bonvoy Bold (1X base); Ink Business Premier's
+  2.5% on purchases of $5,000 or more is listed as not represented.

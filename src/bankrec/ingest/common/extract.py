@@ -354,6 +354,63 @@ def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sour
     return [s for s in out if s.present]
 
 
+_PROGRAM_PARA = re.compile(
+    r"^(?:Earning in the Rewards Program|How you can earn (?:points|cash back))\b", re.I
+)
+_PROGRAM_SKIP = re.compile(
+    r"(?:points|miles|rewards)\s+on\s+purchases\s+of\s+products\s+and\s+services|balance\s+transfers\s+made|"
+    r"tier\s+qualifying|for\s+each\s+\$[\d,]{2,}\b(?!\s*spent)",
+    re.IGNORECASE,
+)
+_RATE_IN_PAREN = re.compile(r"\([^()]*\d+(?:\.\d+)?\s*(?:%|points?|miles?)[^()]*\)", re.IGNORECASE)
+PURCHASE_SIZE = re.compile(r"\bpurchases?\s+totaling\s+\$[\d,]+\s+or\s+more", re.IGNORECASE)
+
+
+def program_statements(text: str) -> list[tuple[str, str]]:
+    """The issuer's rewards-program terms printed on the product page (Chase: "Earning in the Rewards Program: ...
+    5 points ("5X points"): You'll earn 5 points for each $1 spent on qualifying purchases made at hotels
+    participating in IHG One Rewards. ..."): (sentence as printed, sentence prepared for parsing) per "You'll earn"
+    clause. The clause headings are not used (they can disagree with the sentence: "5% Cash Back: You'll earn 1.5%
+    ..."); "(N additional points on top of ...)" asides and the generic definition of a purchase are dropped."""
+    out: list[tuple[str, str]] = []
+    for ln in text.split("\n"):
+        if not _PROGRAM_PARA.search(ln):
+            continue
+        starts = [m.start() for m in re.finditer(r"You[’']ll earn\s", ln)]
+        for i, a0 in enumerate(starts):
+            seg = ln[a0 : starts[i + 1] if i + 1 < len(starts) else len(ln)]
+            e = re.search(r"\.(?=\s)", seg)
+            sent = (seg[: e.end()] if e else seg).strip()
+            if _PROGRAM_SKIP.search(sent):
+                continue
+            prep = _RATE_IN_PAREN.sub(" ", sent)
+            prep = re.sub(r"\b(points?|miles?|rewards)\s+total\s+for\b", r"\1 for", prep, flags=re.I)
+            prep = re.sub(r"\bCash\s+Back\s+rewards\b", "cash back", prep, flags=re.I)
+            if re.search(r"for\s+each\s+\$1(?:\s+spent)?\s*\.?$", prep.strip()):
+                prep = (
+                    prep.rstrip(". ") + " on all other purchases."
+                )  # "You'll earn 1 point for each $1 spent."
+            out.append((sent, norm_ws(prep)))
+    return out
+
+
+_TILE_THIS_CARD = re.compile(r"^That[’']s\s+(\d{1,2}(?:\.\d+)?)X\s+points\s+with\s+this\s+card\b", re.I)
+
+
+def card_tiles(text: str) -> list[tuple[str, str]]:
+    """ "Up to 17X total points at IHG® Hotels and Resorts" / "That's 5X points with this card.*": the card's own rate
+    is the second line, its category the heading. Returns (span: heading + line, statement to parse)."""
+    lines = [ln.strip() for ln in text.split("\n") if ln.strip()]
+    out: list[tuple[str, str]] = []
+    for i, ln in enumerate(lines[1:], 1):
+        m = _TILE_THIS_CARD.match(ln)
+        if not m:
+            continue
+        head = re.sub(r"^(?:earn\s+)?up\s+to\s+\d+X\s+total\s+points\s*", "", lines[i - 1], flags=re.I)
+        out.append((f"{lines[i - 1]} {ln}", f"{m.group(1)}X points {head}"))
+    return out
+
+
 def rate_conditions(found: list[tuple[str, str, str | None]], statement: str) -> list[RateCondition]:
     """Parsed qualifiers as records. The stating words must be part of the statement (the located span), else the
     statement itself is quoted."""

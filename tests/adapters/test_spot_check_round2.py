@@ -3,6 +3,7 @@ stored snapshots of 2026-10-14. Each test names its finding; values were read of
 
 from __future__ import annotations
 
+from datetime import date
 from decimal import Decimal
 
 from bankrec.ingest.common import extract as X
@@ -240,3 +241,40 @@ def test_a_recommender_counts_restricted_rates_only_with_opt_in() -> None:
         NOW,
     )
     assert v == 7200 and "Dining: U.S. purchases only." in notes
+
+
+def test_b_ihg_hotel_tile_and_time_bound_program_rates() -> None:
+    # «Up to 17X total points at IHG® Hotels and Resorts» / «That's 5X points with this card.*», and the
+    # rewards-program terms on the page: «You’ll earn 3 points for each $1 spent on purchases that post to your account
+    # through December 31, 2026 in the following rewards categories: utilities; internet, cable, and phone services;
+    # select streaming services.» Both were missing; the card was shown as complete.
+    c = run_official("chase", "ihg-one-rewards", "ihg-one-rewards-2026-10-14.rendered.html")
+    by = {(r.value.category, r.value.rate): r.value for r in c.reward_rates if r.value}
+    hotel = by[("hotel", Decimal("5"))]
+    assert [(x.kind, x.detail) for x in hotel.conditions] == [("partner_only", "IHG")]
+    assert "That's 5X points with this card" in hotel.text
+    for cat in ("utilities", "telecom", "streaming"):
+        assert by[(cat, Decimal("3"))].ends_on == date(2026, 12, 31)
+    assert by[("other", Decimal("2"))].ends_on is None  # «2X after» is the base rate
+    assert c.fields["earn_rates_complete"].value is True
+
+
+def test_b_program_terms_rate_without_a_category_fails_completeness() -> None:
+    # «You'll earn 2.5% Cash Back rewards total for each $1 spent on every purchase totaling $5,000 or more»: a real
+    # earn rate with no category to hold it, so the card is not complete (it was before only for another reason).
+    c = run_official("chase", "ink-business-premier", "ink-premier-summary-block.rendered.html")
+    assert c.fields["earn_rates_complete"].null_reason is NullReason.ambiguous
+    assert any(n.startswith("rewards-program terms not represented: You'll earn 2.5%") for n in c.notes)
+
+
+def test_b_program_statements_split_and_clean() -> None:
+    text = (
+        "Earning in the Rewards Program: You'll earn points on purchases of products and services, minus returns. "
+        "1 point: You'll earn 1 point for each $1 spent. 5 points (\"5X points\"): You'll earn 5 points total for each "
+        "$1 spent (4 additional points on top of the 1 point per $1 earned on each purchase) on office supply stores."
+    )
+    got = [p for _, p in X.program_statements(text)]
+    assert got == [
+        "You'll earn 1 point for each $1 spent on all other purchases.",
+        "You'll earn 5 points for each $1 spent on office supply stores.",
+    ]
