@@ -65,12 +65,14 @@ def lowest_rate_per_category(rates: list[Sourced[RewardRateRec]]) -> list[Source
     Chase Travel") and the general rate for the same category ("2x on all other travel") are different rates and are
     both kept (spot-check round 1, finding 1). So are a time-bound rate and the ongoing one ("2X at grocery stores.
     Through December 31, 2026, these purchases will earn 3X"; round 2)."""
-    low: dict[tuple[str, bool, object], Sourced[RewardRateRec]] = {}
+    low: dict[tuple[str, bool, object, object], Sourced[RewardRateRec]] = {}
     for r in rates:
         v = r.value
         if v is None:
             continue
-        k = (v.category, v.portal_only, v.ends_on)
+        # partner / merchant rates at different values are different merchants ("10% at DisneyPlus.com ..." and "3% at
+        # most U.S. Disney locations"), not two readings of one rate
+        k = (v.category, v.portal_only, v.ends_on, v.rate if v.category in {"partner", "merchant"} else None)
         lv = low[k].value if k in low else None
         if lv is None or v.rate < lv.rate or (v.rate == lv.rate and lv.cap_cents is None and v.cap_cents):
             low[k] = r
@@ -89,7 +91,7 @@ def _partner_probe(st: str, words: list[str]) -> str:
     """``st`` with the partner's purchases replaced by "partner purchases" (``st`` unchanged when not found)."""
     pat = "|".join(re.escape(w) for w in words)
     probe = re.sub(
-        rf"(?:eligible\s+)?(?:entire\s+)?(?:{pat})(?:[®™]|\s|,)*(?:[\w®™]+,?\s+){{0,6}}?(?:purchases?|orders)\b"
+        rf"(?:eligible\s+)?(?:entire\s+)?(?:{pat})(?:[®™]|\s|,)*(?:[\w.®™]+,?\s+){{0,6}}?(?:purchases?|orders|locations)\b"
         r"(?:\s*\([^)]*\))?",  # "Allegiant purchases (air, hotel, car rental and attractions)"
         "partner purchases",
         st,
@@ -309,6 +311,41 @@ class DeclarativeAdapter:
                 else:
                     unrep.append(span)
         return added, unrep
+
+    def _restricted_currency(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
+        na = NullReason.not_applicable
+        for spec in self.rules.get("restricted_currencies") or []:
+            name = re.search(spec["detect"], page.text)
+            if name is None:
+                continue
+            c.fields["reward_currency"] = ctx.field("restricted", name.group(0), method="free_text")
+            c.fields["reward_currency_name"] = ctx.field(spec["name"], name.group(0), method="free_text")
+            val = re.search(spec["value"], page.text)
+            c.fields["redemption_value_cents"] = (
+                ctx.field(round(float(val.group(1)) * 100), val.group(0), method="free_text")
+                if val
+                else ctx.field(None, None)
+            )
+            seen: list[str] = []
+            keys: set[str] = set()
+            for m in re.finditer(spec["restriction"], page.text):
+                k = re.sub(
+                    r"^.*?\bstatement credit toward\s+", "", X.norm_ws(m.group(0))
+                )  # same place, other wording
+                if k not in keys:
+                    keys.add(k)
+                    seen.append(X.norm_ws(m.group(0)))
+            located = [s for s in seen if ctx.locate(s) is not None]
+            c.fields["redemption_restriction"] = (
+                ctx.field(" ".join(located), located[0], method="free_text")
+                if located
+                else ctx.field(None, None)
+            )
+            if not located:
+                c.notes.append(f"{spec['name']}: where they can be redeemed is not stated on the page")
+            return
+        for f in ("reward_currency_name", "redemption_value_cents", "redemption_restriction"):
+            c.fields[f] = ctx.field(None, None, null_reason=na)
 
     def _partner_words(self, partner: str) -> list[str]:
         return list((self.rules.get("partner_words") or {}).get(partner, [partner]))
@@ -577,6 +614,7 @@ class DeclarativeAdapter:
             c.fields["earn_rates_complete"] = ctx.field(True, rates[0].span_text if rates else name)
         # Rewards paid in a merchant's own currency (e.g. "Disney Rewards Dollars") are not cash back or points the
         # recommender can value: no rates, no currency (the card stays Partially verified).
+        # Store currencies not yet modelled as restricted currencies (Capital One T-Mobile / REI): not valued.
         store = next(
             (m for p in self.rules.get("store_currency_patterns", []) if (m := re.search(p, page.text))), None
         )
@@ -589,6 +627,9 @@ class DeclarativeAdapter:
         c.fields["reward_currency"] = (
             ctx.field(currency, rates[0].span_text) if currency and rates else ctx.field(None, None)
         )
+        # Rewards paid in a merchant's own currency ("Disney Rewards Dollars"): a restricted-redemption currency with
+        # its stated value and where it can be redeemed (DESIGN §24.19), never generic cash back.
+        self._restricted_currency(page, ctx, c)
         base = [r for r in rates if r.value and r.value.category == "other"]
         c.fields["base_rate"] = (
             ctx.field(base[0].value.rate, base[0].span_text)

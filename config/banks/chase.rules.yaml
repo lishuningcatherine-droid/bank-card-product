@@ -23,8 +23,13 @@ partner_words:
   British Airways: [British Airways]
   Aer Lingus: [Aer Lingus]
   Iberia: [Iberia]
-  Disney: [Disney]
+  Disney: [Disney, DisneyPlus.com, Hulu.com, Stream.ESPN.com]
   Instacart: [Instacart]
   DoorDash: [DoorDash, Caviar]
-# Rewards in a merchant's own currency are not valued (no reward rates, no currency).
-store_currency_patterns: ["Disney Rewards Dollars"]
+# Rewards in a merchant's own currency: a restricted-redemption currency (DESIGN §24.19). detect = the currency's
+# name on the page; value = the stated worth of one unit; restriction = the sentences saying where it can be redeemed.
+restricted_currencies:
+  - name: Disney Rewards Dollars
+    detect: "Disney Rewards Dollars"
+    value: "Each Disney Rewards Dollar you redeem for a statement credit toward qualifying purchases with Pay Yourself Back is worth \\$(\\d+(?:\\.\\d{2})?)\\."
+    restriction: "(?:(?:You can use |Use )?Pay Yourself Back® to redeem Rewards Dollars|Cardmembers can also redeem Rewards Dollars) for a statement credit toward (?:[^.]|\\.(?=[A-Za-z]|\\s+[a-z]))+\\."

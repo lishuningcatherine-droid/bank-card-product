@@ -153,7 +153,12 @@ class CreditCardDetails(ProdBase):
     foreign_tx_fee_pct: Mapped[Decimal | None] = mapped_column(Rate)
     secured_min_deposit_cents: Mapped[int | None] = mapped_column(BigInteger)
     secured_max_deposit_cents: Mapped[int | None] = mapped_column(BigInteger)
-    reward_currency: Mapped[str | None] = mapped_column(String(10))
+    reward_currency: Mapped[str | None] = mapped_column(String(10))  # cashback | points | miles | restricted
+    # restricted-redemption currencies (DESIGN §24.19): "Disney Rewards Dollars", worth 100 cents each, redeemable
+    # only as stated ("... toward purchases made at most Disney locations in the U.S. ... airline tickets ...")
+    reward_currency_name: Mapped[str | None] = mapped_column(Text)
+    redemption_value_cents: Mapped[int | None] = mapped_column(Integer)
+    redemption_restriction: Mapped[str | None] = mapped_column(Text)
     reward_program: Mapped[str | None] = mapped_column(Text)  # program name, e.g. "Chase Ultimate Rewards®"
     # "none" = evidence-backed: the card has no rewards program (config/no_rewards.yaml); null = not established
     rewards_program: Mapped[str | None] = mapped_column(String(10))

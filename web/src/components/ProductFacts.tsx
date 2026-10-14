@@ -18,7 +18,22 @@ export function keyFacts(p: Product): { label: string; value: React.ReactNode }[
       .sort((a, b) => Number(b.rate) - Number(a.rate))
       .slice(0, 2)
       .map((r) => `${rateText(r.rate, r.rate_unit)} ${CATEGORY_LABEL[r.category] ?? r.category}`);
+    // A restricted-redemption currency (e.g. Disney Rewards Dollars) is never shown as cash back.
+    const restricted =
+      d.reward_currency === "restricted"
+        ? [{
+            label: "Rewards paid in",
+            value: (
+              <span>
+                {String(d.reward_currency_name ?? "a store currency")}
+                {d.redemption_value_cents != null ? ` (worth ${usd(d.redemption_value_cents as number)} each when redeemed as the issuer allows)` : ""}
+                {d.redemption_restriction ? <span className="block text-ink-500">{String(d.redemption_restriction)}</span> : null}
+              </span>
+            ),
+          }]
+        : [];
     return [
+      ...restricted,
       { label: "Annual fee", value: fee == null ? missing : <span className="tabular">{usd(fee)}{intro != null && intro !== fee ? ` (${usd(intro)} first year)` : ""}</span> },
       { label: "Rewards", value: top.length ? top.join(" · ") : d.rewards_program === "none" ? "No rewards program" : missing },
       { label: "Purchase APR", value: aprRange(d.purchase_apr_min_pct, d.purchase_apr_max_pct) ?? "See issuer" },

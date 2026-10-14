@@ -68,6 +68,10 @@ _NOT_EARN = re.compile(
     r"\bdepending on your card\b",
     re.IGNORECASE,
 )
+_GIFT_PLUS_EARN = re.compile(
+    r"^(?:\$[\d,]+\s+Offer\s+)?(?P<gift>Get\s+an?\s+\$[\d,]+\s+[^+]{0,60}?Gift\s+Card[^+]*?)\s*\+\s*(?P<earn>earn\s+.+)$",
+    re.IGNORECASE,
+)
 # "... Through December 31, 2026, these purchases will earn 3X ...": one statement (the second rate refers back)
 _BACK_REF = re.compile(r"\bthese\s+purchases\s+will\s+earn\b", re.IGNORECASE)
 # A spend limit we could not parse ("on $150K combined spend") makes the rate's cap unknown.
@@ -211,6 +215,18 @@ class Adapter(DeclarativeAdapter):
             out["secured_min_deposit_cents"] = ctx.field(amt, dep, method="free_text")
         return out
 
+    def offer_note(self, page: ClassifiedPage) -> str | None:
+        base = super().offer_note(page)
+        text = page.doc.text if page.doc is not None else page.text
+        for ln in text.split("\n"):
+            t = re.sub(r"^NEW CARDMEMBER OFFER\s*", "", ln.strip(), flags=re.IGNORECASE)
+            if gm := _GIFT_PLUS_EARN.match(t):
+                gift = gm.group("gift").rstrip("*† ")
+                return f"Plus «{gift}» (a gift card; not counted in recommendations)." + (
+                    f" {base}" if base else ""
+                )
+        return base
+
     # ------------------------------------------------------------------ statements
     def statements(self, page: ClassifiedPage, key: str, fallback: str | None) -> list[str]:
         doc = page.doc
@@ -234,6 +250,11 @@ class Adapter(DeclarativeAdapter):
                     "NEW CARDMEMBER OFFER"
                 ):
                     t = re.sub(r"^NEW CARDMEMBER OFFER\s*", "", t, flags=re.IGNORECASE)
+                    # "$500 Offer Get a $300 Disney Gift Card eGift to use today upon approval* + earn a $200
+                    # statement credit after you spend $1,000 ...": the spend bonus is the offer; the gift card is
+                    # kept as the offer's note (offer_note), never counted
+                    if gm := _GIFT_PLUS_EARN.match(t):
+                        t = gm.group("earn")
                     # Only plain bonuses ("Earn 75,000 points", "Earn a $200 bonus"). Gift cards, free nights,
                     # memberships and partner credits are not cash/points bonuses and are left out.
                     if t and _OFFER_LEAD.search(t) and t not in out:
@@ -274,9 +295,12 @@ class Adapter(DeclarativeAdapter):
                 if re.search(r"\bAPR\b", line):
                     continue  # APR statements are never earn statements (split pieces would lose the word "APR")
                 # one sentence, then one rate clause at a time ("Earn 3 Avios ... In addition earn 2 Avios ...")
-                sentences = re.split(r"(?<=[a-z*®])\.\s+(?=[A-Z])", line.strip())
+                sentences = re.split(r"(?<=[a-z*®])\.[*†‡¤]*\s+(?=[A-Z])", line.strip())
                 # "... at grocery stores. Through December 31, 2026, these purchases will earn 3X points per $1
                 # spent.": the second sentence refers back to the first one's categories, so they stay together.
+                # "Save 10% on select purchases at DisneyStore.com": a discount; once split into rate clauses the
+                # word "Save" would be lost
+                sentences = [x for x in sentences if not re.search(r"\bsave\s+\d+%|\b\d+%\s+off\b", x, re.I)]
                 for k in range(len(sentences) - 1, 0, -1):
                     if re.match(
                         r"^through\b[^.]{0,40},\s+these\s+purchases\s+will\s+earn\b", sentences[k], re.I

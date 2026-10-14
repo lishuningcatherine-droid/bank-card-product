@@ -305,9 +305,35 @@ def _fee_for_year(p: ProductView, year: int, now: datetime) -> int:
     return int(d.get("annual_fee_cents") or 0)
 
 
+def _restricted_value(
+    p: ProductView, req: CardRequest, rewards: int, per_cat: dict[str, int], notes: list[str]
+) -> tuple[int, dict[str, int]]:
+    """A restricted-redemption currency (DESIGN §24.19, e.g. Disney Rewards Dollars) is not cash back: it counts at
+    its stated value only when the card's partner is the user's preferred partner, otherwise at 0, with a note."""
+    d = p.details
+    name = str(d.get("reward_currency_name") or "store currency")
+    partner = str(d.get("co_brand_partner") or "")
+    value = d.get("redemption_value_cents")
+    if req.preferred_partner and partner and req.preferred_partner.lower() in partner.lower() and value:
+        factor = Decimal(int(value)) / 100
+        notes.append(
+            f"Rewards are {name}, counted at their stated value (${factor:g} each) because {partner} is your preferred partner."
+        )
+        return int(rewards * factor), {k: int(v * factor) for k, v in per_cat.items()}
+    where = str(d.get("redemption_restriction") or "")
+    notes.append(
+        f"Rewards are {name}, redeemable only as the issuer states"
+        + (f" ({where[:160]}{'…' if len(where) > 160 else ''})" if where else "")
+        + f"; not counted unless {partner or 'the partner'} is your preferred partner."
+    )
+    return 0, {k: 0 for k in per_cat}
+
+
 def calc(p: ProductView, req: CardRequest, now: datetime) -> CardCalc:
     cpp, basis = cents_per_point(p.details.get("reward_program"), req.cents_per_point)
     rewards, per_cat, share, notes = annual_rewards(p, req, cpp, now)
+    if p.details.get("reward_currency") == "restricted":
+        rewards, per_cat = _restricted_value(p, req, rewards, per_cat, notes)
     credits = []
     credit_total = 0
     for b in p.benefits:

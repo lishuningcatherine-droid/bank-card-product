@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
 import { OfferAmount, OfferTiers, UP_TO_TOOLTIP } from "@/components/OfferAmount";
+import { keyFacts } from "@/components/ProductFacts";
+import type { Product } from "@/lib/api/types";
 import { isExpired, pageLabel } from "@/components/OfferBlock";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { usd, pct, relativeHours } from "@/lib/format";
@@ -102,5 +104,25 @@ describe("tiered offers and entry points (spot-check round 1)", () => {
     expect(pageLabel("https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred")).toBe(
       "creditcards.chase.com/rewards-credit-cards/sapphire/preferred",
     );
+  });
+});
+
+describe("restricted-redemption currency (DESIGN §24.19)", () => {
+  it("names the currency and where it can be redeemed, never 'cash back'", () => {
+    const p = {
+      product_type: "credit_card",
+      reward_rates: [{ category: "partner", rate: "10", rate_unit: "pct", portal_only: false }],
+      details: {
+        reward_currency: "restricted", reward_currency_name: "Disney Rewards Dollars", redemption_value_cents: 100,
+        redemption_restriction: "Cardmembers can also redeem Rewards Dollars for a statement credit toward airline tickets purchased with your card.",
+        annual_fee_cents: 14900,
+      },
+    } as unknown as Product;
+    const facts = keyFacts(p);
+    expect(facts[0]!.label).toBe("Rewards paid in");
+    const { container } = render(<>{facts[0]!.value}</>);
+    expect(container.textContent).toContain("Disney Rewards Dollars (worth $1 each");
+    expect(container.textContent).toContain("airline tickets");
+    expect(container.textContent).not.toMatch(/cash back/i);
   });
 });

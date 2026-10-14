@@ -403,3 +403,63 @@ def test_renowned_hotels_booking_is_portal_only() -> None:
         if r.value and r.value.category == "hotel" and r.value.rate == Decimal("5")
     ]
     assert h.portal_only and [x.kind for x in h.conditions] == ["portal_only"]
+
+
+def test_disney_inspire_restricted_currency_and_10pct_streaming() -> None:
+    # Owner check of the live page (2026-10-14): 10% Disney Rewards Dollars at DisneyPlus.com, Hulu.com or
+    # Stream.ESPN.com; 3% at gas stations and most U.S. Disney locations; 2% grocery stores and restaurants; 1% other;
+    # $149 annual fee; Rewards Dollars redeemable at $1 each via Pay Yourself Back toward U.S. Disney purchases and
+    # airline tickets. Before: no rates and no currency (store-currency rule).
+    c = run_official("chase", "disney-inspire-visa", "disney-inspire-2026-10-14.rendered.html")
+    assert sorted((r.value.category, r.value.rate) for r in c.reward_rates if r.value) == [
+        ("dining", Decimal("2")),
+        ("gas", Decimal("3")),
+        ("groceries", Decimal("2")),
+        ("other", Decimal("1")),
+        ("partner", Decimal("3")),
+        ("partner", Decimal("10")),
+    ]
+    assert (c.value("reward_currency"), c.value("reward_currency_name")) == (
+        "restricted",
+        "Disney Rewards Dollars",
+    )
+    assert c.value("redemption_value_cents") == 100 and c.value("annual_fee_cents") == 14900
+    r = c.value("redemption_restriction")
+    assert "most Disney locations in the U.S." in r and "airline tickets" in r
+    [o] = offers(c)  # «earn a $200 statement credit after you spend $1,000 ...»; the $300 gift card is a note
+    assert (o.amount_max, o.requirement_min_cents) == (20000, 100000) and "Gift Card" in (o.note or "")
+    assert c.fields["earn_rates_complete"].value is True
+
+
+def test_disney_premier_restricted_currency() -> None:
+    # «Earn 5% on card purchases made directly at DisneyPlus.com, Hulu.com or Stream.ESPN.com» / «Earn 2% ... at gas
+    # stations and most Disney U.S. locations» / «Earn 2% ... grocery stores and restaurants» / «Earn 1% on all other
+    # card purchases»; «ANNUAL FEE $49†».
+    c = run_official("chase", "disney-premier-visa", "disney-premier-2026-10-14.rendered.html")
+    assert sorted((r.value.category, r.value.rate) for r in c.reward_rates if r.value) == [
+        ("dining", Decimal("2")),
+        ("gas", Decimal("2")),
+        ("groceries", Decimal("2")),
+        ("other", Decimal("1")),
+        ("partner", Decimal("2")),
+        ("partner", Decimal("5")),
+    ]
+    assert c.value("reward_currency") == "restricted" and c.value("annual_fee_cents") == 4900
+    assert "airline purchases made directly with the airline" in c.value("redemption_restriction")
+
+
+def test_restricted_currency_counts_only_for_the_preferred_partner() -> None:
+    p = card(
+        rates=[rate("groceries", "2"), rate("other", "1")],
+        reward_currency="restricted",
+        reward_currency_name="Disney Rewards Dollars",
+        redemption_value_cents=100,
+        redemption_restriction="... toward purchases made at most Disney locations in the U.S. ...",
+        is_co_branded=True,
+        co_brand_partner="Disney",
+    )
+    sp = MonthlySpend(groceries=100)
+    off = cards.calc(p, req(monthly_spend=sp), NOW)
+    on = cards.calc(p, req(monthly_spend=sp, preferred_partner="Disney"), NOW)
+    assert off.rewards_cents == 0 and on.rewards_cents == 2400
+    assert any("Disney Rewards Dollars" in n and "not counted" in n for n in off.limitations)

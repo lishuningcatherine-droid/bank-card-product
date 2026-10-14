@@ -1282,3 +1282,19 @@ Disney captures) and the pipeline integration test.
   failed. The offer block lists each tier on its own line ("70,000 miles after you spend $3,000 in 3 months";
   "10,000 miles after you add an authorized user … (not counted in recommendations)") under "Up to 80,000 miles in
   tiers"; a tier's amount is never shown with another tier's requirement. Scoring counts only spend tiers reached.
+
+### 24.19 Restricted-redemption reward currency (owner decision 2026-10-14; replaces §24.8 for Disney)
+
+Disney Rewards Dollars are not "no rewards" and not generic cash back. `reward_currency = "restricted"` with
+`reward_currency_name`, `redemption_value_cents` (the stated worth of one unit: «Each Disney Rewards Dollar you
+redeem for a statement credit toward qualifying purchases with Pay Yourself Back is worth $1.») and
+`redemption_restriction` (the page sentences saying where it can be redeemed), all with provenance (migration 0010;
+`restricted_currencies` in the bank rules). The earn rates are kept, including the streaming tier at
+DisneyPlus.com / Hulu.com / Stream.ESPN.com (`partner`, 10% Inspire / 5% Premier) and "most U.S. Disney locations"
+(`partner`); partner and merchant rates at different values are different merchants in the dedupe. Scoring counts the
+rewards at the stated value only when the card's partner is the user's preferred partner, otherwise at 0 with a note
+quoting the restriction; a "cash back" preference excludes the card. The UI shows "Rewards paid in Disney Rewards
+Dollars (worth $1 each when redeemed as the issuer allows)" and the restriction. Welcome offers "Get a $300 Disney Gift
+Card eGift … + earn a $200 statement credit after you spend $1,000 …" record the spend bonus; the gift card is the
+offer's note and never counted. Capital One's T-Mobile and REI store currencies still follow §24.8 (not valued) until
+checked the same way.
