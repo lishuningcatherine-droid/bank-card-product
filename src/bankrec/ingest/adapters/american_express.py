@@ -121,6 +121,11 @@ class Adapter(DeclarativeAdapter):
                 if _TILE_RATE.match(ln) and i + 2 < len(lines):
                     unit, cat = lines[i + 1], lines[i + 2]
                     detail = lines[i + 3] if i + 3 < len(lines) and not _TILE_RATE.match(lines[i + 3]) else ""
+                    if re.match(r"^\d{1,2}(?:\.\d+)?X\s+points?\b", cat, re.I):
+                        out.append(
+                            cat
+                        )  # "2X / Points for Each Dollar / 2X points on all other eligible purchases."
+                        continue
                     stmt = f"{ln} {unit} {cat}".rstrip("‡*")
                     if detail and not re.match(r"^(?:cash back is received|rewards|featured)", detail, re.I):
                         stmt = f"{stmt} {detail}"

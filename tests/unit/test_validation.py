@@ -43,6 +43,7 @@ def test_valid_card() -> None:
     assert v.status == "valid" and sorted(v.missing_key) == [
         "base_rate",
         "earn_rates_complete",
+        "offer_capture",
         "reward_currency",
     ]
 

@@ -1,0 +1,3 @@
+# Declarative extraction rules.
+# Offers are inserted by the page script and the static HTML may not contain them (DESIGN §24.6).
+offers_script_only: true

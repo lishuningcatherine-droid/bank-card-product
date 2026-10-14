@@ -196,7 +196,31 @@ def annual_rewards(
     return int(value), per_cat, share, notes
 
 
+def _tiered_bonus(o: OfferView, req: CardRequest, cpp: Decimal) -> tuple[int, Achievability]:
+    """Count only the tiers whose (cumulative) spend the user reaches within that tier's window."""
+    default_m = scoring()["credit_card"]["assumptions"]["first_months_for_bonus"]
+    monthly = Decimal(str(req.monthly_spend.total)) * 100
+    total, cum, parts = 0, 0, []
+    for t in o.tiers:
+        need = t.get("requirement_min_cents")
+        if need is None:
+            parts.append(f"{t['amount']:,} not counted (no spending requirement to check)")
+            continue
+        cum = cum + need if t.get("incremental") else need
+        days = t.get("window_days")
+        months = Decimal(days) / Decimal(30) if days else Decimal(str(default_m))
+        if monthly * months >= cum:
+            total += t["amount"]
+            parts.append(f"{t['amount']:,} counted ({usd(cum)} within {months:g} months)")
+        else:
+            parts.append(f"{t['amount']:,} not counted ({usd(cum)} not reached within {months:g} months)")
+    value = total if o.reward_unit == "cents" else int(Decimal(total) * cpp)
+    return value, Achievability(achievable=total > 0, explanation="Tiered offer: " + "; ".join(parts) + ".")
+
+
 def _bonus(o: OfferView, req: CardRequest, cpp: Decimal) -> tuple[int, Achievability]:
+    if o.amount_qualifier == "tiered" and o.tiers:
+        return _tiered_bonus(o, req, cpp)
     req_cents = worst_case_requirement(o)
     months = window_months(o, scoring()["credit_card"]["assumptions"]["first_months_for_bonus"])
     projected = int(req.monthly_spend.total * months * 100)
@@ -243,7 +267,7 @@ def calc(p: ProductView, req: CardRequest, now: datetime) -> CardCalc:
             credits.append({"id": b.id, "name": b.name, "annual_value_cents": b.annual_value_cents})
             credit_total += b.annual_value_cents
     offers = eligible_offers(p)
-    exact = next((o for o in offers if o.amount_qualifier == "exact"), None)
+    exact = next((o for o in offers if o.amount_qualifier in {"exact", "tiered"}), None)
     possible = next((o for o in offers if o.amount_qualifier in {"up_to", "starting_at"}), None)
     promo, ach = (0, None)
     if exact is not None:

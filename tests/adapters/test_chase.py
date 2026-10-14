@@ -135,9 +135,19 @@ def test_united_explorer_co_brand_and_intro_fee() -> None:
     # "9x total miles on eligible United flights" stacks MileagePlus earn and is left out.
     assert "airline" not in r and "travel" not in r
     assert r["hotel"] == ("2x", None) and r["dining"] == ("2x", None) and r["other"] == ("1x", None)
-    # "Earn up to 80,000 bonus miles" is up_to and contributes $0.
+    # "Earn up to 80,000 bonus miles" + "Earn 70,000 bonus miles after you spend $3,000 ... in the first 3 months" +
+    # "Plus, earn 10,000 bonus miles after you add an authorized user": tiers that add up to the headline.
     [o] = [o.value for o in c.offers if o.value]
-    assert (o.amount_qualifier, o.amount_min, o.amount_max, o.reward_unit) == ("up_to", None, 80000, "miles")
+    assert (o.amount_qualifier, o.amount_min, o.amount_max, o.reward_unit) == (
+        "tiered",
+        70000,
+        80000,
+        "miles",
+    )
+    assert [(t.amount, t.requirement_min_cents, t.window_days) for t in o.tiers] == [
+        (70000, 300000, 90),
+        (10000, None, None),
+    ]
 
 
 def test_marriott_boundless_annual_cap_and_hotel_partner() -> None:

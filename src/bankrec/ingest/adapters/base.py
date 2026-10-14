@@ -73,6 +73,12 @@ def lowest_rate_per_category(rates: list[Sourced[RewardRateRec]]) -> list[Source
     return list(low.values())
 
 
+# Rate-like text that is never an earn statement: APRs, review percentages, bare numbers, calculator labels.
+_NOT_AN_EARN_STATEMENT = re.compile(
+    r"\bAPR\b|respondents|recommend this|^\s*\d{1,3}(?:\.\d+)?%\s*$|^\s*[\d.]+%\s*-\s*[\d.]+%|^earn \d+% cash back\.?$",
+    re.IGNORECASE,
+)
+
 NETWORKS = [
     ("American Express", r"\bAmerican Express\b"),
     ("Visa", r"\bVisa\b"),
@@ -149,12 +155,20 @@ class DeclarativeAdapter:
                 continue
             pat = "|".join(re.escape(w) for w in words)
             probe = re.sub(
-                rf"(?:eligible\s+)?(?:{pat})(?:[®™]|\s|,)*(?:\w+\s+){{0,6}}?(?:purchases|orders)\b",
+                rf"(?:eligible\s+)?(?:entire\s+)?(?:{pat})(?:[®™]|\s|,)*(?:\w+\s+){{0,6}}?(?:purchases?|orders)\b",
                 "partner purchases",
                 st,
                 count=1,
                 flags=re.I,
             )
+            if probe == st:  # "... on qualifying purchases made using your card directly through Instacart"
+                probe = re.sub(
+                    rf"\b(?:qualifying\s+)?purchases\b[^.]{{0,80}}?\b(?:through|at|with|on)\s+(?:the\s+)?(?:{pat})\b",
+                    "partner purchases",
+                    st,
+                    count=1,
+                    flags=re.I,
+                )
             rr = parse_reward_statement(probe) if probe != st else None
             if rr is None or rr.categories != ["partner"]:
                 continue
@@ -328,7 +342,13 @@ class DeclarativeAdapter:
         # Statements an adapter excludes on purpose (portal duplicates, "up to"/"total" stacked rates, discounts,
         # statement-credit rebates) never reach this list.
         produced = {X.norm_ws(r.span_text or "") for r in rates}
-        unparsed = [st for st in reward_lines if X.norm_ws(st) not in produced and X.has_rate_token(st)]
+        unparsed = [
+            st
+            for st in reward_lines
+            if X.norm_ws(st) not in produced
+            and X.has_rate_token(st)
+            and not _NOT_AN_EARN_STATEMENT.search(st)
+        ]
         # A short summary heading that repeats a represented rate ("Earn 5% cash back on business essentials") adds
         # no new earn rate.
         shown = {(r.value.rate, r.value.rate_unit) for r in rates if r.value}
@@ -481,7 +501,46 @@ class DeclarativeAdapter:
                 tiers=tiers,
                 note=self.offer_note(page),
             )
+            v = o.value if o is not None else None
+            if v is None or (v.requirement_type is None and v.amount_qualifier != "tiered"):
+                # the requirement or the tiers may be stated elsewhere on the page (spot-check findings 8, 10)
+                ext = X.offer_context(page.text, b)
+                if ext:
+                    o2 = X.offer(
+                        f"{b} {ext}",
+                        foot,
+                        ctx,
+                        offer_type=offer_type,
+                        offer_url=page.url,
+                        tiers=tiers,
+                        note=self.offer_note(page),
+                        evidence=b,
+                    )
+                    v2 = o2.value if o2 is not None else None
+                    if v2 is not None and (
+                        v2.requirement_type is not None or v2.amount_qualifier == "tiered"
+                    ):
+                        o = o2
             if o is not None:
                 c.offers.append(o)
-        if not c.offers:
+        # Offer capture (spot-check round 1): a page that shows an offer block (amount + spend + window) but yields no
+        # offer is a reading failure, never "no offer".
+        bank = page.bank.display_name
+        signal = X.offer_signal(page.doc.text if page.doc is not None else page.text)
+        if c.offers:
+            c.fields["offer_capture"] = ctx.field(True, c.offers[0].span_text, method="label_regex")
+        elif signal is not None:
+            c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.ambiguous)
+            c.notes.append(f"offer block not read: {signal[:160]}")
+            c.offer_absent_note = (
+                f"We couldn't read the welcome offer on this page. Check {bank} for the current offer."
+            )
+        elif self.rules.get("offers_script_only"):
+            c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+            c.offer_absent_note = (
+                self.offer_absent_note(page)
+                or f"Welcome offer not captured (shown only by the page script). Check {bank} for the current offer."
+            )
+        else:
+            c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
             c.offer_absent_note = self.offer_absent_note(page)

@@ -461,7 +461,9 @@ def offer(
     terms_url: str | None = None,
     tiers: list[str] | None = None,
     note: str | None = None,
+    evidence: str | None = None,
 ) -> Sourced[OfferRec] | None:
+    """``evidence``: the located span when ``block`` also carries context lines (see ``offer_context``)."""
     po = parse_offer_block(block, footnotes)
     if po is None:
         return None
@@ -497,6 +499,7 @@ def offer(
         block + " " + footnotes,
         re.IGNORECASE,
     )
+    exp_numeric = _NUMERIC_END.search(block + " " + footnotes)
     open_by = re.search(
         r"open\s+(?:a\s+new\s+\w+\s+account\s+)?by\s+(january|february|march|april|may|june|july|"
         r"august|september|october|november|december)\s+(\d{1,2}),?\s+(\d{4})",
@@ -514,6 +517,18 @@ def offer(
             re.IGNORECASE,
         )
     ]
+    spend_tiers = _spend_tiers(block)
+    if (
+        po.qualifier.value == "up_to"
+        and len(spend_tiers) >= 2
+        and po.amount_max == sum(t.amount for t in spend_tiers)
+        and all(t.text for t in spend_tiers)
+    ):
+        # "Earn up to 80,000 ... Earn 70,000 after you spend $3,000 ... Plus, earn 10,000 after you add an
+        # authorized user": the tiers add up to the headline, so the offer is tiered, not an unexplained "up to".
+        tier_recs = spend_tiers
+        po.qualifier = Qualifier.tiered
+        po.amount_min = spend_tiers[0].amount
     try:
         rec = OfferRec(
             offer_type=offer_type,
@@ -530,7 +545,7 @@ def offer(
             qualification_window_months=window_months,
             qualification_window_text=po.window_text,
             holding_period_days=po.holding.days if po.holding else None,
-            expiration_date=_d(exp),
+            expiration_date=_d(exp) or _numeric_date(exp_numeric),
             open_by_date=_d(open_by),
             promo_code=promo.group(1) if promo else None,
             audience="public",
@@ -544,7 +559,117 @@ def offer(
         )
     except ValueError:
         return None
-    return ctx.field(rec, block, method="label_regex", name="offer")
+    return ctx.field(rec, evidence or block, method="label_regex", name="offer")
+
+
+_NUMERIC_END = re.compile(
+    r"(?:expires?|ends?|offer (?:ends|expires)|through|until|apply by|by)\s+(?:on\s+)?(\d{1,2})/(\d{1,2})/(\d{2}(?:\d{2})?)\b",
+    re.IGNORECASE,
+)
+_TIER = re.compile(
+    r"(?:^|[.*†!]\s*|\bplus,?\s+|\band\s+)(?:earn|get)\s+(?:an?\s+)?(?P<add>additional\s+|another\s+)?"
+    r"(?P<amt>[\d,]{5,}|\$[\d,]+)\s*(?:bonus\s+)?(?:points|miles|avios|cash back|cash bonus|bonus)?[^.]*?"
+    r"\b(?:after|once|when)\s+you\s+(?:"
+    r"(?:spend|make)\s+(?:an?\s+)?(?P<inc>additional\s+|another\s+)?\$(?P<req>[\d,]+)"
+    r"|(?P<other>add|refer|open|enroll)[^.]*)",
+    re.IGNORECASE,
+)
+
+
+def _spend_tiers(block: str) -> list[OfferTier]:
+    """The tiers of a multi-part welcome offer, in page order (empty when the block states one amount)."""
+    out: list[OfferTier] = []
+    for m in _TIER.finditer(block):
+        amt = int(m.group("amt").replace("$", "").replace(",", "")) * (
+            100 if m.group("amt").startswith("$") else 1
+        )
+        if m.group("other"):
+            out.append(OfferTier(amount=amt, requirement_min_cents=None, text=m.group(0).strip()))
+            continue
+        days = None
+        end = block.find(".", m.end())
+        w = re.search(
+            r"(?:within|in)\s+(?:the\s+|your\s+)?(?:first\s+)?(\d+)\s*(days?|months?)",
+            block[m.start() : end if end != -1 else len(block)],
+            re.IGNORECASE,
+        )
+        if w:
+            n = int(w.group(1))
+            days = n if w.group(2).lower().startswith("day") else n * 30
+        out.append(
+            OfferTier(
+                amount=amt,
+                requirement_min_cents=int(m.group("req").replace(",", "")) * 100,
+                text=m.group(0).strip(),
+                window_days=days,
+                incremental=bool(m.group("inc")),
+            )
+        )
+    return out
+
+
+_AMOUNT_TOKEN = re.compile(r"\$[\d,]{3,}|\b\d{1,3},\d{3}\b")
+_FOLLOW = re.compile(r"^(?:earn|plus|get)\b", re.IGNORECASE)
+_SPEND_PHRASE = re.compile(
+    r"\b(?:spend|spending|make|purchases totaling|net purchases totaling)\b[^.]{0,40}\$[\d,]+", re.I
+)
+
+
+_SIGNAL_AMT = re.compile(
+    r"\b(?:earn|get|bonus)\b[^\n]{0,80}?(?:\$[\d,]{3,}|\b\d{1,3},\d{3}\s+(?:bonus\s+)?(?:points|miles|avios)\b)",
+    re.I,
+)
+_SIGNAL_WINDOW = re.compile(r"\b\d+\s*(?:days?|months?)\b", re.I)
+
+
+def offer_signal(text: str) -> str | None:
+    """An offer block on the page: a bonus amount with a spending requirement and a window in the same or the next
+    line. Returns the text that triggered it (for the review note)."""
+    lines = [ln for ln in text.split("\n") if ln.strip()]
+    for i, ln in enumerate(lines):
+        if not _SIGNAL_AMT.search(ln):
+            continue
+        win = " ".join(lines[i : i + 2])
+        if _SPEND_PHRASE.search(win) and _SIGNAL_WINDOW.search(win) and not re.search(r"\brefer", win, re.I):
+            return win
+    return None
+
+
+def offer_context(text: str, block: str) -> str:
+    """Lines elsewhere on the page that complete an offer headline lacking its requirement: the "Earn ... / Plus,
+    earn ..." lines right after another occurrence of the headline amount (tiers), and footnotes that repeat the
+    amount with a spending requirement ("$750 cash back will be awarded if ... Net Purchases totaling $6,000 ...")."""
+    m = _AMOUNT_TOKEN.search(block)
+    if not m:
+        return ""
+    amt = m.group(0)
+    lines = [ln for ln in text.split("\n") if ln.strip()]
+    nb = norm_ws(block)
+    extra: list[str] = []
+    for i, ln in enumerate(lines):
+        if amt not in ln:
+            continue
+        if _SPEND_PHRASE.search(ln) and norm_ws(ln) not in nb:
+            extra.append(ln)
+        for nxt in lines[i + 1 : i + 4]:
+            if (_FOLLOW.search(nxt) and _SPEND_PHRASE.search(nxt)) or re.match(
+                r"^plus,?\s+earn\b", nxt, re.I
+            ):
+                extra.append(nxt)
+            elif not _FOLLOW.search(nxt):
+                break
+    seen: list[str] = []
+    for e in extra:
+        if norm_ws(e) not in nb and e not in seen:
+            seen.append(e)
+    return " ".join(seen[:4])
+
+
+def _numeric_date(m: re.Match[str] | None) -> date | None:
+    if not m:
+        return None
+    y = int(m.group(3))
+    return date(y + 2000 if y < 100 else y, int(m.group(1)), int(m.group(2)))
 
 
 def _d(m: re.Match[str] | None) -> date | None:

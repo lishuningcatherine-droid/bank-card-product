@@ -51,6 +51,7 @@ _UNTIL = re.compile(
     r"november|december)\s+(?P<d>\d{1,2}),?\s+(?P<y>\d{4})",
     re.IGNORECASE,
 )
+_CHOICE = {"choice", "choice_everyday"}
 _MONTHS = {
     m: i
     for i, m in enumerate(
@@ -129,6 +130,11 @@ def parse_reward_statement(text: str) -> RewardRate | None:
         # "3% cash back + 3% first-year cash back bonus in the category of your choice": the category after the
         # added (temporary) bonus also belongs to the ongoing rate; the added bonus itself is not counted.
         cats = categories_in(full_rest)
+    chosen = [c for c in cats if c in _CHOICE]
+    if chosen:
+        # "2% on one everyday category you choose, like gas stations, grocery stores or restaurants": the listed
+        # categories are options, not fixed categories (spot-check round 1).
+        cats = chosen[:1]
     is_base = "other" in cats and len(cats) == 1
     cats = [c for c in cats if c != "other"] or (["other"] if is_base else [])
     rr = RewardRate(rate=rate, rate_unit=unit, categories=cats, is_base=is_base, text=text.strip())

@@ -27,12 +27,15 @@ categories:
                                                       "cell phone service providers", "cell phone services", "phone services",
                                                       "internet, cable, and phone", "internet, cable and phone"]}
   advertising: {label: Advertising, synonyms: ["advertising purchases made with social media sites and search engines",
-                                               "social media and search engine advertising", "select advertising", "advertising purchases"]}
+                                               "social media and search engine advertising", "social media & search engine advertising",
+                                               "select advertising", "advertising purchases"]}
   shipping: {label: Shipping, synonyms: ["shipping purchases", "shipping"]}
   # Cardholder-chosen category ("3% in the category of your choice", "5% on two categories you choose"): not a fixed
   # category; never applied to user spend unless the user opts in (like rotating).
   choice: {label: Category you choose, synonyms: ["category of your choice", "categories you choose", "category you choose",
                                                    "choice category"]}
+  # A second, lower-rate chosen category (U.S. Bank Cash+: "2% cash back on one everyday category you choose").
+  choice_everyday: {label: Everyday category you choose, synonyms: ["one everyday category you choose", "everyday category you choose"]}
   # Purchases with the co-brand partner itself ("4% on DoorDash orders", "3 points per dollar on Royal Caribbean").
   partner: {label: Partner purchases, synonyms: ["partner purchases"]}
   # A named merchant that is not the card's co-brand partner ("5x on Lyft rides", "5x on Peloton equipment").

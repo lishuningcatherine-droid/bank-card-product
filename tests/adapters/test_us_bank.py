@@ -46,7 +46,7 @@ def test_altitude_connect() -> None:
     )
 
 
-def test_cash_plus_rendered_fills_placeholders_and_choice_categories_are_left_out() -> None:
+def test_cash_plus_rendered_fills_placeholders_and_choice_categories() -> None:
     c = run_official(
         "us_bank",
         "cash-plus-visa-signature-credit-card",
@@ -59,9 +59,26 @@ def test_cash_plus_rendered_fills_placeholders_and_choice_categories_are_left_ou
         Decimal("28.24"),
     )
     r = rates(c)
-    # 5% / 2% categories are chosen by the cardholder: not fixed categories. Prepaid travel is Travel Center only.
-    assert set(r) == {"other", "travel@portal"} and r["other"] == ("1pct", None)
-    assert [x.value.portal_only for x in c.reward_rates if x.value and x.value.category == "travel"] == [True]
+    # Chosen categories are represented, never their listed examples (no fixed gas/grocery/dining 2%).
+    assert (
+        r
+        == {
+            "choice": (
+                "5pct",
+                200000,
+            ),  # "5% ... on your first $2,000 in combined eligible purchases each quarter on two categories you choose"
+            "choice_everyday": (
+                "2pct",
+                None,
+            ),  # "2% ... on one everyday category you choose ..., like gas stations ..."
+            "other": ("1pct", None),
+            "travel@portal": (
+                "5pct",
+                None,
+            ),  # "5% cash back on prepaid travel ... booked directly in the Travel Center"
+        }
+    )
+    assert c.value("earn_rates_complete") is True
     assert (_offer(c).amount_max, _offer(c).requirement_min_cents) == (20000, 100000)
 
 

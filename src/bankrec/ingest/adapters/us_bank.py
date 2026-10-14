@@ -45,7 +45,7 @@ _RATE_LEAD = re.compile(
     re.IGNORECASE,
 )
 _NOT_EARN = re.compile(
-    r"\bup\s+to\s+\d|you choose|of your choice|\bsave\b|%\s+off\b|statement credit|\bbonus\b", re.IGNORECASE
+    r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|statement credit|\bbonus\b|\bAPR\b|respondents", re.IGNORECASE
 )
 _OFFER_HEAD = re.compile(
     r"^(?:earn|get)\s+(?:rewarded\s+with\s+)?(?:a\s+)?(?:\$[\d,]+|[\d,]{5,}\s+bonus\s+points)", re.IGNORECASE
@@ -162,9 +162,9 @@ class Adapter(DeclarativeAdapter):
             for i, ln in enumerate(lines):
                 if _OFFER_HEAD.search(ln):
                     nxt = lines[i + 1] if i + 1 < len(lines) else ""
-                    block = ln if _SPEND.search(ln) else f"{ln} {nxt}" if _SPEND.search(nxt) else ""
-                    if block:
-                        return [block]
+                    # a headline without its requirement is still returned: the shared offer step looks for the
+                    # requirement elsewhere on the page (e.g. a footnote; spot-check finding 8)
+                    return [ln if _SPEND.search(ln) else f"{ln} {nxt}" if _SPEND.search(nxt) else ln]
             return []
         if key in {"offer_footnote", "offer_tier", "credit", "benefit"}:
             return []

@@ -263,12 +263,17 @@ class OfferTier(BaseModel):
     requirement_min_cents: int | None
     requirement_max_cents: int | None = None
     text: str
+    # Tiered welcome offers (spot-check round 1, finding 10): each tier's own spend and window. ``incremental``: the
+    # requirement is "another/additional $X" on top of the previous tiers' spend. requirement None = non-spend tier
+    # (e.g. "add an authorized user"), never counted in value.
+    window_days: int | None = None
+    incremental: bool = False
 
 
 class OfferRec(BaseModel):
     offer_type: Literal["card_welcome", "checking_bonus", "savings_bonus", "intro_apr", "annual_fee_waiver"]
     reward_unit: Literal["cents", "points", "miles"]
-    amount_qualifier: Literal["exact", "up_to", "starting_at"]
+    amount_qualifier: Literal["exact", "up_to", "starting_at", "tiered"]
     amount_min: int | None
     amount_max: int | None
     stated_cash_value_cents: int | None = None
@@ -303,6 +308,8 @@ class OfferRec(BaseModel):
             raise ValueError("up_to offers need amount_min NULL and amount_max set")
         if q == "starting_at" and not (lo is not None and hi is None):
             raise ValueError("starting_at offers need amount_min set and amount_max NULL")
+        if q == "tiered" and not (len(self.tiers) >= 2 and hi == sum(t.amount for t in self.tiers)):
+            raise ValueError("tiered offers need >= 2 tiers and amount_max == the sum of tier amounts")
         return self
 
 

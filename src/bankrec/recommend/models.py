@@ -136,7 +136,7 @@ class OfferView(BaseModel):
     id: str
     offer_type: str
     reward_unit: str
-    amount_qualifier: Literal["exact", "up_to", "starting_at"]
+    amount_qualifier: Literal["exact", "up_to", "starting_at", "tiered"]
     amount_min: int | None
     amount_max: int | None
     requirement_type: str | None = None

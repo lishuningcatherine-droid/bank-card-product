@@ -19,6 +19,9 @@ class Qualifier(StrEnum):
     exact = "exact"
     up_to = "up_to"
     starting_at = "starting_at"
+    tiered = (
+        "tiered"  # set by the extractor when the tiers add up to the headline (never by the block parser)
+    )
 
 
 VARIABILITY_PHRASES = [
