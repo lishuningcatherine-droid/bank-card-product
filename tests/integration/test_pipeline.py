@@ -389,7 +389,10 @@ def test_degraded_capture_keeps_prod_values_and_proposes_no_removal(session, set
     before = _product(session, "Example Bank Secured Card")
     fee, rates = before.card.annual_fee_cents, sorted((r.category, r.rate) for r in before.reward_rates)
     html = (FIX / "card_secured.html").read_text()
-    s, e = html.index('<ul class="earn-rates">'), html.index("</ul>", html.index('<ul class="earn-rates">')) + 5
+    s, e = (
+        html.index('<ul class="earn-rates">'),
+        html.index("</ul>", html.index('<ul class="earn-rates">')) + 5,
+    )
     shell = tmp_path / "secured_shell.html"
     shell.write_text(html[:s] + html[e:])
     r = run(session, settings, reg, [source(reg, "secured", shell)])
@@ -410,3 +413,25 @@ def test_degraded_capture_keeps_prod_values_and_proposes_no_removal(session, set
     # the next good capture goes through normally
     r2 = run(session, settings, reg, [source(reg, "secured")])
     assert r2.sources[0].terminal in {"published", "unchanged"}
+
+
+def test_tiered_offer_is_published_with_its_tiers(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    # The prod offers table rejected amount_qualifier 'tiered' (the United approvals failed on the check constraint).
+    reg = registry()
+    tiered = mutate(
+        tmp_path,
+        "card_example_air_miles.html",
+        "Bonus as high as 60,000 miles after you spend $3,000 within the first 90 days.",
+        "Earn up to 60,000 bonus miles after qualifying activities. Earn 50,000 bonus miles after you spend $3,000 on "
+        "purchases in the first 3 months. Plus, earn 10,000 bonus miles after you add an authorized user in the first "
+        "3 months.",
+    )
+    run(session, settings, reg, [source(reg, "example-air-miles", tiered)])
+    [o] = session.scalars(select(P.Offer)).all()
+    assert (o.amount_qualifier, o.amount_max) == ("tiered", 60000)
+    assert [
+        (t["amount"], t["requirement_min_cents"], t["window_count"], t["window_unit"]) for t in o.tiers
+    ] == [
+        (50000, 300000, 3, "months"),
+        (10000, None, None, None),
+    ]

@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 import type { Offer } from "@/lib/api/types";
 import { longDate } from "@/lib/format";
 
-import { OfferAmount } from "./OfferAmount";
+import { OfferAmount, OfferTiers } from "./OfferAmount";
 import { SourceLink } from "./SourceLink";
 import { StatusLabel } from "./StatusLabel";
 
@@ -66,6 +66,7 @@ export function OfferBlock({ offer, compact = false }: { offer: Offer; compact?:
       </p>
       {!compact ? (
         <>
+          <OfferTiers offer={offer} />
           <blockquote className="border-l-2 border-border pl-3 text-ink-700">{offer.verbatim_text}</blockquote>
           {offer.note ? <p className="text-ink-500">{offer.note}</p> : null}
           {offer.eligibility_restrictions ? <p className="text-ink-500">{offer.eligibility_restrictions}</p> : null}

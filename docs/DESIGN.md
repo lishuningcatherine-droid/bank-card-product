@@ -1277,3 +1277,8 @@ Only a capture that passes can propose removing a value. A source with nothing p
 are degraded against the rendered capture behind the published APR; the Disney captures pass (their removals came
 from the store-currency rule, not the capture). Tests: `tests/unit/test_capture_quality.py` (stored Amex shell and
 Disney captures) and the pipeline integration test.
+- **Tiered offers in prod and the UI (2026-10-14).** The prod `offers` check constraint never allowed
+  `amount_qualifier = 'tiered'` (migration 0009 adds it: `amount_max` set, ≥ 2 tiers), so approving the United offers
+  failed. The offer block lists each tier on its own line ("70,000 miles after you spend $3,000 in 3 months";
+  "10,000 miles after you add an authorized user … (not counted in recommendations)") under "Up to 80,000 miles in
+  tiers"; a tier's amount is never shown with another tier's requirement. Scoring counts only spend tiers reached.

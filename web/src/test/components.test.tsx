@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 
-import { OfferAmount, UP_TO_TOOLTIP } from "@/components/OfferAmount";
+import { OfferAmount, OfferTiers, UP_TO_TOOLTIP } from "@/components/OfferAmount";
 import { isExpired, pageLabel } from "@/components/OfferBlock";
 import { VerificationBadge } from "@/components/VerificationBadge";
 import { usd, pct, relativeHours } from "@/lib/format";
@@ -81,6 +81,22 @@ describe("tiered offers and entry points (spot-check round 1)", () => {
   it("shows a tiered maximum as 'Up to ... in tiers', never as a flat amount", () => {
     render(<OfferAmount offer={{ amount_qualifier: "tiered", amount_min: 70000, amount_max: 80000, reward_unit: "miles" }} />);
     expect(screen.getByText(/in tiers/)).toHaveTextContent("Up to 80,000 miles in tiers");
+  });
+  it("lists each tier separately and never pairs the maximum with the first tier's spend", () => {
+    const offer = {
+      amount_qualifier: "tiered" as const, reward_unit: "miles",
+      tiers: [
+        { amount: 70000, requirement_min_cents: 300000, window_count: 3, window_unit: "months", text: "Earn 70,000 bonus miles after you spend $3,000" },
+        { amount: 10000, requirement_min_cents: null, text: "Plus, earn 10,000 bonus miles after you add an authorized user to your account in the first 3 months your account is open.*" },
+      ],
+    };
+    const { container } = render(<OfferTiers offer={offer} />);
+    const items = [...container.querySelectorAll("li")].map((li) => li.textContent);
+    expect(items).toEqual([
+      "70,000 miles after you spend $3,000 in 3 months",
+      "10,000 miles after you add an authorized user to your account in the first 3 months your account is open (not counted in recommendations)",
+    ]);
+    expect(container.textContent).not.toMatch(/80,000 miles after/);
   });
   it("names the official page the offer came from", () => {
     expect(pageLabel("https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred")).toBe(

@@ -243,7 +243,8 @@ class Offer(ProdBase):
         CheckConstraint(
             "(amount_qualifier = 'exact' AND amount_min IS NOT NULL AND amount_min = amount_max) OR "
             "(amount_qualifier = 'up_to' AND amount_min IS NULL AND amount_max IS NOT NULL) OR "
-            "(amount_qualifier = 'starting_at' AND amount_min IS NOT NULL AND amount_max IS NULL)",
+            "(amount_qualifier = 'starting_at' AND amount_min IS NOT NULL AND amount_max IS NULL) OR "
+            "(amount_qualifier = 'tiered' AND amount_max IS NOT NULL AND jsonb_array_length(tiers) >= 2)",
             name="amount_qualifier_shape",
         ),
         CheckConstraint(

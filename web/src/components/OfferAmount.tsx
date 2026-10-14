@@ -13,6 +13,39 @@ function amountText(unit: string, n: number): string {
   return `${n.toLocaleString("en-US")} ${unit}`;
 }
 
+type Tier = { amount: number; requirement_min_cents?: number | null; window_count?: number | null; window_unit?: string | null; incremental?: boolean; text?: string };
+
+/** One line per tier: "70,000 miles after you spend $3,000 in 3 months"; a non-spend tier keeps the page's wording
+ * ("10,000 miles after you add an authorized user …") and is marked as not counted. A tier's amount is never shown
+ * with another tier's requirement. */
+export function tierLine(unit: string, t: Tier): { text: string; counted: boolean } {
+  const amt = amountText(unit, t.amount);
+  if (t.requirement_min_cents != null) {
+    const when = t.window_count ? ` in ${t.window_count} ${(t.window_unit ?? "").replace("_", " ")}` : "";
+    const spend = `$${Math.floor(t.requirement_min_cents / 100).toLocaleString("en-US")}`;
+    return { text: `${amt} after you spend ${t.incremental ? "another " : ""}${spend}${when}`, counted: true };
+  }
+  const cond = /\b(after you .+?)(?:[.*]|$)/i.exec(t.text ?? "")?.[1];
+  return { text: cond ? `${amt} ${cond}` : `${amt} for a non-spending activity`, counted: false };
+}
+
+export function OfferTiers({ offer }: { offer: Pick<Offer, "amount_qualifier" | "reward_unit" | "tiers"> }) {
+  if (offer.amount_qualifier !== "tiered" || !offer.tiers?.length) return null;
+  return (
+    <ul className="list-disc pl-5 text-ink-700">
+      {(offer.tiers as Tier[]).map((t, i) => {
+        const l = tierLine(offer.reward_unit, t);
+        return (
+          <li key={i} className="tabular">
+            {l.text}
+            {l.counted ? null : <span className="text-ink-500"> (not counted in recommendations)</span>}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function OfferAmount({ offer }: { offer: Pick<Offer, "amount_qualifier" | "amount_min" | "amount_max" | "reward_unit"> }) {
   const [open, setOpen] = useState(false);
   const id = useId();
