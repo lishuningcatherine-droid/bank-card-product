@@ -20,9 +20,9 @@ from typing import Any
 from urllib.parse import urlsplit
 
 from bankrec.candidate import ProductCandidate
-from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter
+from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter, lowest_rate_per_category
 from bankrec.ingest.common import extract as X
-from bankrec.model import ExtractionContext, NullReason, RewardRateRec, Sourced
+from bankrec.model import ExtractionContext, NullReason, Sourced
 from bankrec.parsers.money import parse_fee_schedule, parse_money
 
 _RANGE = re.compile(r"(\d{1,2}\.\d{2})%\s*(?:–|-|to)\s*(\d{1,2}\.\d{2})%")
@@ -234,16 +234,8 @@ class Adapter(DeclarativeAdapter):
                 break
         else:
             c.fields["network"] = ctx.field(None, None)
-        # One rate per category: the same rate is often stated twice; with two different rates keep the lower.
-        low: dict[str, Sourced[RewardRateRec]] = {}
-        for r in c.reward_rates:
-            v = r.value
-            if v is None:
-                continue
-            lv = low[v.category].value if v.category in low else None
-            if lv is None or v.rate < lv.rate:
-                low[v.category] = r
-        c.reward_rates = list(low.values())
+        # One rate per (category, portal-only); portal rates are kept beside general ones (spot-check round 1).
+        c.reward_rates = lowest_rate_per_category(c.reward_rates)
         base = [r for r in c.reward_rates if r.value and r.value.category == "other"]
         c.fields["base_rate"] = (
             ctx.field(base[0].value.rate, base[0].span_text)

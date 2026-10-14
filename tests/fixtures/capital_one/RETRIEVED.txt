@@ -7,3 +7,5 @@ www-credit-cards-venture.html | https://www.capitalone.com/credit-cards/venture/
 www-credit-cards-savor.html | https://www.capitalone.com/credit-cards/savor/ | https://www.capitalone.com/credit-cards/savor/ | 200 | text/html | 947292 | 2026-10-13T09:14:07Z
 www-credit-cards-platinum-secured.html | https://www.capitalone.com/credit-cards/platinum-secured/ | https://www.capitalone.com/credit-cards/platinum-secured/ | 200 | text/html | 903429 | 2026-10-13T09:14:23Z
 www-small-business-credit-cards-spark-cash.html | https://www.capitalone.com/small-business/credit-cards/spark-cash/ | https://www.capitalone.com/small-business/credit-cards/spark-cash/ | 200 | text/html | 516160 | 2026-10-13T09:15:01Z
+venture-2026-10-14.html | https://www.capitalone.com/credit-cards/venture/ | https://www.capitalone.com/credit-cards/venture/ | 200 | text/html | 1004908 | 2026-10-14T10:53:59Z
+spark-cash-select-2026-10-14.html | https://www.capitalone.com/small-business/credit-cards/spark-cash-select/ | https://www.capitalone.com/small-business/credit-cards/spark-cash-select/ | 200 | text/html | 573170 | 2026-10-14T11:09:50Z

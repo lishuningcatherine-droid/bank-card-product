@@ -384,7 +384,10 @@ class DeclarativeAdapter:
         produced = {X.norm_ws(r.span_text or "") for r in rates}
         unparsed = [
             st
-            for st in reward_lines
+            for line in reward_lines
+            for st in [
+                p.strip() for p in X.split_rate_clauses(line)
+            ]  # every clause holding a rate must produce one
             if X.norm_ws(st) not in produced
             and X.has_rate_token(st)
             and not _NOT_AN_EARN_STATEMENT.search(st)

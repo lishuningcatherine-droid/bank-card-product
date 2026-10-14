@@ -269,3 +269,23 @@ def test_d_fee_and_apr_lines_are_not_earn_statements() -> None:
     from bankrec.parsers.rewards import parse_reward_statement
 
     assert parse_reward_statement("3% foreign transaction fee") is None
+
+
+def test_d_capital_one_portal_rates_kept_and_with_capital_one_travel_is_portal() -> None:
+    # The Capital One adapter had its own per-category dedupe (the round-1 portal bug); "Earn 5X miles with Capital
+    # One Travel" was not recognised as portal-only.
+    c = run_official("capital_one", "venture", "venture-2026-10-14.html")
+    r = rates(c)
+    assert r["other"] == ("2x", None) and r["hotel@portal"] == r["travel@portal"] == ("5x", None)
+    assert "travel" not in r  # no general 5x travel rate
+    assert c.value("earn_rates_complete") is True
+
+
+def test_d_two_rates_in_one_sentence_and_portal_flag_per_clause() -> None:
+    # "Earn unlimited 1.5% cash back ... everywhere, no limits or category restrictions. Plus, earn unlimited 5% cash
+    # back on hotels and rental cars booked through Capital One Business Travel."
+    c = run_official("capital_one", "spark-cash-select", "spark-cash-select-2026-10-14.html")
+    r = rates(c)
+    assert r["other"] == ("1.5pct", None)  # general, not portal-only
+    assert r["hotel@portal"] == ("5pct", None)
+    assert c.value("earn_rates_complete") is True

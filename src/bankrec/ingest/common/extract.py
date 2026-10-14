@@ -319,7 +319,9 @@ def split_rate_clauses(text: str) -> list[str]:
 
 def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[RewardRateRec]]:
     out: list[Sourced[RewardRateRec]] = []
-    for st in statements:
+    # One clause per rate: "1.5% on every purchase ... Plus, earn unlimited 5% on hotels ..." holds two rates.
+    pieces = [p.strip() for st in statements for p in split_rate_clauses(st)]
+    for st in pieces:
         rr = parse_reward_statement(st)
         if rr is None:
             continue

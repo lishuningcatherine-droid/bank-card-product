@@ -42,7 +42,7 @@ _PORTAL = re.compile(
     r"\b(?:booked|purchased|reserved|made)\s+(?:directly\s+)?(?:through|via|on)\s+(?:the\s+)?"
     r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|"
     r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
-    r"\b(?:on|through|via)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
+    r"\b(?:on|through|via|with)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
     r"amex ?travel|american express travel)\b|\bin the travel center\b",
     re.IGNORECASE,
 )
@@ -159,7 +159,9 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     if rr.is_rotating:
         rr.categories = ["rotating"]
     rr.requires_activation = bool(_ACTIVATION.search(text))
-    rr.portal_only = bool(_PORTAL.search(text))
+    # Only this rate's own clause: "1.5% on every purchase ... Plus, 5% on hotels booked through Capital One
+    # Business Travel" makes the 5% portal-only, not the 1.5%.
+    rr.portal_only = bool(_PORTAL.search(text[: m.end()] + rest))
     until = _UNTIL.search(text)
     if until:
         rr.ends_on = date(int(until.group("y")), _MONTHS[until.group("m").lower()], int(until.group("d")))
