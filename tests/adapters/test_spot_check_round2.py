@@ -390,3 +390,16 @@ def test_flex_items_are_separate_lines() -> None:
     c = run_official("chase", "ink-business-unlimited", "ink-unlimited-flex-spans.rendered.html")
     assert c.value("annual_fee_cents") == 0
     assert (c.value("intro_purchase_apr_months"), c.value("intro_apr_period_unit")) == (12, "months")
+
+
+def test_renowned_hotels_booking_is_portal_only() -> None:
+    # «5x miles on hotel stays when you prepay directly through Renowned Hotels and Resorts for United® Cardmembers»;
+    # the program terms: «... hotel accommodation purchases made using your card with Renowned Hotels and Resorts for
+    # United® Cardmembers through Chase Travel.»
+    c = run_official("chase", "united-quest", "united-quest-2026-10-14.rendered.html")
+    [h] = [
+        r.value
+        for r in c.reward_rates
+        if r.value and r.value.category == "hotel" and r.value.rate == Decimal("5")
+    ]
+    assert h.portal_only and [x.kind for x in h.conditions] == ["portal_only"]

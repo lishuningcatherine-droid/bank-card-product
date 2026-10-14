@@ -43,7 +43,10 @@ _PORTAL = re.compile(
     r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|"
     r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
     r"\b(?:on|through|via|with)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
-    r"amex ?travel|american express travel)\b|\bin the travel center\b",
+    r"amex ?travel|american express travel)\b|\bin the travel center\b|"
+    # United cards: "hotel stays when you prepay directly through Renowned Hotels and Resorts for United® Cardmembers"
+    # (the program terms: "... with Renowned Hotels and Resorts for United® Cardmembers through Chase Travel")
+    r"\bthrough\s+renowned\s+hotels\s+and\s+resorts\b",
     re.IGNORECASE,
 )
 _UNTIL = re.compile(
