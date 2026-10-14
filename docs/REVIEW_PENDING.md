@@ -1,6 +1,6 @@
 # Held changes awaiting review
 
-Generated 2026-10-14 20:16 UTC from the open `major_change` review items (80 products: 64 LOW risk, 16 HIGH risk). Prod keeps the previous values for these cards (shown Partially verified) until the item is approved or rejected with `bankrec review approve|reject <id>`. A product's changes are decided together.
+Generated 2026-10-14 20:34 UTC from the open `major_change` review items (80 products: 64 LOW risk, 16 HIGH risk). Prod keeps the previous values for these cards (shown Partially verified) until the item is approved or rejected with `bankrec review approve|reject <id>`. A product's changes are decided together.
 
 **LOW risk**: every change only adds rates or qualifiers that the page states, drops 'travel' read from a
 portal's name, or fills a previously empty field; nothing is removed or re-valued. **HIGH risk**: a value is
@@ -91,13 +91,13 @@ removed or changed, or an offer appears / changes / disappears.
 | 206 | chase | Instacart Mastercard® | reward_rates | + 5% partner cap $6,000/annual | <https://creditcards.chase.com/cash-back-credit-cards/instacart> |
 | 207 | chase | British Airways Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline [partner_only] | <https://creditcards.chase.com/travel-credit-cards/avios/british-airways> |
 | 284 | chase | IHG One Rewards Business Credit Card | reward_rates | + 10x hotel [partner_only]; 5x advertising; 5x car_rental; 5x office_supply until 2026-12-31; 5x travel until 2026-12-31<br>qualifier added: 5x airline [booked_direct] | <https://creditcards.chase.com/business-credit-cards/IHG/business> |
-| 285 | chase | Ink Business Cash® Credit Card | reward_rates | + 5% merchant; 5% office_supply cap $25,000/annual; 5% telecom cap $25,000/annual | <https://creditcards.chase.com/business-credit-cards/ink/cash> |
+| 285 | chase | Ink Business Cash® Credit Card | reward_rates | + 5% merchant until 2027-09-30; 5% office_supply cap $25,000/annual; 5% telecom cap $25,000/annual | <https://creditcards.chase.com/business-credit-cards/ink/cash> |
 | 286 | chase | Sapphire Reserve for Business℠ Credit Card | reward_rates | + 3x advertising; 5x merchant until 2027-09-30<br>qualifier added: 4x airline [booked_direct]; 4x hotel [booked_direct] | <https://creditcards.chase.com/business-credit-cards/sapphire/reserve> |
 | 289 | chase | DoorDash Rewards Mastercard® | reward_rates | + 4% partner | <https://creditcards.chase.com/cash-back-credit-cards/doordash> |
-| 290 | chase | Chase Freedom Flex® Credit Card | reward_rates | + 2% merchant; 5% rotating cap $1,500/quarterly [enrollment_required] | <https://creditcards.chase.com/cash-back-credit-cards/freedom/flex> |
+| 290 | chase | Chase Freedom Flex® Credit Card | reward_rates | + 2% merchant until 2027-09-30; 5% rotating cap $1,500/quarterly [enrollment_required] | <https://creditcards.chase.com/cash-back-credit-cards/freedom/flex> |
 | 291 | chase | Chase Freedom Rise® Credit Card | reward_rates | + 2% merchant | <https://creditcards.chase.com/cash-back-credit-cards/freedom/rise> |
 | 292 | chase | Chase Freedom Unlimited® Credit Card | reward_rates | + 2% merchant | <https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited> |
-| 295 | chase | Chase Sapphire Preferred® Credit Card | reward_rates | + 5x merchant; 5x travel (portal) | <https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred> |
+| 295 | chase | Chase Sapphire Preferred® Credit Card | reward_rates | + 5x merchant until 2027-09-30; 5x merchant until 2027-12-31; 5x travel (portal) | <https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred> |
 | 297 | chase | Aer Lingus Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline [partner_only] | <https://creditcards.chase.com/travel-credit-cards/avios/aer-lingus> |
 | 298 | chase | Iberia Visa Signature® Credit Card | reward_rates | + 1x other; 2x hotel; 3x airline [partner_only] | <https://creditcards.chase.com/travel-credit-cards/avios/iberia> |
 | 299 | chase | Marriott Bonvoy Bold® Credit Card | reward_rates | + 1x other; 2x telecom<br>qualifier added: 3x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/bold> |
@@ -107,13 +107,13 @@ removed or changed, or an offer appears / changes / disappears.
 | 321 | chase | Ink Business Premier® Credit Card | reward_rates | + 5% merchant | <https://creditcards.chase.com/business-credit-cards/ink/premier> |
 | 322 | chase | Southwest Rapid Rewards® Premier Business Credit Card | reward_rates | + 3x partner | <https://creditcards.chase.com/business-credit-cards/southwest/premier-business> |
 | 333 | chase | IHG One Rewards Premier Credit Card | reward_rates | + 10x hotel [partner_only]; 5x car_rental; 5x travel until 2026-12-31<br>qualifier added: 5x airline [booked_direct] | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier> |
-| 337 | chase | Ink Business Preferred® Credit Card | reward_rates | + 3x advertising cap $150,000/annual; 3x shipping cap $150,000/annual; 3x telecom cap $150,000/annual; 3x travel cap $150,000/annual; 5x merchant | <https://creditcards.chase.com/business-credit-cards/ink/business-preferred> |
+| 337 | chase | Ink Business Preferred® Credit Card | reward_rates | + 3x advertising cap $150,000/annual; 3x shipping cap $150,000/annual; 3x telecom cap $150,000/annual; 3x travel cap $150,000/annual; 5x merchant until 2027-09-30 | <https://creditcards.chase.com/business-credit-cards/ink/business-preferred> |
 | 338 | chase | Chase Sapphire Reserve® Credit Card | reward_rates | + 10x merchant until 2027-12-31<br>qualifier added: 4x airline [booked_direct]; 4x hotel [booked_direct] | <https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve> |
 | 339 | chase | IHG One Rewards Credit Card | reward_rates | + 3x streaming until 2026-12-31; 3x telecom until 2026-12-31; 3x utilities until 2026-12-31; 5x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/one-rewards> |
 | 340 | chase | IHG One Rewards Premier Select Credit Card | reward_rates | + 12x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/ihg-rewards-club/premier-select> |
 | 341 | chase | Marriott Bonvoy Boundless® Credit Card | reward_rates | qualifier added: 6x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/boundless> |
 | 342 | chase | Marriott Bonvoy Bountiful® Credit Card | reward_rates | qualifier added: 6x hotel [partner_only] | <https://creditcards.chase.com/travel-credit-cards/marriott-bonvoy/bountiful> |
-| 354 | chase | Ink Business Unlimited® Credit Card | reward_rates | + 5% merchant | <https://creditcards.chase.com/business-credit-cards/ink/unlimited> |
+| 354 | chase | Ink Business Unlimited® Credit Card | reward_rates | + 5% merchant until 2027-09-30 | <https://creditcards.chase.com/business-credit-cards/ink/unlimited> |
 | 262 | us_bank | U.S. Bank Altitude® Connect Visa Signature® Card | reward_rates | + 5x travel (portal) | <https://www.usbank.com/credit-cards/altitude-connect-visa-signature-credit-card.html> |
 | 263 | us_bank | U.S. Bank Smartly™ Visa Signature® Card | reward_rates | + 2% other | <https://www.usbank.com/credit-cards/bank-smartly-visa-signature-credit-card.html> |
 | 264 | us_bank | U.S. Bank Cash+® Secured Visa® Card | reward_rates | + 2% choice_everyday; 5% choice cap $2,000/quarterly | <https://www.usbank.com/credit-cards/cash-plus-secured-visa-credit-card.html> |
