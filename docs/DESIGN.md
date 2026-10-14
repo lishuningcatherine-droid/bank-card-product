@@ -1245,3 +1245,7 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   longer states the foreign transaction fee (conditional field; prod keeps the reviewed value until the held change
   is decided) and puts the 3x advertising cap on its own line ("On up to $1 million in spend each anniversary year,
   starting 11/15/26"), which is not parsed yet.
+  Air Canada Aeroplan: "2X … at grocery stores. Through December 31, 2026, these purchases will earn 3X …" — the
+  ongoing 2X had been stored as ending 2026-12-31 and the 3X promotion was missing. A "these purchases will earn"
+  sentence now stays with the previous one and gives a dated rate for the same categories; a dated rate and the
+  ongoing rate for one category are both kept by the per-category dedupe.

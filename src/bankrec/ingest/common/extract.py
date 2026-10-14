@@ -27,7 +27,14 @@ from bankrec.parsers.offers import Qualifier, parse_offer_block
 from bankrec.parsers.percent import parse_percent, parse_percent_range
 from bankrec.parsers.period import parse_period
 from bankrec.parsers.placeholders import contains_placeholder, is_placeholder
-from bankrec.parsers.rewards import _MONTHS, parse_reward_statement, portal_lead
+from bankrec.parsers.rewards import (
+    _MONTHS,
+    RewardRate,
+    end_date,
+    parse_rate_only,
+    parse_reward_statement,
+    portal_lead,
+)
 
 US_STATES = [
     "AL",
@@ -325,10 +332,16 @@ def reward_rates(statements: Iterable[str], ctx: ExtractionContext) -> list[Sour
     out: list[Sourced[RewardRateRec]] = []
     # One clause per rate: "1.5% on every purchase ... Plus, earn unlimited 5% on hotels ..." holds two rates.
     pieces = [(p.strip(), portal_lead(st), st) for st in statements for p in split_rate_clauses(st)]
+    prev: tuple[str, RewardRate] | None = None
     for st, lead, whole in pieces:
-        rr = parse_reward_statement(st)
+        # the words introducing the next, back-referring rate are not part of this one ("2X at grocery stores.
+        # Through December 31, 2026, these purchases will earn" | "3X points per $1 spent")
+        rr = parse_reward_statement(_BACK_REF_TAIL.sub("", st))
+        if rr is None:
+            rr = _back_reference(st, whole, prev)
         if rr is None:
             continue
+        prev = (whole, rr)
         rr.portal_only = rr.portal_only or lead
         for cat in rr.categories:
             conds = rate_conditions(rr.conditions.get(cat, []), st)
@@ -413,6 +426,29 @@ def card_tiles(text: str) -> list[tuple[str, str]]:
         head = re.sub(r"^(?:earn\s+)?up\s+to\s+\d+X\s+total\s+points\s*", "", lines[i - 1], flags=re.I)
         out.append((f"{lines[i - 1]} {ln}", f"{m.group(1)}X points {head}"))
     return out
+
+
+_BACK_REF_TAIL = re.compile(
+    r"\.?\s*\bthrough\b[^.]{0,40},\s+these\s+purchases\s+will\s+earn\s*$", re.IGNORECASE
+)
+
+
+def _back_reference(st: str, whole: str, prev: tuple[str, RewardRate] | None) -> RewardRate | None:
+    """ "Through December 31, 2026, these purchases will earn 3X points per $1 spent": a rate for the previous clause's
+    categories (same statement), ending on the stated date."""
+    if prev is None or prev[0] != whole or not re.search(r"\bthese\s+purchases\s+will\s+earn\b", whole, re.I):
+        return None
+    only = parse_rate_only(st)
+    until = re.search(r"\bthrough\s+[^.]{3,40}?,\s+these\s+purchases\s+will\s+earn\b", whole, re.I)
+    if only is None or until is None:
+        return None
+    return RewardRate(
+        rate=only[0],
+        rate_unit=only[1],
+        categories=list(prev[1].categories),
+        ends_on=end_date(until.group(0)),
+        text=whole.strip(),
+    )
 
 
 def rate_conditions(found: list[tuple[str, str, str | None]], statement: str) -> list[RateCondition]:

@@ -63,13 +63,14 @@ def lowest_rate_per_category(rates: list[Sourced[RewardRateRec]]) -> list[Source
     """One rate per category and channel. The same rate is often stated twice (summary and detail); when the page
     shows two different rates for one category, the lower one is kept (never overstate). A portal-only rate ("5x on
     Chase Travel") and the general rate for the same category ("2x on all other travel") are different rates and are
-    both kept (spot-check round 1, finding 1)."""
-    low: dict[tuple[str, bool], Sourced[RewardRateRec]] = {}
+    both kept (spot-check round 1, finding 1). So are a time-bound rate and the ongoing one ("2X at grocery stores.
+    Through December 31, 2026, these purchases will earn 3X"; round 2)."""
+    low: dict[tuple[str, bool, object], Sourced[RewardRateRec]] = {}
     for r in rates:
         v = r.value
         if v is None:
             continue
-        k = (v.category, v.portal_only)
+        k = (v.category, v.portal_only, v.ends_on)
         lv = low[k].value if k in low else None
         if lv is None or v.rate < lv.rate or (v.rate == lv.rate and lv.cap_cents is None and v.cap_cents):
             low[k] = r

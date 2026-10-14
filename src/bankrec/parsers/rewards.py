@@ -210,15 +210,21 @@ def parse_reward_statement(text: str) -> RewardRate | None:
             found.append(("enrollment_required", _clause_around(text, act.start(), act.end()), None))
         if found:
             rr.conditions[c] = found
-    until = _UNTIL.search(text)
-    if until and until.group("m"):
-        rr.ends_on = date(int(until.group("y")), _MONTHS[until.group("m").lower()], int(until.group("d")))
-    elif until:
-        y = int(until.group("ny"))
-        rr.ends_on = date(y + 2000 if y < 100 else y, int(until.group("nm")), int(until.group("nd")))
+    rr.ends_on = end_date(text)
     if not rr.categories:
         return None
     return rr
+
+
+def end_date(text: str) -> date | None:
+    """The date a rate ends: "through December 31, 2026", "through 9/30/27"."""
+    until = _UNTIL.search(text)
+    if until is None:
+        return None
+    if until.group("m"):
+        return date(int(until.group("y")), _MONTHS[until.group("m").lower()], int(until.group("d")))
+    y = int(until.group("ny"))
+    return date(y + 2000 if y < 100 else y, int(until.group("nm")), int(until.group("nd")))
 
 
 def strip_exclusions(text: str) -> str:

@@ -68,6 +68,8 @@ _NOT_EARN = re.compile(
     r"\bdepending on your card\b",
     re.IGNORECASE,
 )
+# "... Through December 31, 2026, these purchases will earn 3X ...": one statement (the second rate refers back)
+_BACK_REF = re.compile(r"\bthese\s+purchases\s+will\s+earn\b", re.IGNORECASE)
 # A spend limit we could not parse ("on $150K combined spend") makes the rate's cap unknown.
 _UNPARSED_CAP = re.compile(r"\bcombined\b|\bmax(?:imum)?\b|\bon\s+the\s+first\s+\$|\$\d+K\b", re.IGNORECASE)
 _MULTI_RATE = re.compile(r",\s*(?:and\s+)?(?=\d{1,2}(?:\.\d{1,2})?\s*(?:%|x\b))", re.IGNORECASE)
@@ -262,8 +264,18 @@ class Adapter(DeclarativeAdapter):
                     continue  # APR statements are never earn statements (split pieces would lose the word "APR")
                 # one sentence, then one rate clause at a time ("Earn 3 Avios ... In addition earn 2 Avios ...")
                 sentences = re.split(r"(?<=[a-z*®])\.\s+(?=[A-Z])", line.strip())
+                # "... at grocery stores. Through December 31, 2026, these purchases will earn 3X points per $1
+                # spent.": the second sentence refers back to the first one's categories, so they stay together.
+                for k in range(len(sentences) - 1, 0, -1):
+                    if re.match(
+                        r"^through\b[^.]{0,40},\s+these\s+purchases\s+will\s+earn\b", sentences[k], re.I
+                    ):
+                        sentences[k - 1 : k + 1] = [f"{sentences[k - 1]}. {sentences[k]}"]
                 parts = [
-                    p for sent in sentences for c in X.split_rate_clauses(sent) for p in _MULTI_RATE.split(c)
+                    p
+                    for sent in sentences
+                    for c in ([sent] if _BACK_REF.search(sent) else X.split_rate_clauses(sent))
+                    for p in ([c] if _BACK_REF.search(c) else _MULTI_RATE.split(c))
                 ]
                 for part in parts:
                     part = part.strip()

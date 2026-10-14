@@ -315,3 +315,20 @@ def test_chase_third_template_offer_and_fee() -> None:
     assert window(o) == (6, "months", None)
     assert c.value("annual_fee_cents") == 79500
     assert c.fields["earn_rates_complete"].value is True
+
+
+def test_time_bound_rate_referring_back_to_the_previous_categories() -> None:
+    # «2X points per $1 spent at grocery stores. Through December 31, 2026, these purchases will earn 3X points per $1
+    # spent.*»: 2X is the ongoing rate (it was stored as ending 2026-12-31) and the 3X promotion was missing.
+    c = run_official("chase", "air-canada-aeroplan", "air-canada-aeroplan-2026-10-14.rendered.html")
+    got = sorted(
+        (r.value.category, r.value.rate, r.value.ends_on)
+        for r in c.reward_rates
+        if r.value and r.value.category in {"groceries", "dining"}
+    )
+    assert got == [
+        ("dining", Decimal("2"), None),
+        ("dining", Decimal("3"), date(2026, 12, 31)),
+        ("groceries", Decimal("2"), None),
+        ("groceries", Decimal("3"), date(2026, 12, 31)),
+    ]
