@@ -24,6 +24,7 @@ from bankrec.model import (
     RewardRateRec,
     Sourced,
 )
+from bankrec.normalize.categories import categories_in
 from bankrec.parsers.rewards import parse_rate_only, parse_reward_statement
 from bankrec.registry.no_rewards import confirmed as no_rewards_confirmed
 from bankrec.registry.schema import BankConfig, SourceEntry
@@ -74,8 +75,31 @@ def lowest_rate_per_category(rates: list[Sourced[RewardRateRec]]) -> list[Source
 
 
 # Rate-like text that is never an earn statement: APRs, review percentages, bare numbers, calculator labels.
+def _partner_probe(st: str, words: list[str]) -> str:
+    """``st`` with the partner's purchases replaced by "partner purchases" (``st`` unchanged when not found)."""
+    pat = "|".join(re.escape(w) for w in words)
+    probe = re.sub(
+        rf"(?:eligible\s+)?(?:entire\s+)?(?:{pat})(?:[®™]|\s|,)*(?:[\w®™]+,?\s+){{0,6}}?(?:purchases?|orders)\b"
+        r"(?:\s*\([^)]*\))?",  # "Allegiant purchases (air, hotel, car rental and attractions)"
+        "partner purchases",
+        st,
+        count=1,
+        flags=re.I,
+    )
+    if probe == st:  # "... on qualifying purchases made using your card directly through Instacart"
+        probe = re.sub(
+            rf"\b(?:qualifying\s+)?purchases\b[^.]{{0,80}}?\b(?:through|at|with|on)\s+(?:the\s+)?(?:{pat})\b",
+            "partner purchases",
+            st,
+            count=1,
+            flags=re.I,
+        )
+    return probe
+
+
 _NOT_AN_EARN_STATEMENT = re.compile(
-    r"\bAPR\b|respondents|recommend this|^\s*\d{1,3}(?:\.\d+)?%\s*$|^\s*[\d.]+%\s*-\s*[\d.]+%|^earn \d+% cash back\.?$",
+    # APR (also "APR2" with a footnote digit), fee and credit-score copy, and store-discount copy are not earn rates
+    r"\bAPR(?:\b|\d)|transfer fee|of each transfer|credit score|\bsavings everyday\b|respondents|recommend this|^\s*\d{1,3}(?:\.\d+)?%\s*$|^\s*[\d.]+%\s*-\s*[\d.]+%|^earn \d+% cash back\.?$",
     re.IGNORECASE,
 )
 
@@ -145,33 +169,24 @@ class DeclarativeAdapter:
         applied to the user's spend categories."""
         if partner is None:
             return []
-        words = (self.rules.get("partner_words") or {}).get(partner[0], [partner[0]])
-        produced = {X.norm_ws(r.span_text or "") for r in rates}
+        words = self._partner_words(partner[0])
         out: list[Sourced[RewardRateRec]] = []
         for st in lines:
-            if X.norm_ws(st) in produced or not any(
-                re.search(rf"\b{re.escape(w)}\b", st, re.I) for w in words
-            ):
+            if not any(re.search(rf"\b{re.escape(w)}\b", st, re.I) for w in words):
                 continue
-            pat = "|".join(re.escape(w) for w in words)
-            probe = re.sub(
-                rf"(?:eligible\s+)?(?:entire\s+)?(?:{pat})(?:[®™]|\s|,)*(?:\w+\s+){{0,6}}?(?:purchases?|orders)\b",
-                "partner purchases",
-                st,
-                count=1,
-                flags=re.I,
-            )
-            if probe == st:  # "... on qualifying purchases made using your card directly through Instacart"
-                probe = re.sub(
-                    rf"\b(?:qualifying\s+)?purchases\b[^.]{{0,80}}?\b(?:through|at|with|on)\s+(?:the\s+)?(?:{pat})\b",
-                    "partner purchases",
-                    st,
-                    count=1,
-                    flags=re.I,
-                )
+            probe = _partner_probe(st, words)
             rr = parse_reward_statement(probe) if probe != st else None
-            if rr is None or rr.categories != ["partner"]:
+            # "3 points on eligible dining, foreign transaction, Alaska Airlines and Hawaiian Airlines purchases":
+            # the partner part is a partner rate; dining stays a dining rate (from the ordinary parse).
+            if rr is None or "partner" not in rr.categories:
                 continue
+            plain = parse_reward_statement(st)
+            if (
+                partner[1] in ("airline", "hotel")
+                and plain is not None
+                and any(k in (partner[1], "travel") for k in plain.categories)
+            ):
+                continue  # "3 Avios on British Airways ... flight purchases" is already the airline rate
             rec = RewardRateRec(
                 category="partner",
                 rate=rr.rate,
@@ -186,9 +201,12 @@ class DeclarativeAdapter:
                 text=st.strip(),
             )
             got = ctx.field(rec, st, method="free_text", name="reward:partner")
-            if got.present:
+            if got.present and X.norm_ws(st) not in {X.norm_ws(r.span_text or "") for r in out}:
                 out.append(got)
         return out
+
+    def _partner_words(self, partner: str) -> list[str]:
+        return list((self.rules.get("partner_words") or {}).get(partner, [partner]))
 
     def partner_rates(self, c: ProductCandidate) -> None:
         """Earn on the co-brand partner itself ("2X points on Southwest Airlines purchases", "6X at hotels
@@ -203,7 +221,7 @@ class DeclarativeAdapter:
         kind = next((k for k, v in co_brands().items() if partner in v), None)
         if kind not in ("airline", "hotel"):
             return
-        words = (self.rules.get("partner_words") or {}).get(partner, [partner])
+        words = self._partner_words(partner)
         rates = []
         for r in c.reward_rates:
             v = r.value
@@ -213,6 +231,11 @@ class DeclarativeAdapter:
                 re.search(rf"\b{re.escape(w)}\b", v.text, re.I) for w in words
             ):
                 if v.category not in (kind, "travel"):
+                    # A category the sentence lists besides the partner ("dining, ..., Alaska Airlines purchases")
+                    # stands; one that only describes the partner's purchases ("Allegiant purchases (air, hotel
+                    # ...)") is dropped (the partner rate represents it).
+                    if v.category in categories_in(_partner_probe(v.text, words)):
+                        rates.append(r)
                     continue
                 r = r.model_copy(update={"value": v.model_copy(update={"category": kind})})
             rates.append(r)
@@ -421,7 +444,27 @@ class DeclarativeAdapter:
             ctx.field(" ".join(elig), elig[0]) if elig else ctx.field(None, None)
         )
         self._offers(page, ctx, c, "card_welcome")
+        before = [r for r in c.reward_rates if r.value]
         self.card_extras(page, ctx, c)
+        # An adapter's post-processing (partner rules, shared caps, dedupe) may drop a rate. That is fine when its
+        # category is still represented, or its statement still produced a rate (e.g. a partner rate); otherwise
+        # the card's earn rates are no longer complete.
+        after = [r for r in c.reward_rates if r.value]
+        kept = {(r.value.category, r.value.portal_only) for r in after if r.value}
+        spans = {X.norm_ws(r.span_text or "") for r in after}
+        lost = [
+            r
+            for r in before
+            if r.value
+            and (r.value.category, r.value.portal_only) not in kept
+            and X.norm_ws(r.span_text or "") not in spans
+        ]
+        if lost and (done := c.fields.get("earn_rates_complete")) is not None and done.present:
+            c.fields["earn_rates_complete"] = ctx.field(None, None, null_reason=NullReason.ambiguous)
+            c.notes.append(
+                "earn rates dropped without replacement: "
+                + " | ".join(f"{r.value.category}: {(r.span_text or '')[:100]}" for r in lost if r.value)
+            )
         self._no_rewards(page, ctx, c)
 
     def _checking(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:

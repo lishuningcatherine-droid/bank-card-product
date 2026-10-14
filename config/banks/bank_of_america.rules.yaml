@@ -1,0 +1,6 @@
+# Bank of America extraction rules (the adapter's own logic is in bankrec/ingest/adapters/bank_of_america.py).
+# Words that name a co-brand partner's own purchases: a rate on them is a ``partner`` rate (DESIGN §24.16).
+partner_words:
+  Royal ONE: [Royal Caribbean, Celebrity Cruises, Silversea]
+  Allways: [Allegiant]
+  Atmos: [Alaska Airlines, Hawaiian Airlines]

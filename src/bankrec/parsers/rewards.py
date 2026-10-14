@@ -52,6 +52,7 @@ _UNTIL = re.compile(
     re.IGNORECASE,
 )
 _CHOICE = {"choice", "choice_everyday"}
+_GLUED_NOTE = re.compile(r"(?<=[a-z])\d(?![\d,.%x])")
 _MONTHS = {
     m: i
     for i, m in enumerate(
@@ -114,6 +115,10 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     """Parse one earn-rate statement. Returns None when no rate is present or the text holds a placeholder."""
     if contains_placeholder(text):
         return None
+    original = text
+    text = _GLUED_NOTE.sub(
+        " ", text
+    )  # "5% cash back2on your first $2,000": footnote marker glued to the words
     m = _RATE.search(text)
     if not m:
         return None
@@ -137,7 +142,7 @@ def parse_reward_statement(text: str) -> RewardRate | None:
         cats = chosen[:1]
     is_base = "other" in cats and len(cats) == 1
     cats = [c for c in cats if c != "other"] or (["other"] if is_base else [])
-    rr = RewardRate(rate=rate, rate_unit=unit, categories=cats, is_base=is_base, text=text.strip())
+    rr = RewardRate(rate=rate, rate_unit=unit, categories=cats, is_base=is_base, text=original.strip())
     cap = _CAP.search(text)
     if cap:
         rr.cap_cents = _dollars_to_cents(cap.group("amt")) * (1000 if cap.group("k") else 1)  # "$50K"

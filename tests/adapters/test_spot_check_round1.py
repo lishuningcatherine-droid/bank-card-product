@@ -218,3 +218,54 @@ def test_d_chase_new_template_avios_offer_and_all_rates() -> None:
     assert (o.amount_max, o.reward_unit, o.requirement_min_cents) == (75000, "points", 500000)
     assert rates(c) == {"airline": ("3x", None), "hotel": ("2x", None), "other": ("1x", None)}
     assert c.value("earn_rates_complete") is True
+
+
+def test_d_partner_purchases_with_parenthetical_are_a_partner_rate() -> None:
+    # "3 points per $1 spent on Allegiant purchases (air, hotel, car rental and attractions)"
+    c = run_official("bank_of_america", "allegiant-credit-card", "allegiant-2026-10-14.rendered.html")
+    assert rates(c) == {"partner": ("3x", None), "dining": ("2x", None), "other": ("1x", None)}
+    assert c.value("earn_rates_complete") is True
+
+
+def test_d_categories_listed_beside_the_partner_stand() -> None:
+    # "Earn 3 points for every $1 spent on eligible dining, foreign transaction, Alaska Airlines and Hawaiian
+    # Airlines purchases": dining and foreign purchases are general rates, the airlines part is a partner rate.
+    c = run_official(
+        "bank_of_america", "alaska-airlines-infinite-credit-card", "atmos-summit-2026-10-14.rendered.html"
+    )
+    r = rates(c)
+    assert r["dining"] == r["foreign_purchases"] == r["partner"] == ("3x", None) and r["other"] == (
+        "1x",
+        None,
+    )
+
+
+def test_d_royal_one_plus_lists_every_2x_category_and_partner_4x() -> None:
+    # "2 points per dollar spent on eligible airline, hotel, dining, grocery, gas and EV charging station purchases"
+    c = run_official(
+        "bank_of_america", "royal-one-plus-credit-card", "royal-one-plus-2026-10-14.rendered.html"
+    )
+    r = rates(c)
+    for k in ("airline", "hotel", "dining", "groceries", "gas", "ev_charging"):
+        assert r[k] == ("2x", None), k
+    assert r["partner"] == ("4x", None) and r["other"] == ("1x", None)
+
+
+def test_d_glued_footnote_marker_keeps_the_capped_choice_rate() -> None:
+    # "5% cash back2on your first $2,000 in combined eligible purchases each quarter in two categories you choose3"
+    c = run_official(
+        "us_bank", "cash-plus-secured-visa-credit-card", "cash-plus-secured-2026-10-14.rendered.html"
+    )
+    r = rates(c)
+    assert (
+        r["choice"] == ("5pct", 200000)
+        and r["choice_everyday"] == ("2pct", None)
+        and r["other"] == ("1pct", None)
+    )
+    assert c.value("earn_rates_complete") is True
+
+
+def test_d_fee_and_apr_lines_are_not_earn_statements() -> None:
+    from bankrec.parsers.rewards import parse_reward_statement
+
+    assert parse_reward_statement("3% foreign transaction fee") is None

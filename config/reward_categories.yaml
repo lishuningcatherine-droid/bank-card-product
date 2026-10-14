@@ -10,9 +10,9 @@ categories:
   travel: {label: Travel, synonyms: ["travel", "travel purchases", "hotels and car rentals"]}
   # "Flights" are airline purchases, not travel in general (which would also cover hotels, cars, cruises).
   airline: {label: Airline, synonyms: ["flights booked directly with airlines", "flights booked directly",
-                                       "flights booked direct", "airline purchases", "flight purchases", "airfare", "flights"]}
-  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels", "hotels booked direct", "hotel accommodations"]}
-  gas: {label: Gas, synonyms: ["gas stations", "gas", "fuel", "u.s. gas stations", "gas and ev charging"]}
+                                       "flights booked direct", "airline purchases", "flight purchases", "airfare", "flights", "airline"]}
+  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels", "hotels booked direct", "hotel accommodations", "hotel"]}
+  gas: {label: Gas, synonyms: ["gas stations", "gas", "fuel", "u.s. gas stations"]}
   ev_charging: {label: EV charging, synonyms: ["ev charging", "electric vehicle charging"]}
   entertainment: {label: Entertainment, synonyms: ["entertainment", "live entertainment"]}
   streaming: {label: Streaming, synonyms: ["streaming services", "select u.s. streaming subscriptions", "streaming"]}
@@ -36,6 +36,9 @@ categories:
                                                    "choice category"]}
   # A second, lower-rate chosen category (U.S. Bank Cash+: "2% cash back on one everyday category you choose").
   choice_everyday: {label: Everyday category you choose, synonyms: ["one everyday category you choose", "everyday category you choose"]}
+  # Purchases in a foreign currency or outside the U.S. ("3 points on eligible dining, foreign transaction, ...").
+  # "foreign transaction," keeps its comma so a "foreign transaction fee" is never read as an earn category.
+  foreign_purchases: {label: Foreign purchases, synonyms: ["foreign transaction,", "foreign purchases"]}
   # Purchases with the co-brand partner itself ("4% on DoorDash orders", "3 points per dollar on Royal Caribbean").
   partner: {label: Partner purchases, synonyms: ["partner purchases"]}
   # A named merchant that is not the card's co-brand partner ("5x on Lyft rides", "5x on Peloton equipment").
