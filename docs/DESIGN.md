@@ -1135,3 +1135,28 @@ confirms it (`confirmed: true`, `confirmed_by`, `confirmed_on`); a product page 
 it. Effect: `base_rate` and `reward_currency` become not_applicable (the card can be Verified), and the recommender
 admits the card only for low-interest, balance-transfer and credit-building goals. Distinct from `reward_program`
 (the program's name).
+
+### 24.16 Stricter "Verified" after spot-check round 1 (docs/SPOT_CHECK_TRIAGE.md)
+
+- **Earn completeness** (`earn_rates_complete`, key field). Every rate-led earn statement an adapter collects must
+  produce a rate. Explained exclusions (portal duplicates handled as portal rates, "up to"/"total" stacked rates,
+  airline-program earn, discounts, statement-credit rebates, APR and review percentages, summary headings repeating a
+  represented rate) never count. Any unrepresented statement → Partially verified, listed in the record's notes.
+- **New categories** so statements are represented rather than dropped: `office_supply`, `telecom`, `advertising`,
+  `shipping`; `choice` / `choice_everyday` (cardholder-chosen, never expanded into the listed examples); `partner`
+  (the co-brand partner's own purchases); `merchant` (named-merchant promotions such as Lyft, Peloton). None are mapped
+  to the user's spend categories, so they never add value on their own.
+- **Portal rates kept**: one rate per (category, portal-only) instead of per category.
+- **Offer capture** (`offer_capture`, key field): an offer block on the page (amount + spending requirement + window)
+  with no extracted offer → Partially verified and "We couldn't read the welcome offer on this page"; never "no
+  offer". Sources whose offers are script-only (`offers_script_only` in Capital One and Amex rules) say "Welcome offer
+  not captured" instead of reporting none. Requirements and tiers stated elsewhere on the page (a footnote repeating
+  the amount, "Plus, earn ..." lines) are joined to the headline; the provenance span stays the located headline.
+- **Tiered offers**: `amount_qualifier = "tiered"` when the parsed tiers add up to the headline "up to" amount; each
+  tier keeps its amount, spend (cumulative or incremental) and window. Scoring counts only tiers the user's spending
+  reaches within the window; non-spend tiers (e.g. adding an authorized user) are never counted.
+- **Intro periods keep their unit**: `intro_apr_period_unit` (months | billing_cycles | statement_closings) from the
+  value's own evidence; the UI prints the stated unit.
+- **End dates**: numeric dates ("7/29/26") and dated lines that repeat the offer amount set `expiration_date`; expired
+  offers are never current (request-time state, browser re-check). 0 of 52 prod offers had a past end date (2026-10-14).
+- **Entry point**: each offer shows "Offer shown on <page> as of <date>" from its `offer_url`.
