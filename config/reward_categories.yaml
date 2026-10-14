@@ -10,8 +10,8 @@ categories:
   travel: {label: Travel, synonyms: ["travel", "travel purchases", "hotels and car rentals"]}
   # "Flights" are airline purchases, not travel in general (which would also cover hotels, cars, cruises).
   airline: {label: Airline, synonyms: ["flights booked directly with airlines", "flights booked directly",
-                                       "flights booked direct", "airline purchases", "airfare", "flights"]}
-  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels", "hotels booked direct"]}
+                                       "flights booked direct", "airline purchases", "flight purchases", "airfare", "flights"]}
+  hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels", "hotels booked direct", "hotel accommodations"]}
   gas: {label: Gas, synonyms: ["gas stations", "gas", "fuel", "u.s. gas stations", "gas and ev charging"]}
   ev_charging: {label: EV charging, synonyms: ["ev charging", "electric vehicle charging"]}
   entertainment: {label: Entertainment, synonyms: ["entertainment", "live entertainment"]}

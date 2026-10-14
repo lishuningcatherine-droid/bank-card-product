@@ -288,7 +288,8 @@ def _intro_apr(text: str | None) -> tuple[Decimal, int] | None:
 
 
 _RATE_TOKEN = re.compile(
-    r"(?<![\w$.,])\d{1,2}(?:\.\d{1,2})?\s*(?:%|[xX]\b|\s+(?:points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\b)"
+    r"(?<![\w$.,])\d{1,2}(?:\.\d{1,2})?\s*(?:%|[xX]\b|\s+(?:points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\b)",
+    re.IGNORECASE,  # "3 Avios for every $1"
 )
 
 

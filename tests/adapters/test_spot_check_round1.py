@@ -208,3 +208,13 @@ def _view(d: dict):  # type: ignore[no-untyped-def,type-arg]
 
 
 _ = (datetime, UTC)
+
+
+def test_d_chase_new_template_avios_offer_and_all_rates() -> None:
+    """Found re-running ingestion (step D): Chase's new page template puts the offer in data-slot="hero-offer", and
+    "In addition earn 2 Avios ..." / "3 Avios for every $1" were invisible to the completeness check."""
+    c = run_official("chase", "british-airways-visa-signature", "british-airways-new-template.rendered.html")
+    [o] = offers(c)
+    assert (o.amount_max, o.reward_unit, o.requirement_min_cents) == (75000, "points", 500000)
+    assert rates(c) == {"airline": ("3x", None), "hotel": ("2x", None), "other": ("1x", None)}
+    assert c.value("earn_rates_complete") is True

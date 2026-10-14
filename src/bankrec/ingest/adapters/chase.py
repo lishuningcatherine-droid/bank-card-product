@@ -47,7 +47,7 @@ _OFFER_LEAD = re.compile(
 )
 # An earn-rate statement leads with its rate ("3x points on dining", "Earn 3% on dining", "Plus, 1% cash back").
 _RATE_LEAD = re.compile(
-    r"^(?:new!?\s+)?(?:(?:and|plus),?\s+)?(?:earn\s+)?(?:a\s+total\s+of\s+)?(?:unlimited\s+)?"
+    r"^(?:new!?\s+)?(?:(?:and|plus|in\s+addition),?\s+)?(?:earn\s+)?(?:a\s+total\s+of\s+)?(?:unlimited\s+)?"
     r"\d{1,2}(?:\.\d{1,2})?\s*(?:%|x\b|\s+(?:points?|miles?|avios)\s+(?:per|for\s+(?:each|every))\b)"
     r"|\bearn\s+(?:unlimited\s+)?\d(?:\.\d{1,2})?%\s+cash\s+back\s+on\s+all\s+purchases",
     re.IGNORECASE,

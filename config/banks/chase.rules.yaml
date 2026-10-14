@@ -6,7 +6,7 @@ scope_selector: "main"
 # Personal (Halo/Sapphire), business and Hyatt-style templates: name, earn rates, offers.
 reward_selector: ".cmp-rewardsbenefits__content p, .cmp-rewardsbenefits__content li, .cmp-reward__element"
 credit_selector: ".cmp-rewardsbenefits__content p, .cmp-rewardsbenefits__content li"
-offer_selector: "[class*='newcardmemberoffer'], [class*='summary__description']"
+offer_selector: "[class*='newcardmemberoffer'], [class*='summary__description'], [data-slot='hero-offer']"
 offer_footnote_selector: "#od-body p"
 reward_program_pattern: "Chase Ultimate Rewards®"
 # Header/footer navigation and the "browse cards" tag cloud (e.g. "No Foreign Transaction Fees", "Visa") inside
