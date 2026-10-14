@@ -161,6 +161,7 @@ def to_view(p: P.Product, now: datetime, bank_name: str) -> ProductView:
         benefits=benefits,
         offers=offers,
         offer_absent_note=p.offer_absent_note,
+        offer_status=p.offer_status,
         test_only=p.test_only,
     )
 

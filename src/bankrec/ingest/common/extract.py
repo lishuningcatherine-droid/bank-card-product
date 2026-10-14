@@ -641,6 +641,26 @@ def offer_signal(text: str) -> str | None:
     return None
 
 
+_NO_OFFER = re.compile(
+    r"\b(?:won[’']t|will\s+not|isn[’']t|is\s+not|aren[’']t|are\s+not)\s+(?:be\s+)?eligible\s+for\s+(?:a\s+|the\s+|any\s+)?"
+    r"(?:new\s+card\s?member|welcome|sign[- ]?up)\s+(?:bonus|offer)"
+    r"|\b(?:this\s+card\s+)?(?:does\s+not|doesn[’']t)\s+(?:offer|have|include)\s+(?:a\s+|any\s+)?"
+    r"(?:new\s+card\s?member|welcome|sign[- ]?up)\s+(?:bonus|offer)",
+    re.IGNORECASE,
+)
+_NO_OFFER_CONDITIONAL = re.compile(r"\bif\b|\bmay\b|\bpreviously\b|\bwithin\s+the\s+(?:last|past)\b", re.I)
+
+
+def no_offer_statement(text: str) -> str | None:
+    """A line where the issuer states this card has no welcome offer ("You'll earn the usual Savor ... rewards, but
+    won't be eligible for new cardmember bonus cash or 0% intro APR"). Eligibility rules for an existing offer
+    ("may not be eligible ... if you previously held this card") are not a statement of absence."""
+    for ln in text.split("\n"):
+        if _NO_OFFER.search(ln) and not _NO_OFFER_CONDITIONAL.search(ln):
+            return ln.strip()
+    return None
+
+
 _END_LINE = re.compile(
     r"\b(?:offer\s+(?:ends|expires|valid\s+through)|ends|expires|apply\s+by|available\s+through|through|until)\b[^.\n]{0,40}?"
     r"(?:(?P<mon>january|february|march|april|may|june|july|august|september|october|november|december)\s+(?P<d>\d{1,2}),?\s+(?P<y>\d{4})"

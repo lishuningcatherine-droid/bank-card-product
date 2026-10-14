@@ -230,6 +230,7 @@ def publish_product(
             critical_missing=critical_missing,
             test_only=bank.test_only,
             offer_absent_note=mp.offer_absent_note,
+            offer_status=mp.offer_status,
             current_version=1,
         )
         session.add(product)
@@ -259,6 +260,7 @@ def publish_product(
             product.apy_confirmed_at = now
         product.missing_fields, product.critical_missing = missing_fields, critical_missing
         product.offer_absent_note = mp.offer_absent_note
+        product.offer_status = mp.offer_status
         product.recheck_pending, product.recheck_reason, product.recheck_fields = False, None, []
         material = [c for c in changes or [] if c.change_class != "info"]
         if material:

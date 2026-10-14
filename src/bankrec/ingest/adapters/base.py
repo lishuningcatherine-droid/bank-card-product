@@ -598,23 +598,38 @@ class DeclarativeAdapter:
             if o is not None:
                 c.offers.append(o)
         # Offer capture (spot-check round 1): a page that shows an offer block (amount + spend + window) but yields no
-        # offer is a reading failure, never "no offer".
+        # offer is a reading failure, never "no offer". offer_status (round 2, D) records which case it is.
         bank = page.bank.display_name
         signal = X.offer_signal(page.doc.text if page.doc is not None else page.text)
+        stated = X.no_offer_statement(page.doc.text if page.doc is not None else page.text)
         if c.offers:
             c.fields["offer_capture"] = ctx.field(True, c.offers[0].span_text, method="label_regex")
+            c.offer_status = "captured"
+        elif stated is not None and ctx.locate(stated) is not None:
+            # The issuer says this card has no welcome offer ("won't be eligible for new cardmember bonus cash"):
+            # a stated fact, not a capture gap.
+            c.fields["offer_capture"] = ctx.field(True, stated, method="free_text")
+            c.offer_status = "none_stated"
+            c.offer_absent_note = f"No welcome offer (stated by {bank}): “{X.norm_ws(stated)}”"
+            if re.search(r"\bintro(?:ductory)? APR\b", stated, re.IGNORECASE):
+                for f in ("intro_purchase_apr_pct", "intro_purchase_apr_months"):
+                    if not (cur := c.fields.get(f)) or not cur.present:
+                        c.fields[f] = ctx.field(None, None, null_reason=NullReason.not_applicable)
         elif signal is not None:
             c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.ambiguous)
             c.notes.append(f"offer block not read: {signal[:160]}")
+            c.offer_status = "unreadable"
             c.offer_absent_note = (
                 f"We couldn't read the welcome offer on this page. Check {bank} for the current offer."
             )
         elif self.rules.get("offers_script_only"):
             c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+            c.offer_status = "not_captured"
             c.offer_absent_note = (
                 self.offer_absent_note(page)
                 or f"Welcome offer not captured (shown only by the page script). Check {bank} for the current offer."
             )
         else:
             c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+            c.offer_status = "none_found"
             c.offer_absent_note = self.offer_absent_note(page)

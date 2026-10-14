@@ -213,6 +213,7 @@ class ProductView(BaseModel):
     benefits: list[BenefitView] = Field(default_factory=list)
     offers: list[OfferView] = Field(default_factory=list)
     offer_absent_note: str | None = None
+    offer_status: str | None = None
     test_only: bool = False
 
 

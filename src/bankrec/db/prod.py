@@ -56,6 +56,11 @@ class Product(ProdBase):
         CheckConstraint("official_name <> '' AND lower(official_name) <> 'unknown'", name="name_not_unknown"),
         CheckConstraint("official_url LIKE 'https://%'", name="official_url_https"),
         CheckConstraint("product_type IN ('credit_card','checking','savings')", name="product_type"),
+        CheckConstraint(
+            "offer_status IS NULL OR offer_status IN "
+            "('captured', 'none_stated', 'unreadable', 'not_captured', 'none_found')",
+            name="offer_status",
+        ),
     )
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
     canonical_key: Mapped[str] = mapped_column(Text, unique=True)
@@ -81,6 +86,8 @@ class Product(ProdBase):
     recheck_fields: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
     provider_only_fields: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
     offer_absent_note: Mapped[str | None] = mapped_column(Text)
+    # captured | none_stated | unreadable | not_captured | none_found (DESIGN §24.17 D)
+    offer_status: Mapped[str | None] = mapped_column(String(16))
     test_only: Mapped[bool] = mapped_column(Boolean, default=False)
     current_version: Mapped[int] = mapped_column(Integer, default=1)
 

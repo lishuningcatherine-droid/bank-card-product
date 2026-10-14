@@ -45,6 +45,7 @@ class MergedProduct:
     conflicts: list[dict[str, Any]] = field(default_factory=list)
     aliases: set[str] = field(default_factory=set)
     offer_absent_note: str | None = None
+    offer_status: str | None = None
 
     def value(self, name: str) -> Any:
         f = self.fields.get(name)
@@ -72,6 +73,7 @@ def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> Mer
         primary,
         pmeta,
         offer_absent_note=primary.offer_absent_note,
+        offer_status=primary.offer_status,
     )
     for c, meta in ordered:
         if c.name:
@@ -98,6 +100,8 @@ def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> Mer
             mp.benefits = [(b, meta) for b in c.benefits]
         if c.offer_absent_note and not mp.offer_absent_note:
             mp.offer_absent_note = c.offer_absent_note
+        if c.offer_status and not mp.offer_status:
+            mp.offer_status = c.offer_status
     return mp
 
 

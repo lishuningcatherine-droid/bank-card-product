@@ -1182,3 +1182,9 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   value for the same offer, so the fix changes no offer keys; same-key offers refresh their descriptive columns on
   publish, and migration 0005 rewrote existing rows. The intro annual fee keeps "first year" = 12 months (an annual
   fee is billed per year).
+- **D. Stated absence.** `products.offer_status` = captured | none_stated | unreadable | not_captured | none_found.
+  An issuer line saying the card has no welcome offer ("won't be eligible for new cardmember bonus cash or 0% intro
+  APR") is `none_stated`: `offer_capture` is satisfied with that line as evidence, the UI quotes it ("No welcome offer
+  (stated by Capital One): …"), and a stated "no intro APR" marks the intro APR fields not applicable. Conditional
+  eligibility rules ("may not be eligible … if you previously held this card") are never a stated absence. Found on
+  Capital One's three "for Good Credit" cards (2026-10-14).

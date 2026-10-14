@@ -680,6 +680,8 @@ export interface components {
             name: string;
             /** Offer Absent Note */
             offer_absent_note?: string | null;
+            /** Offer Status */
+            offer_status?: string | null;
             /** Offers */
             offers?: components["schemas"]["OfferView"][];
             /** Official Url */

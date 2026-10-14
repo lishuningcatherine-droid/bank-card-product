@@ -1161,6 +1161,17 @@
       ],
       "title": "Offer Absent Note"
      },
+     "offer_status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Offer Status"
+     },
      "offers": {
       "items": {
        "$ref": "#/components/schemas/OfferView"

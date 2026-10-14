@@ -108,6 +108,9 @@ class ProductCandidate(BaseModel):
     benefits: list[Sourced[BenefitRec]] = Field(default_factory=list)
     offers: list[Sourced[OfferRec]] = Field(default_factory=list)
     offer_absent_note: str | None = None
+    # captured | none_stated (the issuer says there is none; evidence in fields["offer_capture"]) | unreadable (an
+    # offer block was not read) | not_captured (script-only offers) | none_found (DESIGN §24.17 D)
+    offer_status: str | None = None
     notes: list[str] = Field(default_factory=list)
     refused_fields: list[tuple[str, str]] = Field(default_factory=list)
 

@@ -3,6 +3,8 @@ stored snapshots of 2026-10-14. Each test names its finding; values were read of
 
 from __future__ import annotations
 
+from bankrec.ingest.common import extract as X
+from bankrec.model import NullReason
 from tests.adapters._helpers import run_official
 
 
@@ -36,3 +38,34 @@ def test_c_ihg_window_stays_3_months() -> None:
     [o] = offers(c)
     assert (o.amount_max, o.requirement_min_cents) == (125000, 200000)
     assert window(o) == (3, "months", None)
+
+
+def test_d_savor_good_credit_no_offer_is_stated_by_issuer() -> None:
+    # «You’ll earn the usual Savor grocery store, dining and entertainment rewards, but won’t be eligible for new
+    # cardmember bonus cash or 0% intro APR»: a stated absence, not "not captured".
+    c = run_official("capital_one", "savor-good-credit", "savor-good-credit-2026-10-14.html")
+    assert offers(c) == [] and c.offer_status == "none_stated"
+    cap = c.fields["offer_capture"]
+    assert (
+        cap.value is True
+        and cap.span_text is not None
+        and "won’t be eligible for new cardmember bonus" in cap.span_text
+    )
+    assert c.offer_absent_note is not None and c.offer_absent_note.startswith(
+        "No welcome offer (stated by Capital One)"
+    )
+    assert c.fields["intro_purchase_apr_pct"].null_reason is NullReason.not_applicable
+
+
+def test_d_eligibility_rules_are_not_a_stated_absence() -> None:
+    assert (
+        X.no_offer_statement(
+            "The new cardmember bonus may not be available to you if you previously held this card."
+        )
+        is None
+    )
+    assert X.no_offer_statement("You are not eligible for a welcome offer if you have had this Card.") is None
+    assert (
+        X.no_offer_statement("This card does not offer a welcome bonus.")
+        == "This card does not offer a welcome bonus."
+    )
