@@ -17,6 +17,14 @@ key:
 # excludes the card (avoid_foreign_fee → a verified 0% foreign transaction fee is required).
 conditional:
   credit_card: [foreign_tx_fee_pct]
+# Capture quality gate (DESIGN §24.18). Compared with the capture the published values came from: every listed section
+# that capture showed must still be present, and the text must keep at least min_text_ratio of its length. score =
+# (share of those sections present) × min(1, ratio / min_text_ratio); below min_score the capture is CAPTURE_DEGRADED,
+# nothing is extracted from it, prod keeps its values and the source is retried next run.
+capture_quality:
+  sections: [product_heading, earn, fee, apr, apy]
+  min_text_ratio: 0.6
+  min_score: 1.0
 generic_names: [unknown, "credit card", "credit cards", card, "apply now", checking, savings, "checking account",
                 "savings account", "learn more", "compare cards", "rewards card", "n/a", "none"]
 sanity:

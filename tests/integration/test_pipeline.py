@@ -171,7 +171,9 @@ def test_parser_regression_alerts_downgrades_and_resolves(session, settings, tmp
     try:
         reg = registry()
         run(session, settings, reg)
-        broken = mutate(tmp_path, "card_secured.html", "<tr><th>Annual Fee</th><td>$0</td></tr>", "")
+        # the page still shows its fee section (so the capture passes the quality gate) but the parser cannot read it
+        unread = "<tr><th>Fees</th><td>See the annual fee schedule</td></tr>"
+        broken = mutate(tmp_path, "card_secured.html", "<tr><th>Annual Fee</th><td>$0</td></tr>", unread)
         r = run(session, settings, reg, [source(reg, "secured", broken)])
         assert r.alerts and r.alerts[0]["kind"].startswith("fields_lost") and r.alerts[0]["new_incident"]
         p = _product(session, "Example Bank Secured Card")
@@ -187,7 +189,7 @@ def test_parser_regression_alerts_downgrades_and_resolves(session, settings, tmp
             tmp_path,
             "card_secured.html",
             "<tr><th>Annual Fee</th><td>$0</td></tr>",
-            "<!-- v2 -->",
+            unread + "<!-- v2 -->",
             name="secured2.html",
         )
         r2 = run(session, settings, reg, [source(reg, "secured", broken2)])
@@ -377,3 +379,34 @@ def test_stale_window_drops_label(session, settings) -> None:  # type: ignore[no
         now=later,
     )
     assert label == "partially_verified" and "APY not recently verified" in reasons
+
+
+def test_degraded_capture_keeps_prod_values_and_proposes_no_removal(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    # DESIGN §24.18: a capture that lost a section the published capture had (here the earn list; the Amex static
+    # shells lost the APR) is CAPTURE_DEGRADED: no candidate, no diff, no review item, prod unchanged.
+    reg = registry()
+    run(session, settings, reg)
+    before = _product(session, "Example Bank Secured Card")
+    fee, rates = before.card.annual_fee_cents, sorted((r.category, r.rate) for r in before.reward_rates)
+    html = (FIX / "card_secured.html").read_text()
+    s, e = html.index('<ul class="earn-rates">'), html.index("</ul>", html.index('<ul class="earn-rates">')) + 5
+    shell = tmp_path / "secured_shell.html"
+    shell.write_text(html[:s] + html[e:])
+    r = run(session, settings, reg, [source(reg, "secured", shell)])
+    [o] = r.sources
+    assert (o.terminal, o.failure) == ("retrieval_failed", Failure.CAPTURE_DEGRADED)
+    assert "earn" in o.detail
+    assert not r.products and not r.review_items
+    session.expire_all()
+    p = _product(session, "Example Bank Secured Card")
+    assert not p.recheck_pending and p.card.annual_fee_cents == fee
+    assert sorted((x.category, x.rate) for x in p.reward_rates) == rates
+    snap = session.scalar(
+        select(S.PageSnapshot)
+        .where(S.PageSnapshot.source_id == o.source.source_id)
+        .order_by(S.PageSnapshot.retrieved_at.desc())
+    )
+    assert snap.outcome == "CAPTURE_DEGRADED"
+    # the next good capture goes through normally
+    r2 = run(session, settings, reg, [source(reg, "secured")])
+    assert r2.sources[0].terminal in {"published", "unchanged"}

@@ -22,6 +22,7 @@ class Failure(StrEnum):
     VALIDATION_FAILED = "VALIDATION_FAILED"
     CONFLICT = "CONFLICT"
     STALE = "STALE"
+    CAPTURE_DEGRADED = "CAPTURE_DEGRADED"
 
 
 NEXT_ACTION: dict[Failure, str] = {
@@ -41,4 +42,5 @@ NEXT_ACTION: dict[Failure, str] = {
     Failure.VALIDATION_FAILED: "review extracted values",
     Failure.CONFLICT: "bankrec review show <id>",
     Failure.STALE: "re-run ingestion for this tier",
+    Failure.CAPTURE_DEGRADED: "retried next run; prod keeps its values (manual capture if it persists)",
 }

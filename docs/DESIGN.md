@@ -1262,3 +1262,18 @@ Round 2 found no wrong numbers; it found omissions and lost qualifiers. Fixes, e
   Text extraction: children of a flex / grid container (Tailwind `flex`, `grid` classes) are separate lines, as CSS
   lays them out as separate boxes; Chase's newest summary blocks are spans in a flex column and their words ran
   together ("OFFEREarn 100,000 bonus pointsafter you spend"). No other extraction changed on the stored snapshots.
+
+### 24.18 Capture quality gate (owner decision 2026-10-14)
+
+A degraded capture must never generate a removal diff. After classification and before extraction, each HTML capture
+is compared with the *baseline*: the snapshot the source's published values came from (latest `field_provenance`
+snapshot of that source), re-read with the current text extraction. Sections checked (`config/validation.yaml`
+`capture_quality`): product heading, earn rates, fee, APR range, APY. Score = share of the baseline's sections still
+present × min(1, text length ratio / `min_text_ratio` 0.6); below `min_score` 1.0 the capture is `CAPTURE_DEGRADED`
+(failure enum; snapshot outcome, run status "retrieval_failed", "retry next run"): nothing is extracted, no candidate,
+diff or review item is created, prod keeps its values, and the content hash is not recorded so the next run retries.
+Only a capture that passes can propose removing a value. A source with nothing published has no baseline and passes
+(classification already rejects empty and non-product pages). The Amex static captures (no APR since 2026-10-13 20:25)
+are degraded against the rendered capture behind the published APR; the Disney captures pass (their removals came
+from the store-currency rule, not the capture). Tests: `tests/unit/test_capture_quality.py` (stored Amex shell and
+Disney captures) and the pipeline integration test.

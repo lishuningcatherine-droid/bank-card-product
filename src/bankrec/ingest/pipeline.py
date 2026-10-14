@@ -30,6 +30,7 @@ from bankrec.ingest.adapters.base import ClassifiedPage
 from bankrec.ingest.common.html import parse_html
 from bankrec.ingest.common.pdf import pdf_to_text
 from bankrec.ingest.fetch import FetchResult
+from bankrec.ingest.quality import assess as assess_capture
 from bankrec.ingest.snapshot import store
 from bankrec.model import EXTRACTABLE_PAGE_TYPES, NullReason
 from bankrec.publish.changes import diff_offers, diff_product, jsonable
@@ -448,6 +449,18 @@ class Pipeline:
                 cl.detail or f"page type {cl.page_type.value}",
             )
 
+        # ---- capture quality gate (DESIGN §24.18): a degraded capture never proposes removing a value
+        if not is_pdf and doc is not None:
+            q = assess_capture(text, doc.h1, self._baseline(src.source_id, snap.snapshot_id))
+            if q.degraded:
+                snap_row.outcome = Failure.CAPTURE_DEGRADED.value
+                sp.consecutive_failures += 1
+                sp.health = "degraded"
+                out.retry_status = "retry next run"
+                return self._finish(
+                    out, "retrieval_failed", Failure.CAPTURE_DEGRADED, "capture_quality", q.detail
+                )
+
         # ---- extract
         page = ClassifiedPage(
             source=src,
@@ -592,6 +605,31 @@ class Pipeline:
             "validate",
             "; ".join(f"{r.rule_id}: {r.message}" for _, _, v, _ in out.candidates for r in v.failed)[:2000],
         )
+
+    def _baseline(self, source_id: str, current: str) -> tuple[str, list[str]] | None:
+        """(text, headings) of the capture this source's published values came from, re-read with the current text
+        extraction so both sides are measured alike; None when nothing from this source is published."""
+        sid = self.s.scalar(
+            select(P.FieldProvenance.snapshot_id)
+            .where(
+                P.FieldProvenance.source_id == source_id,
+                P.FieldProvenance.snapshot_id.is_not(None),
+                P.FieldProvenance.snapshot_id != current,
+            )
+            .order_by(P.FieldProvenance.retrieved_at.desc())
+            .limit(1)
+        )
+        snap = self.s.get(S.PageSnapshot, sid) if sid else None
+        if snap is None or "pdf" in (snap.content_type or ""):
+            return None
+        try:
+            raw = Path(snap.raw_path).read_bytes()
+        except OSError:
+            return None
+        if raw[:5] == b"%PDF-":
+            return None
+        bdoc = parse_html(raw.decode("utf-8", errors="replace"))
+        return bdoc.text, bdoc.h1
 
     def _regression(
         self,

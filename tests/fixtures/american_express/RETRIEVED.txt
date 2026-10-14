@@ -9,3 +9,4 @@ us-credit-cards-card-marriott-bonvoy-bevy.rendered.html | https://www.americanex
 static-hilton-honors.html | https://www.americanexpress.com/us/credit-cards/card/hilton-honors/ | http | 200 | 2026-10-13T20:25:51Z
 static-marriott-bonvoy-brilliant.html | https://www.americanexpress.com/us/credit-cards/card/marriott-bonvoy-brilliant/ | http | 200 | 2026-10-13T20:25:57Z
 hilton-surpass-2026-10-14.html | https://www.americanexpress.com/us/credit-cards/card/hilton-honors-surpass/ | https://www.americanexpress.com/us/credit-cards/card/hilton-honors-surpass/ | 200 | text/html; charset=utf-8 | 4020020 | 2026-10-14T16:49:59Z
+blue-cash-preferred-shell-2026-10-14.html | https://www.americanexpress.com/us/credit-cards/card/blue-cash-preferred/ | https://www.americanexpress.com/us/credit-cards/card/blue-cash-preferred/ | 200 | text/html; charset=utf-8 | 4116498 | 2026-10-14T16:49:38Z
