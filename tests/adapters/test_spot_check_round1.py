@@ -301,3 +301,20 @@ def test_d_portal_named_before_the_rates_covers_every_clause() -> None:
         None,
     )
     assert r["other"] == ("2x", None) and "travel@portal" not in r and "airline" not in r
+
+
+def test_d_chase_summary_block_template_offer_and_apr() -> None:
+    # data-slot="summary-block": "NEW CARDMEMBER OFFEREarn $1,000 bonus cash backafter you spend $10,000 ..." and
+    # "APRFlex for Business variable APR: 17.99%–28.74%.†" (spans run together in the page text).
+    c = run_official("chase", "ink-business-premier", "ink-premier-summary-block.rendered.html")
+    [o] = offers(c)
+    assert (o.amount_max, o.reward_unit, o.requirement_min_cents, o.qualification_window_days) == (
+        100000,
+        "cents",
+        1000000,
+        90,
+    )
+    assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
+        Decimal("17.99"),
+        Decimal("28.74"),
+    )

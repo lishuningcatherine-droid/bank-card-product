@@ -114,7 +114,8 @@ class Adapter(DeclarativeAdapter):
         for ln in doc.text.split("\n"):
             if "fee" not in out and re.match(r"^ANNUAL FEE\s*\$\d", ln):
                 out["fee"] = ln
-            if "apr" not in out and re.match(r"^APR\s*\d{1,2}(?:\.\d+)?%", ln):
+            # also "APRFlex for Business variable APR: 17.99%–28.74%.†" (2026-10-14)
+            if "apr" not in out and re.match(r"^APR(?:\s*|[A-Z][^:\n]{0,40}APR:\s*)\d{1,2}(?:\.\d+)?%", ln):
                 out["apr"] = ln
         for key, sel in (("fee", "[class*='aprfee--fee'] p"), ("apr", "[class*='aprfee--apr'] p")):
             if key not in out:
