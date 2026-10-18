@@ -8,6 +8,7 @@ paths are aborted, never fetched.
 
 from __future__ import annotations
 
+import contextlib
 from datetime import UTC, datetime
 from functools import lru_cache
 from typing import Any
@@ -69,10 +70,8 @@ class Renderer:
             elif "wait_ms" in st:
                 page.wait_for_timeout(int(st["wait_ms"]))
                 done.append(f"wait {st['wait_ms']} ms")
-        try:
+        with contextlib.suppress(Exception):  # pages with constant background requests never go idle
             page.wait_for_load_state("networkidle", timeout=15_000)
-        except Exception:  # noqa: S110 (pages with constant background requests never go idle)
-            pass
         return {"zip": loc["zip"], "label": loc.get("label"), "county": chosen, "steps": done}
 
     def render(self, source: SourceEntry, bank: BankConfig) -> FetchResult:
