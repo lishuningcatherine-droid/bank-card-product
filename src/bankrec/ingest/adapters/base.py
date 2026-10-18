@@ -13,10 +13,12 @@ from typing import Any, ClassVar, Protocol
 import yaml
 
 from bankrec.candidate import ProductCandidate
+from bankrec.ingest.common import deposits as D
 from bankrec.ingest.common import extract as X
 from bankrec.ingest.common.html import PageDoc, scoped
 from bankrec.model import (
     PRIORITY,
+    ApyTier,
     ExtractionContext,
     NullReason,
     PageType,
@@ -453,6 +455,21 @@ class DeclarativeAdapter:
             snapshot_id=page.snapshot_id,
         )
         name = self.product_name(page) if page.doc is not None else page.source.expected_entity
+        expected = page.source.expected_entity
+        if (
+            page.doc is not None
+            and (
+                c.product_type is not ProductType.credit_card
+                or page.source.source_kind.value == "offer_detail"
+            )
+            and expected != "multiple"
+            and (not name or X.norm_ws(expected).lower() not in X.norm_ws(name).lower())
+            and ctx.locate(expected) is not None
+        ):
+            # Deposit pages often head with a slogan ("A fee-free online checking account") or several accounts, and
+            # offer pages with the bonus ("Enjoy a $400 checking account bonus"): the curated product name is used
+            # when the page states it verbatim.
+            name = expected
         c.fields["official_name"] = ctx.field(name, name, method="table_cell", name="official_name")
         if page.doc is not None:
             if c.product_type is ProductType.credit_card:
@@ -700,25 +717,65 @@ class DeclarativeAdapter:
         self._category_exclusions(page, c)
         self._no_rewards(page, ctx, c)
 
+    def deposit_lines(self, page: ClassifiedPage) -> list[str]:
+        """The lines deposit readers work on (an adapter narrows them to one account on multi-account pages)."""
+        return [ln for ln in (page.doc.text if page.doc is not None else page.text).split("\n") if ln.strip()]
+
+    def _deposit_fee_and_waivers(
+        self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate
+    ) -> None:
+        doc = page.doc
+        assert doc is not None
+        lines = self.deposit_lines(page)
+        fee = X.monthly_fee(doc, ctx)
+        if not fee.present and (f := D.monthly_fee(lines)) is not None:
+            fee = ctx.field(f[0], f[1], method="free_text", name="monthly_fee")
+        c.fields["monthly_fee_cents"] = fee
+        if self.rules.get("waiver_selector"):
+            waivers = X.fee_waivers(self.statements(page, "waiver", None), ctx)
+        else:
+            listed = D.waiver_lines(lines)
+            located = [w for w in listed if ctx.locate(w) is not None]
+            waivers = (
+                ctx.field(
+                    [D.parse_waiver(w) for w in located], located[0], method="free_text", name="fee_waivers"
+                )
+                if located and len(located) == len(listed)
+                else ctx.field(
+                    None, None, null_reason=NullReason.ambiguous if listed else NullReason.not_found
+                )
+            )
+        c.fields["fee_waivers"] = waivers
+        if fee.value == 0:
+            c.fields["fee_waivers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+        opening = X.min_amount(doc, ctx, "min_opening")
+        if not opening.present and (o := D.opening_deposit(lines)) is not None:
+            opening = ctx.field(o[0], o[1], method="free_text", name="min_opening")
+        c.fields["min_opening_deposit_cents"] = opening
+
     def _checking(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         doc = page.doc
         assert doc is not None
-        c.fields["monthly_fee_cents"] = X.monthly_fee(doc, ctx)
-        waiver_lines = self.statements(
-            page,
-            "waiver",
-            r"(?:avoid|waive)|balance of \$|deposits? totaling|"
-            r"linked|under (?:the )?age",
-        )
-        c.fields["fee_waivers"] = X.fee_waivers(waiver_lines, ctx)
-        if c.fields["monthly_fee_cents"].value == 0:
-            c.fields["fee_waivers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
-        c.fields["min_opening_deposit_cents"] = X.min_amount(doc, ctx, "min_opening")
+        lines = self.deposit_lines(page)
+        self._deposit_fee_and_waivers(page, ctx, c)
         od = X.labelled(doc, "overdraft")
+        if od is None and (s := D.overdraft_summary(lines)) is not None:
+            od = (s, s, "free_text")
         c.fields["overdraft_summary"] = ctx.field(od[0], od[1]) if od else ctx.field(None, None)
         tiers = X.apy_tiers(doc, ctx, self.rules.get("apy_tier_selector", "table.apy-tiers tr"))
+        if not tiers.present and (h := D.headline_apy(lines)) is not None:
+            # "Earn a 1.00% APY ...": one rate for every balance
+            tiers = ctx.field(
+                [ApyTier(min_balance_cents=0, max_balance_cents=None, apy_pct=h[0])], h[1], method="free_text"
+            )
+        elif not tiers.present and any(
+            re.search(r"\bNaN\b.{0,40}(?:APY|Annual Percentage Yield)", ln) for ln in lines
+        ):
+            tiers = ctx.field(None, None, null_reason=NullReason.requires_render)
         c.fields["apy_tiers"] = (
-            tiers if tiers.present else ctx.field(None, None, null_reason=NullReason.not_applicable)
+            tiers
+            if tiers.present or tiers.null_reason is NullReason.requires_render
+            else ctx.field(None, None, null_reason=NullReason.not_applicable)
         )
         c.fields["eligible_states"] = X.states(page.text, ctx)
         access = self.rules.get("access_model")
@@ -750,20 +807,18 @@ class DeclarativeAdapter:
             if c.fields["apy_tiers"].present
             else X.apy_value(doc, ctx)
         )
+        lines = self.deposit_lines(page)
+        if not apy.present and apy.null_reason is not NullReason.not_applicable:
+            got = D.rate_table_apy(lines) or D.headline_apy(lines)
+            if got is not None:
+                apy = ctx.field(got[0], got[1], method="free_text", name="apy")
         c.fields["apy_pct"] = apy
         if not c.fields["apy_tiers"].present and apy.present:
             c.fields["apy_tiers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
         var = X.first_line(doc, r"\bvariable\b|rates? (?:may|can|are subject to) change")
         c.fields["rate_type_note"] = ctx.field(var, var) if var else ctx.field(None, None)
-        c.fields["min_opening_deposit_cents"] = X.min_amount(doc, ctx, "min_opening")
         c.fields["min_balance_cents"] = X.min_amount(doc, ctx, "min_balance")
-        c.fields["monthly_fee_cents"] = X.monthly_fee(doc, ctx)
-        waiver_lines = self.statements(page, "waiver", r"(?:avoid|waive)")
-        c.fields["fee_waivers"] = (
-            X.fee_waivers(waiver_lines, ctx)
-            if c.fields["monthly_fee_cents"].value
-            else ctx.field(None, None, null_reason=NullReason.not_applicable)
-        )
+        self._deposit_fee_and_waivers(page, ctx, c)
         wr, wn = X.withdrawal_limit(doc, ctx)
         c.fields["withdrawal_restrictions"], c.fields["max_withdrawals_per_month"] = wr, wn
         c.fields["eligible_states"] = X.states(page.text, ctx)

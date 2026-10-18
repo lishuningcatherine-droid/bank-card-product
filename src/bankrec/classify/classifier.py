@@ -195,7 +195,7 @@ def classify(
             return Classification(PageType.category_page, sig, Failure.NON_PRODUCT_PAGE)
         return Classification(PageType.unknown_page, sig, Failure.NON_PRODUCT_PAGE)
 
-    headings = list(doc.h1)
+    headings = [*doc.h1, doc.title]  # deposit pages often name the product only in the title
     for sel in heading_selectors or []:
         headings += [doc.node_text(n).replace("\n", " ") for n in doc.select(sel)]
     h1_match = any(name_present(expected_entity, h) for h in headings)
