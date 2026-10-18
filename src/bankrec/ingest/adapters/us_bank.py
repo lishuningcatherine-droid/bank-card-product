@@ -48,8 +48,13 @@ _NOT_EARN = re.compile(
     r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|statement credit|\bbonus\b|\bAPR\b|respondents", re.IGNORECASE
 )
 _OFFER_HEAD = re.compile(
-    r"^(?:earn|get)\s+(?:rewarded\s+with\s+)?(?:a\s+)?(?:\$[\d,]+|[\d,]{5,}\s+bonus\s+points)", re.IGNORECASE
+    r"^(?:earn|get)\s+(?:rewarded\s+with\s+)?(?:a\s+)?(?:\$[\d,]+|[\d,]{5,}\s+bonus\s+points)"
+    # "Business travel is more rewarding with 75,000 bonus points1" (requirement in the enrollment-bonus footnote)
+    r"|\bwith\s+[\d,]{5,}\s+bonus\s+points",  # footnote digit glued: "points1"
+    re.IGNORECASE,
 )
+# "Earn a $25 statement credit for your business when you hail a ride": a merchant credit, not a welcome offer
+_ACTIVITY_CREDIT = re.compile(r"\bstatement credit\b.*\bwhen you\b(?!.*\bspend)", re.IGNORECASE)
 _SPEND = re.compile(r"\bspend(?:ing)?\s+\$[\d,]+", re.IGNORECASE)
 
 
@@ -160,7 +165,7 @@ class Adapter(DeclarativeAdapter):
             return out
         if key == "offer":
             for i, ln in enumerate(lines):
-                if _OFFER_HEAD.search(ln):
+                if _OFFER_HEAD.search(ln) and not _ACTIVITY_CREDIT.search(ln):
                     nxt = lines[i + 1] if i + 1 < len(lines) else ""
                     # a headline without its requirement is still returned: the shared offer step looks for the
                     # requirement elsewhere on the page (e.g. a footnote; spot-check finding 8)

@@ -1310,3 +1310,10 @@ checked the same way.
   below the tiles is collected; "booked through AmexTravel.com … or directly through airlines" (and "directly with
   airlines or AmexTravel.com") is either channel: `booked_direct`, not portal-only; "Amex Travel App" is the portal's
   name and never the category travel.
+- **Amex rendered again (2026-10-18).** Blue Cash Preferred, Delta Gold / Platinum / Reserve and Gold are rendered
+  sources again (`requires_render: true`); the 2026-10-18 renders carried product content, passed the quality gate and
+  replaced the held static readings. If renders stop returning product content again, the gate holds them (prod keeps
+  its values) instead of proposing removals.
+- **U.S. Bank offers.** "Earn a $25 statement credit for your business when you hail a ride" is a merchant credit, not
+  a welcome offer; "Business travel is more rewarding with 75,000 bonus points¹" is the offer, with its requirement
+  from the enrollment-bonus footnote (75,000 points after $6,000 within 180 days).

@@ -537,3 +537,17 @@ def test_amex_gold_static_name_base_rate_and_either_channel_flights() -> None:
     [air] = [r.value for r in c.reward_rates if r.value and r.value.category == "airline"]
     assert [x.kind for x in air.conditions] == ["booked_direct"]
     assert c.value("base_rate") == Decimal("1")
+
+
+def test_usb_business_altitude_connect_offer_is_the_points_bonus_not_the_ride_credit() -> None:
+    # «Earn a $25 statement credit for your business when you hail a ride» is a merchant credit; the welcome offer is
+    # «Business travel is more rewarding with 75,000 bonus points1» with the footnote «One-time 75,000 bonus points will
+    # be awarded if eligible Net Purchases totaling $6,000 or more are made ... within 180 days from account opening».
+    c = run_official(
+        "us_bank",
+        "business-altitude-connect-credit-card",
+        "business-altitude-connect-2026-10-18.rendered.html",
+    )
+    [o] = offers(c)
+    assert (o.amount_max, o.reward_unit, o.requirement_min_cents) == (75000, "points", 600000)
+    assert window(o) == (180, "days", 180)
