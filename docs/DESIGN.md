@@ -1298,3 +1298,10 @@ Dollars (worth $1 each when redeemed as the issuer allows)" and the restriction.
 Card eGift … + earn a $200 statement credit after you spend $1,000 …" record the spend bonus; the gift card is the
 offer's note and never counted. Capital One's T-Mobile and REI store currencies still follow §24.8 (not valued) until
 checked the same way.
+- **U.S. Bank Shield (owner check 2026-10-18).** "prepaid air, hotel and car reservations booked directly in the
+  Travel Center" is airline + hotel + car_rental, portal-only (vocabulary: "prepaid air", "air reservations", "car
+  reservations"); it had been narrowed to hotel. Recurring credits ("Earn a $20 annual statement credit for 11
+  consecutive months of purchases") are stored as benefits with `condition` (migration 0011), never as welcome
+  offers. Balance-transfer terms from the pricing footnotes: `bt_fee_pct` / `bt_fee_min_cents` ("Balance Transfer fee of
+  5% of each transfer amount, $5 minimum") and `intro_bt_window_days` ("applies to balance transfers made within 60
+  days of account opening"), on every U.S. Bank card that states them.

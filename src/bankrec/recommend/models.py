@@ -200,6 +200,7 @@ class BenefitView(BaseModel):
     annual_value_cents: int | None = None
     enrollment_required: bool = False
     merchant_restriction: str | None = None
+    condition: str | None = None
 
 
 class ProductView(BaseModel):

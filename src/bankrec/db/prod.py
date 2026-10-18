@@ -145,6 +145,8 @@ class CreditCardDetails(ProdBase):
     bt_apr_max_pct: Mapped[Decimal | None] = mapped_column(Rate)
     intro_bt_apr_pct: Mapped[Decimal | None] = mapped_column(Rate)
     intro_bt_apr_months: Mapped[int | None] = mapped_column(Integer)
+    # the intro BT APR applies to transfers made within this many days of account opening, as stated
+    intro_bt_window_days: Mapped[int | None] = mapped_column(Integer)
     bt_fee_pct: Mapped[Decimal | None] = mapped_column(Rate)
     bt_fee_min_cents: Mapped[int | None] = mapped_column(BigInteger)
     cash_apr_pct: Mapped[Decimal | None] = mapped_column(Rate)
@@ -239,6 +241,7 @@ class ProductBenefit(ProdBase):
     period_years: Mapped[int | None] = mapped_column(Integer)
     merchant_restriction: Mapped[str | None] = mapped_column(Text)
     enrollment_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    condition: Mapped[str | None] = mapped_column(Text)
     conditions_text: Mapped[str] = mapped_column(Text)
 
 

@@ -264,6 +264,8 @@ class BenefitRec(BaseModel):
     period_years: int | None = None
     merchant_restriction: str | None = None
     enrollment_required: bool = False
+    # what earns the credit, in the page's words ("for 11 consecutive months of purchases")
+    condition: str | None = None
     text: str
 
     @property

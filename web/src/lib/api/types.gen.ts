@@ -271,6 +271,8 @@ export interface components {
             annual_value_cents?: number | null;
             /** Benefit Type */
             benefit_type: string;
+            /** Condition */
+            condition?: string | null;
             /**
              * Enrollment Required
              * @default false

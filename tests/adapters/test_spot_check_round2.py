@@ -477,3 +477,42 @@ def test_disney_visa_currency_name_is_not_a_partner_purchase() -> None:
         c.value("redemption_restriction")
         == "Redeem toward most anything Disney at most Disney U.S. locations."
     )
+
+
+def test_usb_shield_travel_center_rates_annual_credit_and_bt_terms() -> None:
+    # Owner check of the live page (2026-10-18): «4% cash back On prepaid air, hotel and car reservations booked
+    # directly in the Travel Center» = airline, hotel and car rental, all Travel Center only (was hotel only); «Earn a
+    # $20 annual statement credit for 11 consecutive months of purchases» is a recurring credit, not a welcome offer;
+    # no annual fee; 0% intro APR for 21 billing cycles on purchases and on balance transfers made within 60 days;
+    # «Balance Transfer fee of 5% of each transfer amount, $5 minimum will apply.»
+    c = run_official("us_bank", "shield-visa-credit-card", "shield-2026-10-14.rendered.html")
+    assert sorted(
+        (r.value.category, r.value.rate, r.value.portal_only) for r in c.reward_rates if r.value
+    ) == [
+        ("airline", Decimal("4"), True),
+        ("car_rental", Decimal("4"), True),
+        ("hotel", Decimal("4"), True),
+    ]
+    [b] = [x.value for x in c.benefits if x.value]
+    assert (b.amount_cents, b.period, b.condition) == (
+        2000,
+        "annual",
+        "for 11 consecutive months of purchases",
+    )
+    assert offers(c) == [] and c.offer_status == "none_found"
+    assert c.value("annual_fee_cents") == 0
+    assert (
+        c.value("intro_purchase_apr_pct"),
+        c.value("intro_purchase_apr_months"),
+        c.value("intro_apr_period_unit"),
+    ) == (
+        Decimal("0"),
+        21,
+        "billing_cycles",
+    )
+    assert (c.value("intro_bt_apr_pct"), c.value("intro_bt_apr_months"), c.value("intro_bt_window_days")) == (
+        Decimal("0"),
+        21,
+        60,
+    )
+    assert (c.value("bt_fee_pct"), c.value("bt_fee_min_cents")) == (Decimal("5"), 500)

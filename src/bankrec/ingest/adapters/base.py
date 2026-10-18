@@ -487,6 +487,19 @@ class DeclarativeAdapter:
             and ftf.present
             and re.fullmatch(r"no foreign transaction fees?", ftf.span_text or "", re.I)
         )
+        # Balance-transfer terms stated in the pricing footnotes ("Balance Transfer fee of 5% of each transfer amount,
+        # $5 minimum will apply."; "... applies to balance transfers made within 60 days of account opening ...")
+        btf = c.fields.get("bt_fee_pct")
+        if (btf is None or not btf.present) and (bt := X.bt_fee_sentence(page.text)) is not None:
+            c.fields["bt_fee_pct"] = ctx.field(bt[0], bt[2], method="free_text")
+            if bt[1] is not None:
+                c.fields["bt_fee_min_cents"] = ctx.field(bt[1], bt[2], method="free_text")
+        btw = X.bt_window(page.text)
+        bti = c.fields.get("intro_bt_apr_pct")
+        if btw is not None:
+            c.fields["intro_bt_window_days"] = ctx.field(btw[0], btw[1], method="free_text")
+        elif bti is None or not bti.present:
+            c.fields["intro_bt_window_days"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
         # Fee facts stated in an FAQ / accordion answer that names the card (spot-check round 2, E); preferred as
         # evidence over a bare "No Foreign Transaction Fees" heading.
         if (ftf is None or not ftf.present or bare) and (st := X.stated_no_ftf(page.text, name)) is not None:

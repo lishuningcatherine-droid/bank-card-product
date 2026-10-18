@@ -110,6 +110,17 @@
       "title": "Benefit Type",
       "type": "string"
      },
+     "condition": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Condition"
+     },
      "enrollment_required": {
       "default": false,
       "title": "Enrollment Required",

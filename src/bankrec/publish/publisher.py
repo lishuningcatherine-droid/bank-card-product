@@ -146,6 +146,7 @@ def _write_children(session: Session, product: P.Product, mp: MergedProduct) -> 
                 period_years=b.period_years,
                 merchant_restriction=b.merchant_restriction,
                 enrollment_required=b.enrollment_required,
+                condition=b.condition,
                 conditions_text=b.text,
             )
         )

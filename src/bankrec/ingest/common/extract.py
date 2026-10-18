@@ -525,6 +525,11 @@ _CREDIT = re.compile(
 )
 
 
+# "$20 annual statement credit for 11 consecutive months of purchases" / "... after $5,000 in purchases made through
+# the Travel Center when you use your card"
+_CREDIT_CONDITION = re.compile(r"\s*\b(?:for|after|following|when)\s+[^.]{3,120}", re.I)
+
+
 def credits(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[BenefitRec]]:
     out: list[Sourced[BenefitRec]] = []
     for st in statements:
@@ -583,6 +588,7 @@ def credits(statements: Iterable[str], ctx: ExtractionContext) -> list[Sourced[B
             period_years=years,
             merchant_restriction=restriction.group(1) if restriction else None,
             enrollment_required=bool(re.search(r"\benroll(?:ment)?\b", st, re.IGNORECASE)),
+            condition=(c.group(0).strip() if (c := _CREDIT_CONDITION.match(st[m.end() :])) else None),
             text=st,
         )
         out.append(ctx.field(rec, st, method="free_text", name="credit"))
@@ -801,6 +807,37 @@ def offer_signal(text: str) -> str | None:
         win = " ".join(lines[i : i + 2])
         if _SPEND_PHRASE.search(win) and _SIGNAL_WINDOW.search(win) and not re.search(r"\brefer", win, re.I):
             return win
+    return None
+
+
+_BT_FEE = re.compile(
+    r"balance\s+transfer\s+fee\s+(?:of|is|:)?\s*(?:either\s+)?(?P<pct>\d{1,2}(?:\.\d{1,2})?)%\s+of\s+(?:each|the)\s+"
+    r"(?:transfer|amount)[^.$]{0,40}?(?:,|\s+or)\s*\$(?P<min>\d{1,3}(?:\.\d{2})?)\s+(?:minimum|whichever)",
+    re.IGNORECASE,
+)
+_BT_WINDOW = re.compile(
+    r"applies\s+to\s+balance\s+transfers\s+made\s+within\s+(?P<n>\d{1,3})\s+days\s+of\s+account\s+opening",
+    re.I,
+)
+
+
+def bt_fee_sentence(text: str) -> tuple[Decimal, int | None, str] | None:
+    """(fee %, minimum cents, sentence) from "Balance Transfer fee of 5% of each transfer amount, $5 minimum will
+    apply." or "... either 5% of the amount of each transfer or $5, whichever is greater"."""
+    for ln in text.split("\n"):
+        for sent in re.split(r"(?<=[a-z0-9)][.!?])\s+", ln):
+            if m := _BT_FEE.search(sent):
+                return Decimal(m.group("pct")), round(float(m.group("min")) * 100), sent.strip()
+    return None
+
+
+def bt_window(text: str) -> tuple[int, str] | None:
+    """(days, sentence): "The 0% introductory APR applies to balance transfers made within 60 days of account opening
+    and is valid for the first 21 billing cycles." (days as stated; never converted)"""
+    for ln in text.split("\n"):
+        for sent in re.split(r"(?<=[a-z0-9)][.!?])\s+", ln):
+            if m := _BT_WINDOW.search(sent):
+                return int(m.group("n")), sent.strip()
     return None
 
 

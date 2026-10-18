@@ -76,6 +76,10 @@ def test_cash_plus_rendered_fills_placeholders_and_choice_categories() -> None:
                 "5pct",
                 None,
             ),  # "5% cash back on prepaid travel ... booked directly in the Travel Center"
+            "car_rental@portal": (
+                "5pct",
+                None,
+            ),  # "On air, hotel and car reservations booked directly in ..."
             "hotel@portal": (
                 "5pct",
                 None,

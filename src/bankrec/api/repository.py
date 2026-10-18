@@ -138,6 +138,7 @@ def to_view(p: P.Product, now: datetime, bank_name: str) -> ProductView:
                 annual_value_cents=annual,
                 enrollment_required=b.enrollment_required,
                 merchant_restriction=b.merchant_restriction,
+                condition=b.condition,
             )
         )
     return ProductView(

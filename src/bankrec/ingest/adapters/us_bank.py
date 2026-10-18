@@ -166,7 +166,14 @@ class Adapter(DeclarativeAdapter):
                     # requirement elsewhere on the page (e.g. a footnote; spot-check finding 8)
                     return [ln if _SPEND.search(ln) else f"{ln} {nxt}" if _SPEND.search(nxt) else ln]
             return []
-        if key in {"offer_footnote", "offer_tier", "credit", "benefit"}:
+        if key == "credit":
+            # recurring benefits: "Earn a $20 annual statement credit for 11 consecutive months of purchases.4"
+            return [
+                ln
+                for ln in lines
+                if re.match(r"^Earn an?\s+\$\d[\d,]*\s+(?:annual|yearly)\s+statement credit\b", ln)
+            ]
+        if key in {"offer_footnote", "offer_tier", "benefit"}:
             return []
         return super().statements(page, key, fallback)
 

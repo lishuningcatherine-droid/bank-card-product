@@ -43,6 +43,7 @@ CARD_FIELDS = [
     "bt_apr_max_pct",
     "intro_bt_apr_pct",
     "intro_bt_apr_months",
+    "intro_bt_window_days",
     "bt_fee_pct",
     "bt_fee_min_cents",
     "cash_apr_pct",
