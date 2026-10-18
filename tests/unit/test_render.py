@@ -118,3 +118,56 @@ def test_fresh_context_locale_timezone_and_xhr_evidence(server: str, browser: ob
     page_loads = [c for p, c in zip(Handler.paths, Handler.cookies_seen, strict=True) if p == "/card"]
     assert page_loads == ["", ""]
     assert "/private/blocked" not in Handler.paths
+
+
+ZIP_PAGE = """<!doctype html><html><body><h1>Example Bank Savings</h1>
+<div id="gate"><input id="zip" maxlength="5"><button id="go" onclick="show()">Go</button></div>
+<p id="rates">In order to see rates, please provide a ZIP code.</p>
+<script>function show(){ var z = document.getElementById('zip').value;
+document.getElementById('rates').textContent = 'Rates for ZIP ' + z + ': 0.01% APY'; }</script></body></html>"""
+
+
+def test_location_steps_enter_the_capture_zip_and_are_recorded(browser: object) -> None:
+    # DESIGN §24.20: pages that show rates only for a ZIP get the capture ZIP typed into their own public form.
+    class ZipHandler(Handler):
+        def do_GET(self) -> None:
+            body = b"User-agent: *\nAllow: /\n" if self.path == "/robots.txt" else ZIP_PAGE.encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain" if self.path == "/robots.txt" else "text/html")
+            self.end_headers()
+            self.wfile.write(body)
+
+    import httpx
+
+    srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), ZipHandler)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        url = f"http://127.0.0.1:{srv.server_address[1]}/savings"
+        bank = BankConfig(
+            bank_id="example_bank",
+            display_name="Example Bank",
+            official_domains=["127.0.0.1"],
+            adapter="example_bank",
+            test_only=True,
+        )
+        st = Settings(BANKREC_MIN_HOST_INTERVAL_S=0)
+        lim = HostRateLimiter(0)
+        r = Renderer(st, browser, RobotsCache(httpx.Client(), lim, st.user_agent), lim)
+        src = SourceEntry(
+            bank_id="example_bank",
+            slug="s",
+            product_type="savings",
+            source_url="https://example.invalid/savings",
+            source_kind="product_detail",
+            parser_name="example_bank",
+            expected_entity="Example Bank Savings",
+            location_steps=[{"fill": "#zip"}, {"click": "#go"}, {"select_first": "#county"}],
+        )
+        object.__setattr__(src, "source_url", url)
+        res = r.render(src, bank)
+        assert res.failure is None and "Rates for ZIP 90024: 0.01% APY" in res.body.decode()
+        loc = res.capture_conditions["location"]
+        assert loc["zip"] == "90024" and loc["steps"][:2] == ["fill #zip", "click #go"]
+        assert loc["steps"][2] == "no #county (single county)"
+    finally:
+        srv.shutdown()

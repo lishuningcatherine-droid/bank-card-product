@@ -1,0 +1,4 @@
+# Location used when a page shows rates only for a ZIP code (owner decision 2026-10-18, DESIGN §24.20).
+# Rates captured this way are labelled "Rates shown for ZIP 90024 (Los Angeles, CA); may differ where you live".
+zip: "90024"
+label: "Los Angeles, CA"

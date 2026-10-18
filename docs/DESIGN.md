@@ -1317,3 +1317,12 @@ checked the same way.
 - **U.S. Bank offers.** "Earn a $25 statement credit for your business when you hail a ride" is a merchant credit, not
   a welcome offer; "Business travel is more rewarding with 75,000 bonus points¹" is the offer, with its requirement
   from the enrollment-bonus footnote (75,000 points after $6,000 within 180 days).
+
+### 24.20 Deposit accounts: location-dependent rates (owner decision 2026-10-18)
+
+Chase and U.S. Bank show savings rates only for a ZIP code, and Bank of America's deposit pages show nothing until a
+ZIP is chosen. Captures use one documented ZIP, **90024 (Los Angeles, CA)** (`config/capture_location.yaml`): a
+source's `location_steps` type it into the page's own public ZIP form during rendering (fill / press / click /
+select_first / wait). The ZIP and every step taken are recorded in the capture conditions (`location`), and rates
+from such captures are shown as "Rates shown for ZIP 90024 (Los Angeles, CA); may differ where you live". No other
+form is ever filled; robots-disallowed requests stay aborted.

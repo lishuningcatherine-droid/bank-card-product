@@ -73,6 +73,10 @@ class SourceEntry(BaseModel):
     has_offers: bool = False
     render_ready_selector: str | None = None
     expand_selectors: list[str] = Field(default_factory=list)
+    # Pages whose rates depend on location: steps that enter the capture ZIP in the page's own public ZIP form
+    # (config/capture_location.yaml; owner decision 2026-10-18). Each step is one of {fill: css} (types the ZIP),
+    # {press: key}, {click: css}, {select_first: css} (first non-empty option), {wait_for: css}, {wait_ms: n}.
+    location_steps: list[dict[str, str]] = Field(default_factory=list)
     retrieved_by_user_on: str | None = None
     fixture_path: str | None = (
         None  # test_only banks only: served by the fixture transport instead of the network

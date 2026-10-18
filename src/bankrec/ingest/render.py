@@ -9,17 +9,25 @@ paths are aborted, never fetched.
 from __future__ import annotations
 
 from datetime import UTC, datetime
+from functools import lru_cache
 from typing import Any
 from urllib.parse import urlsplit
+
+import yaml
 
 from bankrec.failures import Failure
 from bankrec.ingest.fetch import FetchResult, HostRateLimiter, RobotsCache
 from bankrec.registry.schema import BankConfig, SourceEntry
 from bankrec.registry.urls import canonicalize, domain_allowed, looks_like_referral
-from bankrec.settings import Settings
+from bankrec.settings import CONFIG_DIR, Settings
 
 VIEWPORT = {"width": 1280, "height": 900}
 MAX_EVIDENCE_BYTES = 200_000
+
+
+@lru_cache(maxsize=1)
+def capture_location() -> dict[str, str]:
+    return dict(yaml.safe_load((CONFIG_DIR / "capture_location.yaml").read_text(encoding="utf-8")))
 
 
 class Renderer:
@@ -27,6 +35,45 @@ class Renderer:
         self, settings: Settings, browser: Any, robots: RobotsCache, limiter: HostRateLimiter
     ) -> None:
         self.settings, self.browser, self.robots, self.limiter = settings, browser, robots, limiter
+
+    def _location(self, page: Any, steps: list[dict[str, str]]) -> dict[str, Any]:
+        """Enter the capture ZIP in the page's public ZIP form; every step taken is recorded."""
+        loc = capture_location()
+        done: list[str] = []
+        chosen: str | None = None
+        for st in steps:
+            if "fill" in st:
+                page.locator(st["fill"]).first.fill(loc["zip"])
+                done.append(f"fill {st['fill']}")
+            elif "press" in st:
+                page.keyboard.press(st["press"])
+                done.append(f"press {st['press']}")
+            elif "click" in st:
+                page.locator(st["click"]).first.click()
+                done.append(f"click {st['click']}")
+            elif "select_first" in st:
+                sel = page.locator(st["select_first"]).first
+                try:
+                    sel.wait_for(state="visible", timeout=8_000)
+                except Exception:
+                    done.append(f"no {st['select_first']} (single county)")
+                    continue
+                opts = [o for o in sel.locator("option").all() if (o.get_attribute("value") or "").strip()]
+                if opts:
+                    chosen = opts[0].inner_text().strip()
+                    sel.select_option(value=opts[0].get_attribute("value"))
+                    done.append(f"select {st['select_first']} = {chosen}")
+            elif "wait_for" in st:
+                page.wait_for_selector(st["wait_for"], timeout=20_000)
+                done.append(f"wait_for {st['wait_for']}")
+            elif "wait_ms" in st:
+                page.wait_for_timeout(int(st["wait_ms"]))
+                done.append(f"wait {st['wait_ms']} ms")
+        try:
+            page.wait_for_load_state("networkidle", timeout=15_000)
+        except Exception:  # noqa: S110 (pages with constant background requests never go idle)
+            pass
+        return {"zip": loc["zip"], "label": loc.get("label"), "county": chosen, "steps": done}
 
     def render(self, source: SourceEntry, bank: BankConfig) -> FetchResult:
         url = canonicalize(str(source.source_url), bank.meaningful_query_params)
@@ -97,6 +144,7 @@ class Renderer:
                 if loc.count():
                     loc.first.click()
                     clicked.append(sel)
+            location = self._location(page, source.location_steps) if source.location_steps else None
             html = page.content()
             final = page.url
             status = resp.status if resp is not None else None
@@ -139,6 +187,7 @@ class Renderer:
             "redirect_chain": chain,
             "render_wait": {"strategy": waited},
             "expanders_clicked": clicked,
+            **({"location": location} if location else {}),
             "aborted_robots_disallowed": aborted,
             "captured_at": now.isoformat(),
             "browser": f"chromium {browser_version}",
