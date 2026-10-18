@@ -44,6 +44,8 @@ _PORTAL = re.compile(
     r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
     r"\b(?:on|through|via|with)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
     r"amex ?travel|american express travel)\b|\bin the travel center\b|"
+    # Amex's own portal names wherever they appear ("... or Amex Travel App™"): never the category "travel"
+    r"\bamex\s?travel(?:\.com)?(?:\s+app)?\b|"
     # United cards: "hotel stays when you prepay directly through Renowned Hotels and Resorts for United® Cardmembers"
     # (the program terms: "... with Renowned Hotels and Resorts for United® Cardmembers through Chase Travel")
     r"\bthrough\s+renowned\s+hotels\s+and\s+resorts\b",
@@ -73,6 +75,12 @@ _EXCLUDING = re.compile(
     re.IGNORECASE,
 )
 _SUPERSTORE_WORDS = {"superstores", "target", "walmart"}
+_OR_DIRECT = re.compile(
+    r"\bor\s+directly\s+(?:through|with|from)\s+(?:the\s+)?(?:airlines?|hotels?)\b"
+    r"|\bdirect(?:ly)?\s+(?:with|through|from)\s+[^,.;]{1,40}?\s+or\s+(?:through\s+|on\s+)?"
+    r"(?:amex\s?travel|chase\s+travel|capital\s+one\s+travel)",
+    re.I,
+)
 _EXCLUDED_PART = re.compile(
     r"\((?:excluding|excludes|except|not\s+including)\b[^()]*\)|\b(?:excluding|not\s+including)\s+[^,;.()]*",
     re.IGNORECASE,
@@ -199,14 +207,19 @@ def parse_reward_statement(text: str) -> RewardRate | None:
     rr.requires_activation = bool(_ACTIVATION.search(text))
     # Only this rate's own clause: "1.5% on every purchase ... Plus, 5% on hotels booked through Capital One
     # Business Travel" makes the 5% portal-only, not the 1.5%.
-    portal = _PORTAL.search(text[: m.end()] + rest)
-    rr.portal_only = bool(portal)
+    clause = text[: m.end()] + rest
+    portal = _PORTAL.search(clause)
+    # "Booked through AmexTravel.com or Amex Travel App™ or directly through airlines": either channel, so not
+    # portal-only; still not every airline purchase (booked direct or through the issuer)
+    either = _OR_DIRECT.search(clause) if portal else None
+    rr.portal_only = bool(portal) and either is None
     for c in rr.categories:
-        found = _conditions_for(c, region, text[: m.end()] + rest, cat_region)
-        if portal:
-            if not _DIRECT.search(
-                text[: m.end()] + rest
-            ):  # "booked directly in the Travel Center" is the portal
+        found = _conditions_for(c, region, clause, cat_region)
+        if portal and either is not None:
+            found = [f for f in found if f[0] not in {"portal_only", "booked_direct"}]
+            found.insert(0, ("booked_direct", _clause_around(clause, portal.start(), either.end()), None))
+        elif portal:
+            if not _DIRECT.search(clause):  # "booked directly in the Travel Center" is the portal
                 found = [f for f in found if f[0] != "booked_direct"]
             found.insert(0, ("portal_only", portal.group(0).strip(), None))
         if rr.requires_activation and (act := _ACTIVATION.search(text)):

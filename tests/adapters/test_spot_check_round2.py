@@ -516,3 +516,24 @@ def test_usb_shield_travel_center_rates_annual_credit_and_bt_terms() -> None:
         60,
     )
     assert (c.value("bt_fee_pct"), c.value("bt_fee_min_cents")) == (Decimal("5"), 500)
+
+
+def test_amex_gold_static_name_base_rate_and_either_channel_flights() -> None:
+    # The static page's only h1 elements are modal titles («All Dining and Grocery Benefits (4)»); the title is «The
+    # American Express® Gold Card». The base rate «Earn 1X Membership Rewards® points on all other eligible purchases.»
+    # sits below the tiles, and «3X ... On Flights Booked through AmexTravel.com or Amex Travel App™ or directly through
+    # airlines» is either channel (not portal-only); "Amex Travel App" is the portal, never the category travel.
+    c = run_official("american_express", "gold-card", "gold-card-static-2026-10-14.html")
+    assert c.name == "American Express® Gold Card"
+    got = {(r.value.category, r.value.rate, r.value.portal_only) for r in c.reward_rates if r.value}
+    assert got == {
+        ("dining", Decimal("4"), False),
+        ("groceries", Decimal("4"), False),
+        ("hotel", Decimal("5"), True),
+        ("airline", Decimal("3"), False),
+        ("car_rental", Decimal("2"), True),
+        ("other", Decimal("1"), False),
+    }
+    [air] = [r.value for r in c.reward_rates if r.value and r.value.category == "airline"]
+    assert [x.kind for x in air.conditions] == ["booked_direct"]
+    assert c.value("base_rate") == Decimal("1")

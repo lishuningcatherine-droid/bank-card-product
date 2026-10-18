@@ -52,6 +52,22 @@ class Adapter(DeclarativeAdapter):
     def offer_absent_note(self, page: ClassifiedPage) -> str | None:
         return OFFER_ABSENT
 
+    def product_name(self, page: ClassifiedPage) -> str | None:
+        """The product heading; on the static pages the only ``h1`` elements are modal titles ("All Dining and Grocery
+        Benefits (4)"), so the page title ("The American Express® Gold Card") names the card instead."""
+        doc = page.doc
+        if doc is None:
+            return None
+        for n in doc.select("h1"):
+            if n.attributes.get("id") == "modal-header" or re.search(r"\(\d+\)$", doc.node_text(n).strip()):
+                continue
+            t = doc.node_text(n).replace("\n", " ").strip()
+            if t:
+                return t
+        title = re.sub(r"\s*[|–-]\s*American Express.*$", "", doc.title or "").strip()
+        title = re.sub(r"^The\s+", "", title)
+        return title if title and re.search(r"\bCard\b", title) and title in doc.text else None
+
     def _lines(self, page: ClassifiedPage) -> list[str]:
         doc = page.doc
         assert doc is not None
@@ -131,6 +147,9 @@ class Adapter(DeclarativeAdapter):
                         stmt = f"{stmt} {detail}"
                     if not re.search(r"\bup\s+to\s+\d|\btotal\b", f"{ln} {cat}", re.I):
                         out.append(stmt)
+            # the base rate below the tiles: "Earn 1X Membership Rewards® points on all other eligible purchases.‡"
+            base = r"^Earn\s+\d{1,2}(?:\.\d+)?X\b.*\bon all other eligible purchases"
+            out += [ln for ln in lines if re.match(base, ln, re.I) and ln not in out]
             return out
         if key == "offer":
             for i, ln in enumerate(lines):

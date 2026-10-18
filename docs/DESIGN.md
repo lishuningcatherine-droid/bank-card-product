@@ -1305,3 +1305,8 @@ checked the same way.
   offers. Balance-transfer terms from the pricing footnotes: `bt_fee_pct` / `bt_fee_min_cents` ("Balance Transfer fee of
   5% of each transfer amount, $5 minimum") and `intro_bt_window_days` ("applies to balance transfers made within 60
   days of account opening"), on every U.S. Bank card that states them.
+- **Amex Gold static page (2026-10-18).** The only `h1` elements are modal titles, so the name comes from the page
+  title ("The American Express® Gold Card" → "American Express® Gold Card", located in the text). The base rate line
+  below the tiles is collected; "booked through AmexTravel.com … or directly through airlines" (and "directly with
+  airlines or AmexTravel.com") is either channel: `booked_direct`, not portal-only; "Amex Travel App" is the portal's
+  name and never the category travel.
