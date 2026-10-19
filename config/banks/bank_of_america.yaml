@@ -1,7 +1,7 @@
 # Bank of America. Reachability surveyed 2026-10-13 from the owner's machine (docs/REACHABILITY.md).
 bank_id: bank_of_america
 display_name: "Bank of America"
-official_domains: [bankofamerica.com]
+official_domains: [bankofamerica.com, bac-assets.com]  # bac-assets.com: Bank of America's asset host for the rate sheets linked from /deposits/bank-account-interest-rates/
 adapter: bank_of_america
 capture_timezone: America/New_York
 product_types:

@@ -7,6 +7,7 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime
 from decimal import Decimal
 from functools import lru_cache
+from html import escape
 from pathlib import Path
 from typing import Any, ClassVar, Protocol
 
@@ -15,7 +16,7 @@ import yaml
 from bankrec.candidate import ProductCandidate
 from bankrec.ingest.common import deposits as D
 from bankrec.ingest.common import extract as X
-from bankrec.ingest.common.html import PageDoc, scoped
+from bankrec.ingest.common.html import PageDoc, parse_html, scoped
 from bankrec.model import (
     PRIORITY,
     ApyTier,
@@ -430,6 +431,14 @@ class DeclarativeAdapter:
     def extract(self, page: ClassifiedPage) -> list[ProductCandidate]:
         if page.source.product_type is None:
             return []
+        if (
+            page.doc is None
+            and page.text
+            and page.source.product_type in (ProductType.checking, ProductType.savings)
+        ):
+            # deposit rate sheets are PDFs: the same line readers run on the PDF text (one paragraph per line)
+            html = "".join(f"<p>{escape(ln)}</p>" for ln in page.text.split("\n") if ln.strip())
+            page = replace(page, doc=parse_html(f"<html><body>{html}</body></html>"))
         scope = self.rules.get("scope_selector")
         if scope and page.doc is not None:
             page = replace(page, doc=scoped(page.doc, scope, self.rules.get("exclude_selector")))
@@ -463,12 +472,12 @@ class DeclarativeAdapter:
                 or page.source.source_kind.value == "offer_detail"
             )
             and expected != "multiple"
-            and (not name or X.norm_ws(expected).lower() not in X.norm_ws(name).lower())
+            and (not name or X.norm_ws(name).lower() != X.norm_ws(expected).lower())
             and ctx.locate(expected) is not None
         ):
-            # Deposit pages often head with a slogan ("A fee-free online checking account") or several accounts, and
-            # offer pages with the bonus ("Enjoy a $400 checking account bonus"): the curated product name is used
-            # when the page states it verbatim.
+            # Deposit pages often head with a slogan ("A fee-free online checking account") or an eyebrow ("EVERYDAY
+            # CHECKING Chase Total Checking®"), and offer pages with the bonus ("Enjoy a $400 checking account
+            # bonus"): the curated product name is used when the page states it verbatim.
             name = expected
         c.fields["official_name"] = ctx.field(name, name, method="table_cell", name="official_name")
         if page.doc is not None:
@@ -717,6 +726,10 @@ class DeclarativeAdapter:
         self._category_exclusions(page, c)
         self._no_rewards(page, ctx, c)
 
+    def page_is_scoped(self, page: ClassifiedPage) -> bool:
+        """True while reading one account of a multi-account page (page-wide readers would mix accounts)."""
+        return False
+
     def deposit_lines(self, page: ClassifiedPage) -> list[str]:
         """The lines deposit readers work on (an adapter narrows them to one account on multi-account pages)."""
         return [ln for ln in (page.doc.text if page.doc is not None else page.text).split("\n") if ln.strip()]
@@ -727,9 +740,14 @@ class DeclarativeAdapter:
         doc = page.doc
         assert doc is not None
         lines = self.deposit_lines(page)
-        fee = X.monthly_fee(doc, ctx)
-        if not fee.present and (f := D.monthly_fee(lines)) is not None:
-            fee = ctx.field(f[0], f[1], method="free_text", name="monthly_fee")
+        scoped_page = self.page_is_scoped(page)
+        lab = None if scoped_page else X.labelled(doc, "monthly_fee")
+        if lab is not None:
+            fee = X.monthly_fee(doc, ctx)
+        elif (f := D.monthly_fee(lines)) is not None:
+            fee = ctx.field(f[0], f[1], method="label_regex", name="monthly_fee")
+        else:
+            fee = ctx.field(None, None) if scoped_page else X.monthly_fee(doc, ctx)
         c.fields["monthly_fee_cents"] = fee
         if self.rules.get("waiver_selector"):
             waivers = X.fee_waivers(self.statements(page, "waiver", None), ctx)
@@ -738,7 +756,7 @@ class DeclarativeAdapter:
             located = [w for w in listed if ctx.locate(w) is not None]
             waivers = (
                 ctx.field(
-                    [D.parse_waiver(w) for w in located], located[0], method="free_text", name="fee_waivers"
+                    [D.parse_waiver(w) for w in located], located[0], method="label_regex", name="fee_waivers"
                 )
                 if located and len(located) == len(listed)
                 else ctx.field(
@@ -748,9 +766,16 @@ class DeclarativeAdapter:
         c.fields["fee_waivers"] = waivers
         if fee.value == 0:
             c.fields["fee_waivers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
-        opening = X.min_amount(doc, ctx, "min_opening")
-        if not opening.present and (o := D.opening_deposit(lines)) is not None:
-            opening = ctx.field(o[0], o[1], method="free_text", name="min_opening")
+        # a rate sheet lists many products ("Minimum to open: $1,000 CDs / $1,000 IRAs"): its generic labels are
+        # never read as this account's opening deposit
+        rate_sheet = page.page_type in (PageType.pdf_terms, PageType.terms_page)
+        generic_ok = not scoped_page and not rate_sheet
+        if generic_ok and X.labelled(doc, "min_opening") is not None:
+            opening = X.min_amount(doc, ctx, "min_opening")
+        elif (o := D.opening_deposit(lines)) is not None:
+            opening = ctx.field(o[0], o[1], method="label_regex", name="min_opening")
+        else:
+            opening = X.min_amount(doc, ctx, "min_opening") if generic_ok else ctx.field(None, None)
         c.fields["min_opening_deposit_cents"] = opening
 
     def _checking(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
@@ -758,7 +783,7 @@ class DeclarativeAdapter:
         assert doc is not None
         lines = self.deposit_lines(page)
         self._deposit_fee_and_waivers(page, ctx, c)
-        od = X.labelled(doc, "overdraft")
+        od = None if self.page_is_scoped(page) else X.labelled(doc, "overdraft")
         if od is None and (s := D.overdraft_summary(lines)) is not None:
             od = (s, s, "free_text")
         c.fields["overdraft_summary"] = ctx.field(od[0], od[1]) if od else ctx.field(None, None)
@@ -801,17 +826,31 @@ class DeclarativeAdapter:
         c.fields["apy_tiers"] = X.apy_tiers(
             doc, ctx, self.rules.get("apy_tier_selector", "table.apy-tiers tr")
         )
+        if (
+            not c.fields["apy_tiers"].present
+            and (bt := D.balance_tiers(self.deposit_lines(page))) is not None
+        ):
+            c.fields["apy_tiers"] = ctx.field(
+                [ApyTier(min_balance_cents=a, max_balance_cents=b, apy_pct=r) for a, b, r in bt[0]],
+                bt[1],
+                method="table_cell",
+                name="apy_tiers",
+            )
         # Tiered accounts: the tier table governs; a single headline APY would be misleading.
-        apy = (
-            ctx.field(None, None, null_reason=NullReason.not_applicable)
-            if c.fields["apy_tiers"].present
-            else X.apy_value(doc, ctx)
-        )
         lines = self.deposit_lines(page)
-        if not apy.present and apy.null_reason is not NullReason.not_applicable:
-            got = D.rate_table_apy(lines) or D.headline_apy(lines)
-            if got is not None:
-                apy = ctx.field(got[0], got[1], method="free_text", name="apy")
+        got = D.rate_table_apy(lines) or D.headline_apy(lines)
+        labelled_apy = X.labelled(doc, "apy") is not None
+        apy: Sourced[Any]
+        if c.fields["apy_tiers"].present:
+            apy = ctx.field(None, None, null_reason=NullReason.not_applicable)
+        elif not labelled_apy and got is not None:
+            apy = ctx.field(got[0], got[1], method="label_regex", name="apy")
+        elif not labelled_apy and any(
+            re.search(r"\bNaN\b\s*(?:APY|Annual Percentage Yield)", ln) for ln in lines
+        ):
+            apy = ctx.field(None, None, null_reason=NullReason.requires_render)  # filled by the page script
+        else:
+            apy = X.apy_value(doc, ctx)
         c.fields["apy_pct"] = apy
         if not c.fields["apy_tiers"].present and apy.present:
             c.fields["apy_tiers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)

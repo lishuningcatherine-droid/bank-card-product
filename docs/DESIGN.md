@@ -1326,3 +1326,27 @@ source's `location_steps` type it into the page's own public ZIP form during ren
 select_first / wait). The ZIP and every step taken are recorded in the capture conditions (`location`), and rates
 from such captures are shown as "Rates shown for ZIP 90024 (Los Angeles, CA); may differ where you live". No other
 form is ever filled; robots-disallowed requests stay aborted.
+
+### 24.21 Deposit accounts: extraction and merge (2026-10-19)
+
+- **Readers** (`ingest/common/deposits.py`) built from the official pages: monthly fee ("$15 or $0 Monthly Service Fee",
+  "$12 Monthly Maintenance Fee", "Monthly maintenance fee" / "$8 or $0", "No monthly fees"), the listed fee-waiver
+  conditions (each kept; unrecognised ones as `other`), minimum opening deposit, overdraft policy sentence, APY from a
+  rate table ("0.01% 0.01%"), a headline ("Earn a 1.00% APY") or a rate sheet's balance tiers ("Less than $5,000
+  0.04% 0.04%"). "NaN APY" (the page script did not run) is `requires_render`. Labelled values (Example Bank) still win;
+  the loose page-wide matches ("There is no monthly maintenance fee on our Advantage Savings account if you're under
+  age 25") are a last resort, and a rate sheet's generic labels ("Minimum to open: $1,000 CDs / $1,000 IRAs") are never
+  an account's opening deposit.
+- **Names.** Deposit and offer pages often head with a slogan, an eyebrow or the bonus; the curated product name is
+  used when the page states it verbatim, and the page title counts as a heading for classification (FAQ / article
+  rules no longer reject a page whose heading or title names the product).
+- **Several accounts on one page** (Bank of America Advantage Banking): one source (`expected_entity: multiple`), one
+  candidate per account (`multi_account_pages`), each read only from that account's own fee/waiver block.
+- **Supplementary pages** (fees, rates, offer) carry `product_key_name` so they merge with their product ("Chase
+  Savings" fees page → "Chase Savings℠"). Required fields are judged on the merged record when the primary page
+  lacks only required fields (the APY from the rates page); free-text summaries in different words are not conflicts.
+- **Not stated, never inferred:** no Chase page states a checking opening deposit, nor does any page Bank of America
+  allows (its fee schedule is a robots-disallowed PDF) for checking or Advantage Savings: those records stay in review
+  or Partially verified. Capital One's savings APY comes only from a robots-disallowed API ("NaN APY").
+- Bank of America's rate sheets are PDFs on its asset host `media.bac-assets.com` (robots.txt 404), linked from
+  bankofamerica.com/deposits/bank-account-interest-rates/ for the ZIP: added to the bank's official domains.

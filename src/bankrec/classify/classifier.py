@@ -151,15 +151,24 @@ def classify(
         text = re.sub(re.escape(b), " ", text, flags=re.IGNORECASE)
     if LOGIN_URL.search(url) or (doc.tree.css_first("input[type=password]") is not None):
         return Classification(PageType.login_page, ["login_url_or_password_input"], Failure.LOGIN_WALL)
-    if (
-        ARTICLE_URL.search(url)
-        or doc.tree.css_first("article [rel=author], .byline, [itemprop=author]") is not None
-        or re.search(r"\b\d+\s+min(?:ute)? read\b", text, re.IGNORECASE)
+    # A page whose heading or title names the expected product is that product's page, even when it also links
+    # articles ("5 min read") or carries an FAQ section (deposit pages without an h1).
+    named = expected_entity != "multiple" and any(
+        name_present(expected_entity, h)
+        for h in [*doc.h1, doc.title]
+        + [doc.node_text(n).replace("\n", " ") for sel in heading_selectors or [] for n in doc.select(sel)]
+    )
+    if ARTICLE_URL.search(url) or (
+        not named
+        and (
+            doc.tree.css_first("article [rel=author], .byline, [itemprop=author]") is not None
+            or re.search(r"\b\d+\s+min(?:ute)? read\b", text, re.IGNORECASE)
+        )
     ):
         return Classification(PageType.article, ["article_url_or_byline"], Failure.NON_PRODUCT_PAGE)
     qa = len(re.findall(r"^(?:q:|.{10,160}\?)$", text, re.MULTILINE))
     if FAQ_URL.search(url) or (
-        re.search(r"frequently asked questions", text, re.IGNORECASE) and qa >= 5 and not doc.h1
+        re.search(r"frequently asked questions", text, re.IGNORECASE) and qa >= 5 and not doc.h1 and not named
     ):
         return Classification(PageType.faq, [f"faq_url_or_qa_pairs:{qa}"], Failure.NON_PRODUCT_PAGE)
 

@@ -14,6 +14,7 @@ by value-asserting tests in ``tests/adapters/test_bank_of_america.py``. See ``do
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from decimal import Decimal
 from typing import Any
 
@@ -79,6 +80,44 @@ def _after(lines: list[str], label: str, stop: tuple[str, ...]) -> list[str]:
 class Adapter(DeclarativeAdapter):
     bank_id = "bank_of_america"
     parser_version = "bank_of_america/1.1.1"
+
+    _account: str | None = None
+
+    def extract(self, page: ClassifiedPage) -> list[ProductCandidate]:
+        """The Advantage Banking page lists several checking accounts (``multi_account_pages`` in the rules): one
+        candidate per account, each read only from that account's own fee and waiver block (DESIGN §24.21)."""
+        accounts = (self.rules.get("multi_account_pages") or {}).get(page.source.slug)
+        if not accounts:
+            return super().extract(page)
+        out: list[ProductCandidate] = []
+        try:
+            for name in accounts:
+                self._account = name
+                one = replace(page, source=page.source.model_copy(update={"expected_entity": name}))
+                out += super().extract(one)
+        finally:
+            self._account = None
+        return out
+
+    def page_is_scoped(self, page: ClassifiedPage) -> bool:
+        return self._account is not None
+
+    def deposit_lines(self, page: ClassifiedPage) -> list[str]:
+        lines = super().deposit_lines(page)
+        if self._account is None:
+            return lines
+        accounts = (self.rules.get("multi_account_pages") or {}).get(page.source.slug) or []
+        starts = [
+            k
+            for k, ln in enumerate(lines[:-1])
+            if ln.strip() in accounts and re.match(r"^\$[\d.]+ or \$0$", lines[k + 1].strip())
+        ]
+        mine = [k for k in starts if lines[k].strip() == self._account]
+        if not mine:
+            return []
+        a = mine[-1]  # the detailed "Monthly maintenance fee" block, after the summary tiles
+        later = [k for k in starts if k > a]
+        return lines[a : later[0] if later else a + 14]
 
     @staticmethod
     def _is_terms(page: ClassifiedPage) -> bool:

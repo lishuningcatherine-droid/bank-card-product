@@ -4,3 +4,7 @@ partner_words:
   Royal ONE: [Royal Caribbean, Celebrity Cruises, Silversea]
   Allways: [Allegiant]
   Atmos: [Alaska Airlines, Hawaiian Airlines]
+
+# One page, several accounts (DESIGN §24.21): one candidate per account, read from that account's own block.
+multi_account_pages:
+  advantage-banking: [Advantage SafeBalance Banking, Advantage Plus Banking, Advantage Relationship Banking]

@@ -13,3 +13,5 @@ altitude-go-secured-2026-10-14.rendered.html | https://www.usbank.com/credit-car
 business-shield-2026-10-14.rendered.html | https://www.usbank.com/business-banking/business-credit-cards/business-shield-credit-card.html | playwright | 200 | 2026-10-14T19:48:11Z
 shield-2026-10-14.rendered.html | https://www.usbank.com/credit-cards/shield-visa-credit-card.html | playwright | 200 | 2026-10-14T20:15:08Z
 business-altitude-connect-2026-10-18.rendered.html | https://www.usbank.com/business-banking/business-credit-cards/business-altitude-connect-credit-card.html | playwright | 200 | 2026-10-18T21:48:56Z
+bank-smartly-checking-2026-10-19.html | https://www.usbank.com/bank-accounts/checking-accounts/bank-smartly-checking.html | http | 200 | 2026-10-19T03:12:27Z
+bank-smartly-savings-rates-90024-2026-10-19.rendered.html | https://www.usbank.com/bank-accounts/savings-accounts/bank-smartly-savings/savings-account-interest-rates.html | playwright (ZIP 90024 entered in the page's ZIP form) | 200 | 2026-10-19T03:13:14Z

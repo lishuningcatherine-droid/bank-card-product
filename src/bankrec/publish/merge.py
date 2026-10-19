@@ -63,6 +63,19 @@ class MergedProduct:
         }
 
 
+# Free-text summaries: differently worded pages are not conflicting values; the primary page's wording stands.
+TEXT_SUMMARY_FIELDS = {
+    "overdraft_summary",
+    "rate_type_note",
+    "withdrawal_restrictions",
+    "customer_eligibility",
+    "customer_restrictions",
+    "eligibility_restrictions",
+    "credit_profile_guidance",
+    "redemption_restriction",
+}
+
+
 def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> MergedProduct:
     ordered = sorted(cands, key=lambda cm: (-cm[1].priority, cm[1].source_id))
     primary, pmeta = ordered[0]
@@ -84,6 +97,8 @@ def merge(cands: list[tuple[ProductCandidate, Meta]], canonical_key: str) -> Mer
                 mp.fields[k] = (s, meta)
             elif k == "official_name":
                 pass  # same canonical key by construction: a differently worded name is an alias (kept below)
+            elif k in TEXT_SUMMARY_FIELDS:
+                pass  # summaries in each page's own words ("No overdraft fee if ..." / "Overdraft Fees — $34")
             elif s.present and cur[0].present and jsonable(s.value) != jsonable(cur[0].value):
                 mp.conflicts.append(
                     {

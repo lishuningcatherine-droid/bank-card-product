@@ -579,3 +579,48 @@ sources:
   refresh_tier: terms
   render_ready_selector: "#termsAndConditions div"
   notes: terms page linked from the card page, retrieved 2026-10-13
+- bank_id: bank_of_america
+  slug: advantage-banking
+  product_type: checking
+  source_url: https://www.bankofamerica.com/deposits/checking/advantage-banking/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: multiple
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; one page for three accounts, read per account; ZIP 90024
+  location_steps: &id001
+  - fill: '#zipCodeModalInputField'
+  - click: '#zipSelectModalForm button.spa-btn--primary'
+  - wait_ms: '4000'
+  - select_first: '#countySelectModalSelect'
+  - wait_ms: '1000'
+- bank_id: bank_of_america
+  slug: advantage-savings
+  product_type: savings
+  source_url: https://www.bankofamerica.com/deposits/savings/savings-accounts/
+  source_kind: product_detail
+  parser_name: bank_of_america
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Bank of America Advantage Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; ZIP 90024
+  location_steps: *id001
+- bank_id: bank_of_america
+  slug: advantage-savings-rates
+  product_key_name: Bank of America Advantage Savings
+  product_type: savings
+  source_url: https://media.bac-assets.com/DigitalDeposit_CA_CA_Los_Angeles.pdf
+  source_kind: terms_pdf
+  parser_name: bank_of_america
+  requires_render: false
+  enabled: true
+  priority: 80
+  expected_entity: Advantage Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; the rate sheet for Los Angeles County linked from bankofamerica.com/deposits/bank-account-interest-rates/
+    for ZIP 90024

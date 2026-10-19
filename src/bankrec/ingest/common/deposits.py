@@ -205,3 +205,40 @@ def headline_apy(lines: list[str]) -> tuple[Decimal, str] | None:
         if (m := _HEADLINE_APY.search(ln)) and not re.search(r"\bup\s+to\b|national", ln[: m.start()], re.I):
             return Decimal(m.group("apy")), ln.strip()
     return None
+
+
+_TIER_HEADER = re.compile(r"^(?:account\s+)?balance\s+(?:interest\s+)?rate\s+APY$", re.I)
+_TIER_ROW = re.compile(r"^(?P<lab>.+?)\s+(?P<rate>\d{1,2}\.\d{2})%\s+(?P<apy>\d{1,2}\.\d{2})%$")
+
+
+def _tier_bounds(label: str) -> tuple[int, int | None] | None:
+    amts: list[int] = [
+        m for a in re.findall(r"\$[\d,]+(?:\.\d{2})?", label) if (m := parse_money(a)) is not None
+    ]
+    low = label.lower()
+    if re.search(r"less than|under|below", low) and len(amts) == 1:
+        return 0, amts[0] - 1
+    if re.search(r"and over|or more|\+$|and above", low) and len(amts) == 1:
+        return amts[0], None
+    if len(amts) == 2:
+        return amts[0], amts[1]
+    return None
+
+
+def balance_tiers(lines: list[str]) -> tuple[list[tuple[int, int | None, Decimal]], str] | None:
+    """Rows after an "Account Balance Rate APY" header (rate sheets): [(min cents, max cents or None, APY)], first
+    row as evidence. The first table on the page is the account's standard rate."""
+    for i, ln in enumerate(lines):
+        if not _TIER_HEADER.match(ln.strip()):
+            continue
+        rows: list[tuple[int, int | None, Decimal]] = []
+        first = None
+        for nxt in lines[i + 1 : i + 20]:
+            m = _TIER_ROW.match(nxt.strip())
+            if not m or (b := _tier_bounds(m.group("lab"))) is None:
+                break
+            rows.append((b[0], b[1], Decimal(m.group("apy"))))
+            first = first or nxt.strip()
+        if rows and first:
+            return rows, first
+    return None

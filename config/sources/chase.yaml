@@ -570,3 +570,107 @@ sources:
   expected_entity: Disney® Visa® Card
   notes: 'Pricing & Terms linked from the card page. sites.chase.com robots.txt disallows all crawlers: manual capture only
     (bankrec ingest --manual ... --source-url <this URL>).'
+- bank_id: chase
+  slug: total-checking
+  product_type: checking
+  source_url: https://www.chase.com/personal/checking/total-checking
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Chase Total Checking®
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: chase
+  slug: total-checking-fees
+  product_key_name: Chase Total Checking®
+  product_type: checking
+  source_url: https://www.chase.com/personal/fees/total-checking
+  source_kind: terms_page
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 80
+  expected_entity: Chase Total Checking
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: chase
+  slug: total-checking-offer
+  product_type: checking
+  source_url: https://www.chase.com/personal/offers/total-checking-300
+  source_kind: offer_detail
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 90
+  expected_entity: Chase Total Checking®
+  has_offers: true
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; redirects to account.chase.com (the current public checking offer)
+- bank_id: chase
+  slug: premier-plus-checking
+  product_type: checking
+  source_url: https://www.chase.com/personal/checking/premier-plus-checking
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Chase Premier Plus Checking℠
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: chase
+  slug: premier-plus-checking-fees
+  product_key_name: Chase Premier Plus Checking℠
+  product_type: checking
+  source_url: https://www.chase.com/personal/fees/premier-plus-checking
+  source_kind: terms_page
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 80
+  expected_entity: Chase Premier Plus Checking
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: chase
+  slug: chase-savings
+  product_type: savings
+  source_url: https://www.chase.com/personal/savings/savings-account
+  source_kind: product_detail
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Chase Savings℠
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: chase
+  slug: chase-savings-rates
+  product_key_name: Chase Savings℠
+  product_type: savings
+  source_url: https://www.chase.com/personal/savings/savings-account/interest-rates
+  source_kind: terms_page
+  parser_name: chase
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Chase Savings℠
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; rates for ZIP 90024
+  location_steps:
+  - fill: '#zipInput-field-input'
+  - press: Enter
+  - wait_ms: '4000'
+- bank_id: chase
+  slug: chase-savings-fees
+  product_key_name: Chase Savings℠
+  product_type: savings
+  source_url: https://www.chase.com/personal/fees/savings
+  source_kind: terms_page
+  parser_name: chase
+  requires_render: false
+  enabled: true
+  priority: 80
+  expected_entity: Chase Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18

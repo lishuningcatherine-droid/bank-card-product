@@ -134,3 +134,45 @@ sources:
   expected_entity: U.S. BANK BUSINESS SHIELD™ VISA® CARD
   has_offers: true
   notes: 'rendered: static HTML shows ''$'' placeholders for annual fee and APR'
+- bank_id: us_bank
+  slug: bank-smartly-checking
+  product_type: checking
+  source_url: https://www.usbank.com/bank-accounts/checking-accounts/bank-smartly-checking.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Smartly® Checking
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: us_bank
+  slug: bank-smartly-savings
+  product_type: savings
+  source_url: https://www.usbank.com/bank-accounts/savings-accounts/bank-smartly-savings.html
+  source_kind: product_detail
+  parser_name: us_bank
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: U.S. Bank Smartly Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: us_bank
+  slug: bank-smartly-savings-rates
+  product_key_name: U.S. Bank Smartly Savings
+  product_type: savings
+  source_url: https://www.usbank.com/bank-accounts/savings-accounts/bank-smartly-savings/savings-account-interest-rates.html
+  source_kind: terms_page
+  parser_name: us_bank
+  requires_render: true
+  enabled: true
+  priority: 80
+  expected_entity: Bank Smartly Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; rates for ZIP 90024
+  location_steps:
+  - click: '#zipcodes_edit'
+  - fill: '#zipcode_entry'
+  - click: button:visible:has-text("Go")
+  - wait_ms: '5000'

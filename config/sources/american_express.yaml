@@ -187,3 +187,27 @@ sources:
   notes: static HTML (fee, earn tiles). Rendering stopped returning product content on 2026-10-13 (see config/banks/american_express.yaml);
     welcome offers need a rendered or manual capture
   refresh_tier: offer
+- bank_id: american_express
+  slug: rewards-checking
+  product_type: checking
+  source_url: https://www.americanexpress.com/en-us/banking/checking-account/
+  source_kind: product_detail
+  parser_name: american_express
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Rewards Checking
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: american_express
+  slug: high-yield-savings
+  product_type: savings
+  source_url: https://www.americanexpress.com/en-us/banking/online-savings/high-yield-savings-account/
+  source_kind: product_detail
+  parser_name: american_express
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: High Yield Savings Account
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18

@@ -233,6 +233,20 @@ class Adapter(DeclarativeAdapter):
         if doc is None:
             return []
         out: list[str] = []
+        if (
+            key == "offer"
+            and page.source.product_type is not None
+            and page.source.product_type.value != "credit_card"
+        ):
+            # deposit offer pages: "Enjoy a $400" / "checking account bonus" / "as a new Chase checking customer, when
+            # you open ... and make direct deposits totaling $1,000 or more within 90 days of offer enrollment."
+            lines = [ln.strip() for ln in doc.text.split("\n") if ln.strip()]
+            for k, ln in enumerate(lines):
+                if re.match(r"^(?:enjoy|earn|get)\s+an?\s+\$\d[\d,]*\b", ln, re.I):
+                    block = " ".join(lines[k : k + 3])
+                    if re.search(r"\bdeposits?\b.*\bwithin\s+\d+\s+days\b", block, re.I):
+                        return [block]
+            return []
         if key == "offer":
             for n in doc.select(self.rules["offer_selector"]):
                 if n.attributes.get("data-slot") == "offer":

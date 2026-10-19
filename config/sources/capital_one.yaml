@@ -291,3 +291,54 @@ sources:
   has_offers: false
   refresh_tier: offer
   notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+- bank_id: capital_one
+  slug: 360-checking
+  product_type: checking
+  source_url: https://www.capitalone.com/bank/checking-accounts/online-checking-account/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: 360 Checking
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: capital_one
+  slug: 360-checking-disclosures
+  product_key_name: 360 Checking
+  product_type: checking
+  source_url: https://www.capitalone.com/bank/disclosures/checking-accounts/online-checking-account/
+  source_kind: terms_page
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 80
+  expected_entity: 360 Checking
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18
+- bank_id: capital_one
+  slug: 360-performance-savings
+  product_type: savings
+  source_url: https://www.capitalone.com/bank/savings-accounts/online-performance-savings-account/
+  source_kind: product_detail
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: 360 Performance Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18; the APY is filled by a script from card-apis/bank APIs that robots.txt
+    disallows (shown as NaN)
+- bank_id: capital_one
+  slug: 360-performance-savings-disclosures
+  product_key_name: 360 Performance Savings
+  product_type: savings
+  source_url: https://www.capitalone.com/bank/disclosures/savings-accounts/online-performance-savings-account/
+  source_kind: terms_page
+  parser_name: capital_one
+  requires_render: false
+  enabled: true
+  priority: 80
+  expected_entity: 360 Performance Savings
+  has_offers: false
+  notes: deposit account (DESIGN §24.21); added 2026-10-18

@@ -929,6 +929,10 @@ def offer_end(text: str, block: str) -> tuple[date, str] | None:
     points ... Offer ends 7/29/26"). Returns (date, the line it came from)."""
     m = _AMOUNT_TOKEN.search(block)
     cands = [block] + ([ln for ln in text.split("\n") if m.group(0) in ln] if m else [])
+    # a single standalone "Offer expires 01/27/2027." on the page (deposit offer pages)
+    alone = [ln for ln in text.split("\n") if re.match(r"^\s*offer\s+(?:expires|ends)\b", ln, re.I)]
+    if len({ln.strip() for ln in alone}) == 1:
+        cands.append(alone[0])
     for ln in cands:
         e = _END_LINE.search(ln)
         if not e:

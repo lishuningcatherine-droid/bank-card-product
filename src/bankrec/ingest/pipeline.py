@@ -32,9 +32,9 @@ from bankrec.ingest.common.pdf import pdf_to_text
 from bankrec.ingest.fetch import FetchResult
 from bankrec.ingest.quality import assess as assess_capture
 from bankrec.ingest.snapshot import store
-from bankrec.model import EXTRACTABLE_PAGE_TYPES, NullReason
+from bankrec.model import EXTRACTABLE_PAGE_TYPES, ApyTier, FeeWaiver, NullReason
 from bankrec.publish.changes import diff_offers, diff_product, jsonable
-from bankrec.publish.merge import MergedOffer, Meta, merge, meta_priority
+from bankrec.publish.merge import MergedOffer, MergedProduct, Meta, merge, meta_priority
 from bankrec.publish.publisher import (
     enqueue_revalidation,
     product_tags,
@@ -114,6 +114,17 @@ class RunResult:
 _SUPPLEMENTARY_OK = {"R-REQ", "R-CONFIDENCE"}
 
 
+def _merged_required_ok(mp: MergedProduct) -> bool:
+    """Every required field present in the merged record. The primary page's own required fields already passed the
+    confidence rule (it failed only on missing fields); a supplementary page (rates, fees) fills the rest, as for
+    cards' terms pages (DESIGN §24.13)."""
+    for f in policy()["required"][mp.product_type]:
+        names = ("apy_pct", "apy_tiers") if f == "apy" else (f,)
+        if not any(n in mp.fields and mp.fields[n][0].present for n in names):
+            return False
+    return True
+
+
 def new_run_id(now: datetime) -> str:
     return now.strftime("%Y%m%dT%H%M%SZ") + "-" + uuid.uuid4().hex[:6]
 
@@ -144,6 +155,10 @@ def rehydrate(c: ProductCandidate) -> ProductCandidate:
             c.fields[k] = s.model_copy(update={"value": Decimal(v)})
         elif isinstance(v, str) and k.endswith("_date"):
             c.fields[k] = s.model_copy(update={"value": date.fromisoformat(v)})
+        elif k == "apy_tiers" and isinstance(v, list) and v and isinstance(v[0], dict):
+            c.fields[k] = s.model_copy(update={"value": [ApyTier.model_validate(t) for t in v]})
+        elif k == "fee_waivers" and isinstance(v, list) and v and isinstance(v[0], dict):
+            c.fields[k] = s.model_copy(update={"value": [FeeWaiver.model_validate(t) for t in v]})
     return c
 
 
@@ -499,7 +514,12 @@ class Pipeline:
             seg = c.value("segment")
             key = (
                 canonical_key(
-                    c.bank_id, c.product_type.value, seg, c.name or "", c.value("variant"), bank.display_name
+                    c.bank_id,
+                    c.product_type.value,
+                    seg,
+                    src.product_key_name or c.name or "",
+                    c.value("variant"),
+                    bank.display_name,
                 )
                 if c.name
                 else None
@@ -784,7 +804,7 @@ class Pipeline:
                     c.bank_id,
                     c.product_type.value,
                     c.value("segment"),
-                    c.name,
+                    o.source.product_key_name or c.name,
                     c.value("variant"),
                     self.reg.bank(c.bank_id).display_name,
                 )
@@ -842,9 +862,14 @@ class Pipeline:
         supplementary_ok = all(
             r.rule_id in _SUPPLEMENTARY_OK for c, _, v, _ in items if c is not mp.primary for r in v.failed
         )
-        status = (
-            "valid" if prim.status == "valid" and supplementary_ok and not mp.conflicts else "needs_review"
+        # Required fields and confidence are properties of the merged record: a deposit product page whose APY is on
+        # its rates page (Chase Savings, U.S. Bank Smartly Savings) is complete once merged (DESIGN §24.21).
+        prim_ok = prim.status == "valid" or (
+            prim.status != "reject"
+            and all(r.rule_id == "R-REQ" for r in prim.failed)
+            and _merged_required_ok(mp)
         )
+        status = "valid" if prim_ok and supplementary_ok and not mp.conflicts else "needs_review"
 
         def _present(f: str) -> bool:
             got = mp.fields.get(f)
