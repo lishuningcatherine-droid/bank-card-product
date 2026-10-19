@@ -11,6 +11,7 @@ from bankrec.recommend.common import (
     clip,
     completeness,
     components,
+    deposit_notes,
     eligible_offers,
     holding_days,
     minmax,
@@ -168,6 +169,7 @@ def recommend(
             lim.append(f"Withdrawal limit: {p.details.get('withdrawal_restrictions')}")
         if not p.details.get("eligible_states"):
             lim.append("State availability is not stated on the source page; confirm with the bank.")
+        lim += deposit_notes(p, None)
         fee_text = (
             "No monthly fee"
             if not r["monthly"]

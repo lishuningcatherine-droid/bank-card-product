@@ -1350,3 +1350,24 @@ form is ever filled; robots-disallowed requests stay aborted.
   or Partially verified. Capital One's savings APY comes only from a robots-disallowed API ("NaN APY").
 - Bank of America's rate sheets are PDFs on its asset host `media.bac-assets.com` (robots.txt 404), linked from
   bankofamerica.com/deposits/bank-account-interest-rates/ for the ZIP: added to the bank's official domains.
+
+### 24.22 Deposit follow-ups: bonus terms, eligibility, footnote APY, new-account waiver (owner check 2026-10-19)
+- **Deposit bonuses are plain sentences.** "Earn $300 after you open an American Express® Rewards Checking account by
+  02/01/2027 and receive a total of $7,500 or more of Qualifying Direct Deposit(s) within 90 days" → exact $300,
+  `direct_deposit_total` $7,500 (amount before "direct deposit" is read as well as after), 90 days, `open_by_date`
+  2027-02-01. Card-tile offer readers (Amex) apply only to card pages. The terms' restatement without a requirement
+  ("Earn a Welcome Bonus of $300 after you complete each of the following ...") is the same offer, not a second one.
+- **Eligibility only in the bank's words.** Who may open the account ("We are currently accepting applications from
+  Card Members with a U.S. Basic Consumer Card, ...") is `customer_eligibility` / `customer_restrictions`; who may get
+  the bonus ("You are not eligible for this Welcome Bonus if you have an existing Rewards Checking Account ...") is the
+  offer's `eligibility_restrictions`. Both are quoted in results ("as stated by the bank"); nothing from unofficial
+  sources (forum rules) is ever used, and the recommender does not guess whether the user meets them.
+- **Footnote APY tiers.** "A rate of 0.001% APY applies to accounts with balances between $0–$24,999.99. A rate of
+  0.005% APY applies to accounts with balances of $25,000.00 or more." → two tiers; only a complete ladder ($0 to an
+  open top tier) is stored.
+- **New-account fee waiver** (`intro_fee_waiver`, migration 0012): {count, unit, qualifier, text}, e.g. U.S. Bank "waived
+  for the first two statement periods", Chase "for at least the first two statement periods" (offer-page footnote, read
+  outside the scope selector). The unit is kept as stated; when a page says both "first two months" and "first two
+  statement periods", the statement-period wording (the account terms) is stored. First-year estimates subtract only a
+  waiver stated in months (statement periods are never converted).
+- A duplicate pair a reviewer accepted as distinct is not raised again on later runs.

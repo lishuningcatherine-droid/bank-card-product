@@ -169,3 +169,56 @@ def test_amex_rewards_checking_and_high_yield_savings() -> None:
     assert [t.apy_pct for t in c.value("apy_tiers")] == [Decimal("1.00")]  # «Earn a 1.00% APY»
     s = one("american_express", "high-yield-savings", "high-yield-savings-2026-10-19.rendered.html")
     assert s.value("apy_pct") == Decimal("3.20")  # «3.20% APY²»
+
+
+# ---- deposit spot-check follow-ups (2026-10-19): bonus, eligibility, footnote APY, new-account waiver
+
+
+def test_amex_rewards_checking_bonus_and_eligibility() -> None:
+    c = one("american_express", "rewards-checking", "rewards-checking-2026-10-19.html")
+    [o] = [s.value for s in c.offers if s.value is not None]  # the terms' restatement is the same offer
+    assert (o.offer_type, o.amount_qualifier, o.amount_max, o.reward_unit) == (
+        "checking_bonus",
+        "exact",
+        30000,
+        "cents",
+    )
+    assert (o.requirement_type, o.requirement_min_cents) == ("direct_deposit_total", 750000)
+    assert (o.qualification_window_count, o.qualification_window_unit) == (90, "days")
+    assert o.open_by_date == date(2027, 2, 1)
+    assert o.eligibility_restrictions is not None
+    assert o.eligibility_restrictions.startswith(
+        "You are not eligible for this Welcome Bonus if you have an existing"
+    )
+    assert c.offer_status == "captured"
+    who = c.value("customer_eligibility")
+    assert who.startswith(
+        "We are currently accepting applications from Card Members with a U.S. Basic Consumer Card"
+    )
+    assert "existing High Yield Savings Account or CD" in who
+
+
+def test_us_bank_smartly_checking_footnote_apy_and_intro_waiver() -> None:
+    c = one("us_bank", "bank-smartly-checking", "bank-smartly-checking-2026-10-19.html")
+    tiers = [(t.min_balance_cents, t.max_balance_cents, t.apy_pct) for t in c.value("apy_tiers")]
+    assert tiers == [(0, 2499999, Decimal("0.001")), (2500000, None, Decimal("0.005"))]
+    assert c.fields["apy_tiers"].span_text.startswith(
+        "A rate of 0.001% Annual Percentage Yield (APY) applies"
+    )
+    iw = c.value("intro_fee_waiver")
+    # the page also says "first two months"; the account terms say statement periods, kept as stated
+    assert (iw["count"], iw["unit"], iw["qualifier"]) == (2, "statement_period", "exact")
+    assert iw["text"].endswith(
+        "the $12 Monthly Maintenance Fee is waived for the first two statement periods."
+    )
+
+
+def test_chase_offer_page_intro_waiver_from_footnote() -> None:
+    c = one("chase", "total-checking-offer", "chase-total-checking-offer-2026-10-19.html")
+    iw = c.value("intro_fee_waiver")
+    assert (iw["count"], iw["unit"], iw["qualifier"]) == (2, "statement_period", "at_least")
+
+
+def test_no_fee_account_has_no_intro_waiver() -> None:
+    c = one("capital_one", "360-checking", "360-checking-2026-10-19.html")
+    assert c.fields["intro_fee_waiver"].null_reason is NullReason.not_applicable

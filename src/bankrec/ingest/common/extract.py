@@ -677,6 +677,12 @@ def offer(
         block + " " + footnotes,
         re.IGNORECASE,
     )
+    # "after you open an American Express® Rewards Checking account by 02/01/2027"
+    open_by_num = re.search(
+        r"\bopen\b[^.]{0,100}?\baccount\b[^.]{0,20}?\bby\s+(\d{1,2})/(\d{1,2})/(\d{4})\b",
+        block,
+        re.IGNORECASE,
+    )
     promo = re.search(r"(?:promo(?:tion)?|offer|bonus)\s+code\s+([A-Z0-9]{4,20})\b", block + " " + footnotes)
     restrictions = [
         s.strip()
@@ -721,7 +727,7 @@ def offer(
             holding_period_count=po.holding.value if po.holding else None,
             holding_period_unit=po.holding.unit if po.holding else None,
             expiration_date=_d(exp) or _numeric_date(exp_numeric),
-            open_by_date=_d(open_by),
+            open_by_date=_d(open_by) or _numeric_date(open_by_num),
             promo_code=promo.group(1) if promo else None,
             audience="public",
             eligibility_restrictions=" ".join(restrictions) or None,

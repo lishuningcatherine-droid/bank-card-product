@@ -242,3 +242,104 @@ def balance_tiers(lines: list[str]) -> tuple[list[tuple[int, int | None, Decimal
         if rows and first:
             return rows, first
     return None
+
+
+_SENT = re.compile(r"(?<=[a-z0-9)][.!?])\s+")
+_WORD_COUNT = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6}
+_INTRO_WAIVER = re.compile(
+    r"(?:waived|not\s+be\s+charged\s+a\s+monthly\s+(?:service|maintenance)\s+fee)\s+for\s+(?P<least>at\s+least\s+)?"
+    r"the\s+first\s+(?P<n>\d|one|two|three|four|five|six)\s+(?P<unit>statement\s+periods?|statement\s+cycles?|months?)",
+    re.I,
+)
+
+
+def intro_fee_waiver(lines: list[str]) -> tuple[dict[str, object], str] | None:
+    """A new-account fee waiver ("the $12 Monthly Maintenance Fee is waived for the first two statement periods",
+    "will not be charged a Monthly Service Fee for at least the first two statement periods"): {count, unit,
+    qualifier, text}. The unit is kept as stated (a statement period is never read as a month); when the page states
+    both, the statement-period wording (the account terms) is used."""
+    found: list[tuple[dict[str, object], str]] = []
+    for ln in lines:
+        for sent in _SENT.split(ln):
+            if m := _INTRO_WAIVER.search(sent):
+                n = m.group("n").lower()
+                unit = m.group("unit").lower()
+                found.append(
+                    (
+                        {
+                            "count": int(n) if n.isdigit() else _WORD_COUNT[n],
+                            "unit": "month" if unit.startswith("month") else "statement_period",
+                            "qualifier": "at_least" if m.group("least") else "exact",
+                            "text": sent.strip(),
+                        },
+                        sent.strip(),
+                    )
+                )
+    if not found:
+        return None
+    return next((f for f in found if f[0]["unit"] == "statement_period"), found[0])
+
+
+_ACCOUNT_ELIGIBILITY = re.compile(
+    r"\b(?:currently\s+accepting\s+applications\s+from|only\s+available\s+to|available\s+only\s+to|"
+    r"to\s+be\s+eligible\s+to\s+open)\b",
+    re.I,
+)
+
+
+def account_eligibility(lines: list[str]) -> str | None:
+    """Who may open the account, in the page's words ("We are currently accepting applications from Card Members with
+    a U.S. Basic Consumer Card, ..."). Only the bank's own statement; never a rule from elsewhere."""
+    for ln in lines:
+        for sent in _SENT.split(ln):
+            if _ACCOUNT_ELIGIBILITY.search(sent) and len(sent) < 400:
+                return sent.strip().lstrip("*†‡ ")
+    return None
+
+
+_BONUS_INELIGIBLE = re.compile(
+    r"\bnot\s+(?:be\s+)?eligible\s+(?:for|to\s+receive)\s+(?:this|the|a)\s+(?:welcome\s+)?bonus\b", re.I
+)
+
+
+def bonus_eligibility(lines: list[str]) -> str | None:
+    """The page's own exclusion for the account bonus ("You are not eligible for this Welcome Bonus if you have an
+    existing Rewards Checking Account or previously had a Rewards Checking Account.")."""
+    for ln in lines:
+        for sent in _SENT.split(ln):
+            if _BONUS_INELIGIBLE.search(sent) and len(sent) < 400:
+                return sent.strip()
+    return None
+
+
+_FOOTNOTE_TIER = re.compile(
+    r"A\s+rate\s+of\s+(?P<apy>\d{1,2}\.\d{1,3})%\s+(?:Annual\s+Percentage\s+Yield\s+\(APY\)|APY)\s+applies\s+to\s+"
+    r"accounts\s+with\s+balances\s+(?:between\s+(?P<lo>\$[\d,]+(?:\.\d{2})?)\s*(?:–|-|to)\s*(?P<hi>\$[\d,]+(?:\.\d{2})?)|"
+    r"of\s+(?P<min>\$[\d,]+(?:\.\d{2})?)\s+or\s+more)",
+    re.I,
+)
+
+
+def footnote_apy_tiers(lines: list[str]) -> tuple[list[tuple[int, int | None, Decimal]], str] | None:
+    """Tiered checking APYs stated in a footnote ("A rate of 0.001% Annual Percentage Yield (APY) applies to accounts
+    with balances between $0–$24,999.99. A rate of 0.005% APY applies to accounts with balances of $25,000.00 or
+    more."): [(min cents, max cents or None, APY)] and the footnote line as evidence. Only a complete ladder (starting
+    at $0 and ending open) is returned."""
+    for ln in lines:
+        rows: list[tuple[int, int | None, Decimal]] = []
+        for m in _FOOTNOTE_TIER.finditer(ln):
+            if m.group("min"):
+                lo = parse_money(m.group("min"))
+                if lo is None:
+                    return None
+                rows.append((lo, None, Decimal(m.group("apy"))))
+            else:
+                lo, hi = parse_money(m.group("lo")), parse_money(m.group("hi"))
+                if lo is None or hi is None:
+                    return None
+                rows.append((lo, hi, Decimal(m.group("apy"))))
+        if rows:
+            if rows[0][0] != 0 or rows[-1][1] is not None:
+                return None
+            return rows, ln.strip()
+    return None

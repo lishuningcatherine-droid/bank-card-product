@@ -198,3 +198,24 @@ def test_liquidity_and_fee_waiver() -> None:
     assert savings.recommend(
         [fee], sreq(deposit_range="lt_1k", max_monthly_fee=0)
     ).results  # waived → allowed
+
+
+def test_intro_fee_waiver_and_bank_stated_eligibility_are_shown_not_inferred() -> None:
+    periods = {
+        "count": 2,
+        "unit": "statement_period",
+        "qualifier": "exact",
+        "text": "waived for the first two statement periods",
+    }
+    months = {**periods, "unit": "month", "text": "waived for the first two months"}
+    who = "We are currently accepting applications from Example Bank card members."
+    a = acct(
+        "checking", "Periods", monthly_fee_cents=1200, intro_fee_waiver=periods, customer_eligibility=who
+    )
+    b = acct("checking", "Months", monthly_fee_cents=1200, intro_fee_waiver=months)
+    res = {r.product.name: r for r in checking.recommend([a, b], creq(), NOW).results}
+    # statement periods are never converted to months: only a waiver stated in months lowers the estimate
+    assert res["Periods"].values.first_year_cents == -1200 * 12
+    assert res["Months"].values.first_year_cents == -1200 * 10
+    assert "New accounts: monthly fee waived for the first 2 statement periods." in res["Periods"].limitations
+    assert f"Who can open (as stated by the bank): {who}" in res["Periods"].limitations

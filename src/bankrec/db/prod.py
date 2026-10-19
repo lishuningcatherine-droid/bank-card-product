@@ -180,6 +180,8 @@ class CheckingAccountDetails(ProdBase):
     fee_waivers: Mapped[list[dict[str, Any]] | None] = mapped_column(J)
     min_opening_deposit_cents: Mapped[int | None] = mapped_column(BigInteger)
     overdraft_summary: Mapped[str | None] = mapped_column(Text)
+    # {count, unit (statement_period | month, as stated), qualifier (exact | at_least), text}: new-account fee waiver
+    intro_fee_waiver: Mapped[dict[str, Any] | None] = mapped_column(J)
     apy_tiers: Mapped[list[dict[str, Any]] | None] = mapped_column(J)
     eligible_states: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     customer_eligibility: Mapped[str | None] = mapped_column(Text)
@@ -202,6 +204,7 @@ class SavingsAccountDetails(ProdBase):
     min_balance_cents: Mapped[int | None] = mapped_column(BigInteger)
     monthly_fee_cents: Mapped[int | None] = mapped_column(BigInteger)
     fee_waivers: Mapped[list[dict[str, Any]] | None] = mapped_column(J)
+    intro_fee_waiver: Mapped[dict[str, Any] | None] = mapped_column(J)
     withdrawal_restrictions: Mapped[str | None] = mapped_column(Text)
     max_withdrawals_per_month: Mapped[int | None] = mapped_column(Integer)
     eligible_states: Mapped[list[str] | None] = mapped_column(ARRAY(Text))

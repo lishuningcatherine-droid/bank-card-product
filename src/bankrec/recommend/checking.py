@@ -10,8 +10,10 @@ from bankrec.recommend.common import (
     clip,
     completeness,
     components,
+    deposit_notes,
     eligible_offers,
     holding_days,
+    intro_waived_months,
     minmax,
     usd,
     window_months,
@@ -159,7 +161,7 @@ def recommend(
                 "bonus": amount,
                 "ach": ach,
                 "margin": margin,
-                "net": amount - eff_monthly * 12,
+                "net": amount - eff_monthly * (12 - intro_waived_months(p)),
             }
         )
     net_n = minmax([r["net"] for r in rows])
@@ -195,6 +197,7 @@ def recommend(
             lim.append(f"Bonus requires keeping the account open/funded for {n} {unit}.")
         if r["unknown"] and r["eff"]:
             lim.append("You may qualify for a fee waiver we could not check: " + "; ".join(r["unknown"]))
+        lim += deposit_notes(p, o)
         fee_text = (
             (
                 f"{usd(r['monthly'])}/month"
@@ -207,7 +210,7 @@ def recommend(
             Reason(
                 code="net_value",
                 text=f"Estimated first-year value of {usd(r['net'])} "
-                f"(bonus {usd(r['bonus'])} − fees {usd(r['eff'] * 12)}).",
+                f"(bonus {usd(r['bonus'])} − fees {usd(r['bonus'] - r['net'])}).",
                 params={"cents": r["net"]},
             )
         ]

@@ -435,3 +435,45 @@ def test_tiered_offer_is_published_with_its_tiers(session, settings, tmp_path) -
         (50000, 300000, 3, "months"),
         (10000, None, None, None),
     ]
+
+
+def test_duplicate_pair_accepted_distinct_is_not_raised_again(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    from bankrec.review import service
+
+    reg = registry()
+    plus = mutate(
+        tmp_path,
+        "card_everyday_cash.html",
+        "Example Bank Everyday Cash Card",
+        "Example Bank Everyday Cash Plus Card",
+    )
+    a = source(reg, "everyday-cash")
+    b = a.model_copy(
+        update={
+            "slug": "everyday-cash-plus",
+            "fixture_path": str(plus),
+            "expected_entity": "Example Bank Everyday Cash Plus Card",
+            "source_url": HttpUrl("https://www.examplebank.example/credit-cards/everyday-cash-plus"),
+        }
+    )
+    reg.sources.append(b)
+    run(session, settings, reg)
+    dups = session.scalars(
+        select(S.ManualReviewItem).where(
+            S.ManualReviewItem.item_kind == "duplicate", S.ManualReviewItem.state == "open"
+        )
+    ).all()
+    assert dups, "the Example Bank fixtures contain a fuzzy name pair"
+    for it in dups:
+        assert (
+            service.approve(session, reg, it.id, reviewer="test", note="distinct", now=datetime.now(UTC))
+            == "accepted_distinct"
+        )
+    session.flush()
+    run(session, settings, reg)
+    again = session.scalars(
+        select(S.ManualReviewItem).where(
+            S.ManualReviewItem.item_kind == "duplicate", S.ManualReviewItem.state == "open"
+        )
+    ).all()
+    assert again == []

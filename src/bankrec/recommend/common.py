@@ -121,3 +121,29 @@ def worst_case_requirement(o: OfferView) -> int | None:
 def completeness(p: ProductView) -> float:
     total = len(p.details) or 1
     return clip(1 - len(p.missing_fields) / total)
+
+
+def deposit_notes(p: ProductView, offer: OfferView | None) -> list[str]:
+    """Bank-stated terms the recommender cannot check from the user's inputs, quoted for the result: who may open the
+    account, who may receive its bonus, and a new-account fee waiver (DESIGN §24.22)."""
+    d = p.details
+    out = []
+    if who := d.get("customer_eligibility") or d.get("customer_restrictions"):
+        out.append(f"Who can open (as stated by the bank): {who}")
+    if offer is not None and offer.eligibility_restrictions:
+        out.append(f"Bonus eligibility (as stated by the bank): {offer.eligibility_restrictions}")
+    iw = d.get("intro_fee_waiver")
+    if isinstance(iw, dict) and iw.get("count"):
+        unit = "statement periods" if iw.get("unit") == "statement_period" else "months"
+        least = "at least " if iw.get("qualifier") == "at_least" else ""
+        out.append(f"New accounts: monthly fee waived for {least}the first {iw['count']} {unit}.")
+    return out
+
+
+def intro_waived_months(p: ProductView) -> int:
+    """Months of fee the new-account waiver removes from a first-year estimate. Only a waiver stated in months counts;
+    statement periods are never converted to months, so they do not lower the estimate."""
+    iw = p.details.get("intro_fee_waiver")
+    if isinstance(iw, dict) and iw.get("unit") == "month" and isinstance(iw.get("count"), int):
+        return min(12, int(iw["count"]))
+    return 0

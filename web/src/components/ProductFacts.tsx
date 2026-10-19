@@ -40,17 +40,56 @@ export function keyFacts(p: Product): { label: string; value: React.ReactNode }[
       { label: "Foreign transaction fee", value: d.foreign_tx_fee_pct == null ? "See issuer" : val(d.foreign_tx_fee_pct, (x) => (Number(x) === 0 ? "None" : pct(x as string))) },
     ];
   }
+  const tiers = d.apy_tiers as Tier[] | null;
   if (p.product_type === "checking") {
     return [
       { label: "Monthly fee", value: val(d.monthly_fee_cents, (x) => usd(x as number)) },
+      ...introWaiver(d),
       { label: "Minimum opening deposit", value: val(d.min_opening_deposit_cents, (x) => usd(x as number)) },
       { label: "Fee waivers", value: Array.isArray(d.fee_waivers) && d.fee_waivers.length ? `${d.fee_waivers.length} ways to waive` : d.monthly_fee_cents === 0 ? "Not needed" : missing },
+      ...(tiers?.length ? [{ label: "Interest (APY)", value: tierList(tiers) }] : []),
+      ...whoCanOpen(d.customer_eligibility),
     ];
   }
-  const tiers = d.apy_tiers as { apy_pct: string }[] | null;
   return [
-    { label: "APY", value: d.apy_pct != null ? <span className="tabular">{pct(d.apy_pct as string)}</span> : tiers?.length ? <span className="tabular">{pct(tiers[0]!.apy_pct)}–{pct(tiers[tiers.length - 1]!.apy_pct)} by balance</span> : missing },
+    { label: "APY", value: d.apy_pct != null ? <span className="tabular">{pct(d.apy_pct as string)}</span> : tiers?.length ? tierList(tiers) : missing },
     { label: "Monthly fee", value: val(d.monthly_fee_cents, (x) => usd(x as number)) },
+    ...introWaiver(d),
     { label: "Minimum opening deposit", value: val(d.min_opening_deposit_cents, (x) => usd(x as number)) },
+    ...whoCanOpen(d.customer_restrictions),
   ];
+}
+
+type Tier = { min_balance_cents: number; max_balance_cents: number | null; apy_pct: string };
+type IntroWaiver = { count: number; unit: string; qualifier: string; text: string };
+
+/** Balance tiers as stated: one rate for all balances, or each band with its APY. */
+export function tierList(tiers: Tier[]): React.ReactNode {
+  if (tiers.length === 1 && tiers[0]!.min_balance_cents === 0 && tiers[0]!.max_balance_cents == null) {
+    return <span className="tabular">{pct(tiers[0]!.apy_pct)} on all balances</span>;
+  }
+  return (
+    <ul className="tabular">
+      {tiers.map((t) => (
+        <li key={t.min_balance_cents}>
+          {t.max_balance_cents == null ? `${usd(t.min_balance_cents)} and over` : `${usd(t.min_balance_cents)}–${usd(t.max_balance_cents)}`}: {pct(t.apy_pct)}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** "Waived for the first 2 statement periods": the unit as the bank states it (never converted to months). */
+export function introWaiverText(w: IntroWaiver): string {
+  const unit = w.unit === "statement_period" ? "statement period" : "month";
+  return `Waived for ${w.qualifier === "at_least" ? "at least " : ""}the first ${w.count} ${unit}${w.count === 1 ? "" : "s"}`;
+}
+
+function introWaiver(d: D) {
+  const w = d.intro_fee_waiver as IntroWaiver | null | undefined;
+  return w?.count ? [{ label: "New accounts", value: <span title={`“${w.text}”`}>{introWaiverText(w)}</span> }] : [];
+}
+
+function whoCanOpen(v: unknown) {
+  return typeof v === "string" && v ? [{ label: "Who can open", value: <span className="block text-left">{v}</span> }] : [];
 }

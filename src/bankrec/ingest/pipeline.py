@@ -1070,6 +1070,14 @@ class Pipeline:
                 bank_id, ptype, seg, name, _ = k.split(":", 4)
                 infos.append(KeyInfo(k, bank_id, ptype, name, seg))
         for d in find_fuzzy(infos):
+            # a pair a reviewer already accepted as distinct products is not raised again
+            decided = self.s.scalar(
+                select(S.ManualReviewItem.id).where(
+                    S.ManualReviewItem.item_kind == "duplicate",
+                    S.ManualReviewItem.state == "approved",
+                    S.ManualReviewItem.canonical_key == f"{d.a}|{d.b}",
+                )
+            )
             self.s.add(
                 S.DuplicateCandidate(
                     run_id=self.result.run_id,
@@ -1080,9 +1088,11 @@ class Pipeline:
                     similarity=d.similarity,
                     proposed_canonical=d.proposed,
                     decision=d.decision,
-                    final_result="pending review",
+                    final_result=f"accepted distinct (review {decided})" if decided else "pending review",
                 )
             )
+            if decided:
+                continue
             rid = self._review(
                 "duplicate",
                 "fuzzy_match",

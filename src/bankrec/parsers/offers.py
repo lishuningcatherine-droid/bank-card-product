@@ -57,6 +57,18 @@ _REQ_DD = re.compile(
     r"(?:at\s+least\s+|\$?\s*)?\$?\s*(?P<n>[\d,]+)",
     re.IGNORECASE,
 )
+# "receive a total of $7,500 or more of Qualifying Direct Deposit(s)": the amount before the deposits
+_REQ_DD_BEFORE = re.compile(
+    r"\$\s*(?P<n>[\d,]+)(?:\.\d{2})?\s+(?:or\s+more\s+)?(?:of|in)\s+(?:qualifying\s+)?"
+    r"(?:direct|electronic)\s+deposit",
+    re.IGNORECASE,
+)
+
+
+def _req_dd(block: str) -> re.Match[str] | None:
+    return _REQ_DD.search(block) or _REQ_DD_BEFORE.search(block)
+
+
 _REQ_NEW_MONEY = re.compile(
     r"(?:deposit|transfer)\s+(?:at\s+least\s+)?\$\s*(?P<n>[\d,]+)\s+(?:or more\s+)?"
     r"(?:in\s+)?(?:new\s+money|new\s+funds|in\s+new\s+money)",
@@ -123,9 +135,7 @@ def parse_offer_block(block: str, footnotes: str = "") -> ParsedOffer | None:
     """Parse a welcome-offer or bonus block. Returns None when no reward amount is present."""
     if contains_placeholder(block):
         return None
-    req_matches = [
-        m for m in (_REQ_SPEND.search(block), _REQ_DD.search(block), _REQ_NEW_MONEY.search(block)) if m
-    ]
+    req_matches = [m for m in (_REQ_SPEND.search(block), _req_dd(block), _REQ_NEW_MONEY.search(block)) if m]
     req_spans = [(m.start(), m.end()) for m in req_matches]
     amt = _reward_amount(block, req_spans)
     if amt is None:
@@ -166,7 +176,7 @@ def parse_offer_block(block: str, footnotes: str = "") -> ParsedOffer | None:
         qualifier_evidence=evidence,
     )
 
-    spend, dd, nm = (_REQ_SPEND.search(block), _REQ_DD.search(block), _REQ_NEW_MONEY.search(block))
+    spend, dd, nm = (_REQ_SPEND.search(block), _req_dd(block), _REQ_NEW_MONEY.search(block))
     req = spend or dd or nm
     if req is not None:
         po.requirement_type = (

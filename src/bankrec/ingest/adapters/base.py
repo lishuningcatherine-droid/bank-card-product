@@ -764,8 +764,19 @@ class DeclarativeAdapter:
                 )
             )
         c.fields["fee_waivers"] = waivers
+        # the new-account waiver is often a footnote ("3 New and converted accounts will not be charged a Monthly
+        # Service Fee for at least the first two statement periods."), outside a scope selector's main content
+        iw = D.intro_fee_waiver(lines) or (
+            None if scoped_page else D.intro_fee_waiver([ln for ln in page.text.split("\n") if ln.strip()])
+        )
+        c.fields["intro_fee_waiver"] = (
+            ctx.field(iw[0], iw[1], method="label_regex", name="intro_fee_waiver")
+            if iw and ctx.locate(iw[1]) is not None
+            else ctx.field(None, None)
+        )
         if fee.value == 0:
             c.fields["fee_waivers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+            c.fields["intro_fee_waiver"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
         # a rate sheet lists many products ("Minimum to open: $1,000 CDs / $1,000 IRAs"): its generic labels are
         # never read as this account's opening deposit
         rate_sheet = page.page_type in (PageType.pdf_terms, PageType.terms_page)
@@ -778,6 +789,15 @@ class DeclarativeAdapter:
             opening = X.min_amount(doc, ctx, "min_opening") if generic_ok else ctx.field(None, None)
         c.fields["min_opening_deposit_cents"] = opening
 
+    @staticmethod
+    def _account_eligibility(ctx: ExtractionContext, lines: list[str]) -> Sourced[Any]:
+        e = D.account_eligibility(lines)
+        return (
+            ctx.field(e, e, method="label_regex")
+            if e and ctx.locate(e) is not None
+            else ctx.field(None, None)
+        )
+
     def _checking(self, page: ClassifiedPage, ctx: ExtractionContext, c: ProductCandidate) -> None:
         doc = page.doc
         assert doc is not None
@@ -788,6 +808,15 @@ class DeclarativeAdapter:
             od = (s, s, "free_text")
         c.fields["overdraft_summary"] = ctx.field(od[0], od[1]) if od else ctx.field(None, None)
         tiers = X.apy_tiers(doc, ctx, self.rules.get("apy_tier_selector", "table.apy-tiers tr"))
+        if not tiers.present and (ft := D.footnote_apy_tiers(lines)) is not None:
+            # "A rate of 0.001% Annual Percentage Yield (APY) applies to accounts with balances between $0–$24,999.99.
+            # A rate of 0.005% APY applies to accounts with balances of $25,000.00 or more."
+            tiers = ctx.field(
+                [ApyTier(min_balance_cents=a, max_balance_cents=b, apy_pct=r) for a, b, r in ft[0]],
+                ft[1],
+                method="label_regex",
+                name="apy_tiers",
+            )
         if not tiers.present and (h := D.headline_apy(lines)) is not None:
             # "Earn a 1.00% APY ...": one rate for every balance
             tiers = ctx.field(
@@ -816,7 +845,7 @@ class DeclarativeAdapter:
         )
         elig = X.first_line(doc, r"^(?:eligibility|who can open)\s*:")
         c.fields["customer_eligibility"] = (
-            ctx.field(elig.split(":", 1)[1].strip(), elig) if elig else ctx.field(None, None)
+            ctx.field(elig.split(":", 1)[1].strip(), elig) if elig else self._account_eligibility(ctx, lines)
         )
         self._offers(page, ctx, c, "checking_bonus")
 
@@ -863,7 +892,9 @@ class DeclarativeAdapter:
         c.fields["eligible_states"] = X.states(page.text, ctx)
         cr = X.first_line(doc, r"^(?:eligibility|who can open)\s*:")
         c.fields["customer_restrictions"] = (
-            ctx.field(cr.split(":", 1)[1].strip(), cr) if cr else ctx.field(None, None)
+            ctx.field(cr.split(":", 1)[1].strip(), cr)
+            if cr
+            else self._account_eligibility(ctx, self.deposit_lines(page))
         )
         self._offers(page, ctx, c, "savings_bonus")
 
@@ -919,8 +950,35 @@ class DeclarativeAdapter:
                         }
                     )
                     o = o.model_copy(update={"value": v})
+            if (
+                o is not None
+                and o.value is not None
+                and offer_type in ("checking_bonus", "savings_bonus")
+                and o.value.eligibility_restrictions is None
+                and (ex := D.bonus_eligibility(self.deposit_lines(page))) is not None
+                and ctx.locate(ex) is not None
+            ):
+                # "You are not eligible for this Welcome Bonus if you have an existing Rewards Checking Account ..."
+                o = o.model_copy(
+                    update={"value": o.value.model_copy(update={"eligibility_restrictions": ex})}
+                )
             if o is not None:
                 c.offers.append(o)
+        if offer_type in ("checking_bonus", "savings_bonus"):
+            # the bonus terms restate the headline ("Earn a Welcome Bonus of $300 after you complete each of the
+            # following qualifying criteria:"): the restatement without a requirement is the same offer
+            full = {
+                (o.value.amount_max, o.value.reward_unit)
+                for o in c.offers
+                if o.value is not None and o.value.requirement_type is not None
+            }
+            c.offers = [
+                o
+                for o in c.offers
+                if o.value is None
+                or o.value.requirement_type is not None
+                or (o.value.amount_max, o.value.reward_unit) not in full
+            ]
         # Offer capture (spot-check round 1): a page that shows an offer block (amount + spend + window) but yields no
         # offer is a reading failure, never "no offer". offer_status (round 2, D) records which case it is.
         bank = page.bank.display_name

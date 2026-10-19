@@ -21,7 +21,7 @@ from typing import Any
 from bankrec.candidate import ProductCandidate
 from bankrec.ingest.adapters.base import ClassifiedPage, DeclarativeAdapter, lowest_rate_per_category
 from bankrec.ingest.common import extract as X
-from bankrec.model import ExtractionContext, NullReason, Sourced
+from bankrec.model import ExtractionContext, NullReason, ProductType, Sourced
 from bankrec.parsers.money import parse_fee_schedule
 
 OFFER_NOTE = "Offers may vary; confirm on American Express at application"
@@ -129,6 +129,10 @@ class Adapter(DeclarativeAdapter):
     def statements(self, page: ClassifiedPage, key: str, fallback: str | None) -> list[str]:
         if page.doc is None:
             return []
+        if page.source.product_type is not ProductType.credit_card:
+            # deposit pages state their bonus in plain sentences ("Earn $300 after you open ... and receive a total of
+            # $7,500 or more of Qualifying Direct Deposit(s) within 90 days ..."), not in card offer tiles
+            return super().statements(page, key, fallback)
         lines = self._lines(page)
         out: list[str] = []
         if key == "reward":
