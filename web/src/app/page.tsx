@@ -94,7 +94,7 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
             <ul className="mt-2 space-y-1">
               {data.unranked.map((u) => (
                 <li key={u.offer.id}>
-                  <Link href={`/products/${u.product.id}`}>{u.product.name}</Link> ({u.product.bank_name}): <OfferAmount offer={u.offer} />
+                  <Link href={`/products/${u.product.id}`} className="underline">{u.product.name}</Link> ({u.product.bank_name}): <OfferAmount offer={u.offer} />
                   <span className="block text-ink-500">Not ranked: {u.reason}.</span>
                 </li>
               ))}
@@ -107,10 +107,10 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
             <ul className="mt-2 list-disc space-y-1 pl-5">
               {data.assumptions.map((a) => <li key={a}>{a}</li>)}
             </ul>
-            <p className="mt-2"><Link href="/methodology#public-offers">Point values and full methodology</Link></p>
+            <p className="mt-2"><Link href="/methodology#public-offers" className="underline">Point values and full methodology</Link></p>
           </details>
         ) : null}
-        <p className="text-sm"><Link href={browse[2]}>Browse all {browse[1].toLowerCase()}</Link>, including products without a current bonus.</p>
+        <p className="text-sm"><Link href={browse[2]} className="underline">Browse all {browse[1].toLowerCase()}</Link>, including products without a current bonus.</p>
       </section>
     </div>
   );
