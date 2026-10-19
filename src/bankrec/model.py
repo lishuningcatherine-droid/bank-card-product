@@ -322,7 +322,13 @@ class OfferRec(BaseModel):
     promo_code: str | None = None
     start_date: date | None = None
     expiration_date: date | None = None
-    audience: Literal["public", "targeted"] = "public"
+    # public = shown to everyone on an official page; targeted (selected recipients), referral (a referral link) and
+    # preapproved (a pre-approval/pre-selection invitation) are shown labelled and never ranked or recommended
+    audience: Literal["public", "targeted", "referral", "preapproved"] = "public"
+    # the kind of official page that showed the offer (an offer can appear on several: P.Offer.seen_on)
+    channel: Literal["product_page", "offer_page", "comparison_page", "terms_page", "manual_capture"] = (
+        "product_page"
+    )
     eligibility_restrictions: str | None = None
     offer_url: str
     terms_url: str | None = None

@@ -80,6 +80,9 @@ class SourceEntry(BaseModel):
     # A supplementary page (fees, rates, offer) that names its product differently ("Chase Savings" for "Chase
     # Savings℠"): the product name its record is keyed and merged under.
     product_key_name: str | None = None
+    # Who the page's offers are for, when the owner registers a non-public official page (a referral or
+    # pre-approval landing page). Offer wording can only make an offer less public, never more (DESIGN §25.1).
+    offer_audience: Literal["public", "targeted", "referral", "preapproved"] = "public"
     retrieved_by_user_on: str | None = None
     fixture_path: str | None = (
         None  # test_only banks only: served by the fixture transport instead of the network

@@ -1371,3 +1371,36 @@ form is ever filled; robots-disallowed requests stay aborted.
   statement periods", the statement-period wording (the account terms) is stored. First-year estimates subtract only a
   waiver stated in months (statement periods are never converted).
 - A duplicate pair a reviewer accepted as distinct is not raised again on later runs.
+
+## 25. Public browsing and public offer ranking (owner requirements 2026-10-19, phase 1)
+
+Owner decisions that override earlier text: the front end shows no scores, percentages of a score or weights (dollar
+estimates with their assumptions stay); bank logos and card art are not used until their terms are confirmed (generic
+placeholders, `PlaceholderArt`); manual refresh stays admin-only (CLI); eligibility comes only from the bank's own page
+wording; the point values behind the home page ranking are published on the methodology page.
+
+### 25.1 Offer audience
+`audience` is `public | targeted | referral | preapproved` (migration 0013). A source may register a non-public official
+page (`offer_audience`); the offer's own words (block and footnotes, never the rest of the page, which may advertise a
+refer-a-friend program) can only make it *less* public ("You've been pre-approved", "Referral offer", "only available
+to selected recipients"). Audience is separate from the lifecycle state (`current | expired | stale | uncertain |
+recheck_pending`): non-public offers are served, labelled ("Referral offer — only through a referral link"), shown on
+the product page after public ones, and never ranked, recommended or counted by the `has_bonus` filter. A non-public
+offer still goes to review (R-AUDIENCE). `/offers` lists them only with `include_non_public=true`.
+
+### 25.2 One product, several channels
+An offer records every official page that showed it in `seen_on` ([{url, source_id, channel, first_seen_at,
+last_confirmed_at}], channel = product_page | offer_page | comparison_page | terms_page | manual_capture). The same
+terms on two pages are one offer with two entries (the offer key is unchanged, so no review churn); different terms on
+different pages are different offers of the same product, each naming its page. Existing rows were back-filled with
+their last URL.
+
+### 25.3 Home page ranking (`GET /api/v1/offers/ranked?type=&sort=value|bonus|requirement|ending`)
+No user inputs. Each Verified product contributes its best current public offer (the others are listed as "other public
+offers on other official pages"). Estimate = bonus in dollars: cash as stated; points and miles at
+`config/point_values.yaml` (default 1.0¢; a program gets its own value only from an issuer-published fixed cash value).
+Cards subtract the first-year annual fee (intro fee when stated); deposit accounts show the monthly fee without
+subtracting it (it depends on waivers). "Up to" / "starting at" amounts and restricted store currencies are not valued
+and are listed apart, unranked. The response carries the assumptions, also served by `/methodology` as
+`public_offer_ranking` and shown on the methodology page with the point-value table. No score, component or weight is
+returned.

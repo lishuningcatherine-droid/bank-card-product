@@ -126,3 +126,12 @@ describe("restricted-redemption currency (DESIGN §24.19)", () => {
     expect(container.textContent).not.toMatch(/cash back/i);
   });
 });
+
+describe("RankedOfferCard requirementText", () => {
+  it("states the requirement and window in the units the bank uses", async () => {
+    const { requirementText } = await import("@/components/RankedOfferCard");
+    expect(requirementText({ requirement_type: "spend", requirement_min_cents: 300000, requirement_max_cents: 300000, requirement_qualifier: "exact", qualification_window_count: 3, qualification_window_unit: "months" })).toBe("after you spend $3,000 within 3 months");
+    expect(requirementText({ requirement_type: "direct_deposit_total", requirement_min_cents: 750000, requirement_max_cents: 750000, requirement_qualifier: "exact", qualification_window_count: 90, qualification_window_unit: "days" })).toBe("after you receive direct deposits of $7,500 within 90 days");
+    expect(requirementText({ requirement_type: null, requirement_min_cents: null, requirement_max_cents: null, requirement_qualifier: null, qualification_window_count: null, qualification_window_unit: null })).toBeNull();
+  });
+});

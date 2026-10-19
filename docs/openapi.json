@@ -754,6 +754,68 @@
     "title": "MonthlySpend",
     "type": "object"
    },
+   "OfferEstimate": {
+    "properties": {
+     "bonus_value_cents": {
+      "title": "Bonus Value Cents",
+      "type": "integer"
+     },
+     "cents_per_point": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cents Per Point"
+     },
+     "first_year_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Year Fee Cents"
+     },
+     "monthly_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Monthly Fee Cents"
+     },
+     "net_first_year_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Net First Year Cents"
+     },
+     "value_basis": {
+      "title": "Value Basis",
+      "type": "string"
+     }
+    },
+    "required": [
+     "bonus_value_cents",
+     "value_basis"
+    ],
+    "title": "OfferEstimate",
+    "type": "object"
+   },
    "OfferItem": {
     "properties": {
      "bank_name": {
@@ -818,6 +880,17 @@
        "tiered"
       ],
       "title": "Amount Qualifier",
+      "type": "string"
+     },
+     "audience": {
+      "default": "public",
+      "enum": [
+       "public",
+       "targeted",
+       "referral",
+       "preapproved"
+      ],
+      "title": "Audience",
       "type": "string"
      },
      "eligibility_restrictions": {
@@ -903,6 +976,18 @@
      "offer_url": {
       "title": "Offer Url",
       "type": "string"
+     },
+     "open_by_date": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Open By Date"
      },
      "qualification_window_count": {
       "anyOf": [
@@ -1007,6 +1092,13 @@
       "title": "Reward Unit",
       "type": "string"
      },
+     "seen_on": {
+      "items": {
+       "$ref": "#/components/schemas/SeenOn"
+      },
+      "title": "Seen On",
+      "type": "array"
+     },
      "state": {
       "title": "State",
       "type": "string"
@@ -1095,6 +1187,44 @@
      "page_size"
     ],
     "title": "Page",
+    "type": "object"
+   },
+   "ProductBrief": {
+    "properties": {
+     "bank_name": {
+      "title": "Bank Name",
+      "type": "string"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "official_url": {
+      "title": "Official Url",
+      "type": "string"
+     },
+     "product_type": {
+      "title": "Product Type",
+      "type": "string"
+     }
+    },
+    "required": [
+     "id",
+     "name",
+     "bank_name",
+     "product_type",
+     "official_url",
+     "label"
+    ],
+    "title": "ProductBrief",
     "type": "object"
    },
    "ProductView": {
@@ -1268,6 +1398,108 @@
      "details"
     ],
     "title": "ProductView",
+    "type": "object"
+   },
+   "PublicOffersResponse": {
+    "properties": {
+     "assumptions": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+     },
+     "disclaimer": {
+      "default": "Not financial advice. Product terms change; confirm all details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, and rankings are not paid.",
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/RankedOffer"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "point_values": {
+      "additionalProperties": true,
+      "title": "Point Values",
+      "type": "object"
+     },
+     "product_type": {
+      "title": "Product Type",
+      "type": "string"
+     },
+     "sort": {
+      "enum": [
+       "value",
+       "bonus",
+       "requirement",
+       "ending"
+      ],
+      "title": "Sort",
+      "type": "string"
+     },
+     "unranked": {
+      "items": {
+       "$ref": "#/components/schemas/UnrankedOffer"
+      },
+      "title": "Unranked",
+      "type": "array"
+     }
+    },
+    "required": [
+     "product_type",
+     "sort",
+     "generated_at",
+     "items",
+     "unranked",
+     "assumptions",
+     "point_values"
+    ],
+    "title": "PublicOffersResponse",
+    "type": "object"
+   },
+   "RankedOffer": {
+    "properties": {
+     "estimate": {
+      "$ref": "#/components/schemas/OfferEstimate"
+     },
+     "non_public_offers": {
+      "default": 0,
+      "title": "Non Public Offers",
+      "type": "integer"
+     },
+     "offer": {
+      "$ref": "#/components/schemas/OfferView"
+     },
+     "other_public_offers": {
+      "items": {
+       "$ref": "#/components/schemas/OfferView"
+      },
+      "title": "Other Public Offers",
+      "type": "array"
+     },
+     "product": {
+      "$ref": "#/components/schemas/ProductBrief"
+     },
+     "rank": {
+      "title": "Rank",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "rank",
+     "product",
+     "offer",
+     "estimate"
+    ],
+    "title": "RankedOffer",
     "type": "object"
    },
    "RateConditionView": {
@@ -1728,6 +1960,43 @@
     "title": "SavingsRequest",
     "type": "object"
    },
+   "SeenOn": {
+    "description": "One official page (channel) that showed the offer.",
+    "properties": {
+     "channel": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Channel"
+     },
+     "last_confirmed_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Confirmed At"
+     },
+     "url": {
+      "title": "Url",
+      "type": "string"
+     }
+    },
+    "required": [
+     "url"
+    ],
+    "title": "SeenOn",
+    "type": "object"
+   },
    "SourcesResponse": {
     "properties": {
      "banks": {
@@ -1761,6 +2030,27 @@
      "notes"
     ],
     "title": "SourcesResponse",
+    "type": "object"
+   },
+   "UnrankedOffer": {
+    "properties": {
+     "offer": {
+      "$ref": "#/components/schemas/OfferView"
+     },
+     "product": {
+      "$ref": "#/components/schemas/ProductBrief"
+     },
+     "reason": {
+      "title": "Reason",
+      "type": "string"
+     }
+    },
+    "required": [
+     "product",
+     "offer",
+     "reason"
+    ],
+    "title": "UnrankedOffer",
     "type": "object"
    },
    "ValidationError": {
@@ -2469,6 +2759,18 @@
        "title": "Include Inactive",
        "type": "boolean"
       }
+     },
+     {
+      "description": "include targeted, referral and pre-approved offers (labeled by audience)",
+      "in": "query",
+      "name": "include_non_public",
+      "required": false,
+      "schema": {
+       "default": false,
+       "description": "include targeted, referral and pre-approved offers (labeled by audience)",
+       "title": "Include Non Public",
+       "type": "boolean"
+      }
      }
     ],
     "responses": {
@@ -2494,6 +2796,81 @@
      }
     },
     "summary": "Offers",
+    "tags": [
+     "offers"
+    ]
+   }
+  },
+  "/api/v1/offers/ranked": {
+   "get": {
+    "description": "Public offers of Verified products ranked by a dollar estimate (no user inputs; DESIGN \u00a725.3).",
+    "operationId": "ranked_offers_api_v1_offers_ranked_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "type",
+      "required": false,
+      "schema": {
+       "default": "credit_card",
+       "pattern": "^(credit_card|checking|savings)$",
+       "title": "Type",
+       "type": "string"
+      }
+     },
+     {
+      "description": "value | bonus | requirement | ending",
+      "in": "query",
+      "name": "sort",
+      "required": false,
+      "schema": {
+       "default": "value",
+       "description": "value | bonus | requirement | ending",
+       "enum": [
+        "value",
+        "bonus",
+        "requirement",
+        "ending"
+       ],
+       "title": "Sort",
+       "type": "string"
+      }
+     },
+     {
+      "in": "query",
+      "name": "limit",
+      "required": false,
+      "schema": {
+       "default": 50,
+       "maximum": 100,
+       "minimum": 1,
+       "title": "Limit",
+       "type": "integer"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/PublicOffersResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Ranked Offers",
     "tags": [
      "offers"
     ]

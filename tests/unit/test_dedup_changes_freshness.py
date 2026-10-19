@@ -133,7 +133,8 @@ def test_request_time_expiry_and_stale() -> None:
     late = datetime(2026, 10, 13, 3, 0, tzinfo=UTC)  # 23:00 ET on Oct 12 → still current
     assert offer_state("current", date(2026, 10, 12), fresh, late) == "current"
     assert offer_state("current", None, NOW - timedelta(days=15), NOW) == "stale"
-    assert offer_state("current", None, fresh, NOW, audience="targeted") == "targeted"
+    # who an offer is for is its audience, not a lifecycle state (DESIGN §25.1)
+    assert offer_state("current", None, fresh, NOW) == "current"
     assert offer_state("recheck_pending", None, fresh, NOW) == "recheck_pending"
     assert is_stale(NOW - timedelta(days=8), "apy", NOW) and not is_stale(NOW - timedelta(days=6), "apy", NOW)
     assert is_stale(None, "terms", NOW)

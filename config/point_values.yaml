@@ -1,6 +1,6 @@
 # Cents per point/mile used to value points and miles. Default 1.0¢ unless the issuer publishes a fixed
 # cash-redemption value for the program (add it here with its source). Portal or transfer-partner multipliers
-# are never monetized above these values. Users can adjust the value on the results page.
+# are never monetized above these values. Users can adjust the value on the results page. Served on the
+# methodology page, where the home page's public offer ranking discloses it (DESIGN §25.3).
 default_cents_per_point: 1.0
-programs:
-  "Example Rewards": {cents_per_point: 1.0, basis: "default (fictional test program)"}
+programs: {}

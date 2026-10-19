@@ -14,3 +14,7 @@ export type CompareResponse = S["CompareResponse"];
 export type HistoryEntry = S["HistoryEntry"];
 export type SourcesResponse = S["SourcesResponse"];
 export type ProductType = Product["product_type"];
+export type PublicOffers = S["PublicOffersResponse"];
+export type RankedOffer = S["RankedOffer"];
+export type UnrankedOffer = S["UnrankedOffer"];
+export type OfferSort = PublicOffers["sort"];

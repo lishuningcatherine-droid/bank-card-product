@@ -790,6 +790,17 @@ class DeclarativeAdapter:
         c.fields["min_opening_deposit_cents"] = opening
 
     @staticmethod
+    def _channel(page: ClassifiedPage) -> str:
+        if page.capture_method == "manual":
+            return "manual_capture"
+        return {
+            PageType.official_offer_detail: "offer_page",
+            PageType.official_comparison_page: "comparison_page",
+            PageType.terms_page: "terms_page",
+            PageType.pdf_terms: "terms_page",
+        }.get(page.page_type, "product_page")
+
+    @staticmethod
     def _account_eligibility(ctx: ExtractionContext, lines: list[str]) -> Sourced[Any]:
         e = D.account_eligibility(lines)
         return (
@@ -962,6 +973,15 @@ class DeclarativeAdapter:
                 o = o.model_copy(
                     update={"value": o.value.model_copy(update={"eligibility_restrictions": ex})}
                 )
+            if o is not None and o.value is not None:
+                aud, why = X.offer_audience(page.source.offer_audience, o.value.verbatim_text)
+                o = o.model_copy(
+                    update={
+                        "value": o.value.model_copy(update={"audience": aud, "channel": self._channel(page)})
+                    }
+                )
+                if why:
+                    c.notes.append(f"offer audience {aud}: “{why}”")
             if o is not None:
                 c.offers.append(o)
         if offer_type in ("checking_bonus", "savings_bonus"):

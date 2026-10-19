@@ -136,6 +136,14 @@ RecommendRequest = Annotated[
 
 
 # ------------------------------------------------------------------------------------------------ product DTOs
+class SeenOn(BaseModel):
+    """One official page (channel) that showed the offer."""
+
+    url: str
+    channel: str | None = None  # product_page | offer_page | comparison_page | terms_page | manual_capture
+    last_confirmed_at: datetime | None = None
+
+
 class OfferView(BaseModel):
     id: str
     offer_type: str
@@ -160,10 +168,14 @@ class OfferView(BaseModel):
     offer_url: str
     verified_at: datetime
     last_confirmed_at: datetime
-    state: str  # current | expired | stale | uncertain | targeted | recheck_pending (request-time)
+    state: str  # current | expired | stale | uncertain | recheck_pending (request-time)
     verbatim_text: str
     note: str | None = None
     eligibility_restrictions: str | None = None
+    open_by_date: date | None = None
+    # public | targeted | referral | preapproved: only public offers are ranked or recommended (DESIGN §25.1)
+    audience: Literal["public", "targeted", "referral", "preapproved"] = "public"
+    seen_on: list[SeenOn] = Field(default_factory=list)
 
 
 class RateConditionView(BaseModel):

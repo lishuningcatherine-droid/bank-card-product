@@ -14,7 +14,7 @@ from sqlalchemy.orm import Session, selectinload
 from bankrec.db import prod as P
 from bankrec.freshness import offer_state, product_label
 from bankrec.publish.changes import jsonable
-from bankrec.recommend.models import BenefitView, OfferView, ProductView, RateConditionView, RateView
+from bankrec.recommend.models import BenefitView, OfferView, ProductView, RateConditionView, RateView, SeenOn
 
 __all__ = ["Filters", "Repository", "to_view"]
 
@@ -59,9 +59,7 @@ def to_view(p: P.Product, now: datetime, bank_name: str) -> ProductView:
     )
     offers = []
     for o in p.offers:
-        st = offer_state(o.status, o.expiration_date, o.last_confirmed_at, now, o.audience)
-        if st in {"targeted"}:
-            continue  # targeted offers are never shown as generally available
+        st = offer_state(o.status, o.expiration_date, o.last_confirmed_at, now)
         offers.append(
             OfferView(
                 id=str(o.id),
@@ -91,6 +89,16 @@ def to_view(p: P.Product, now: datetime, bank_name: str) -> ProductView:
                 verbatim_text=o.verbatim_text,
                 note=o.note,
                 eligibility_restrictions=o.eligibility_restrictions,
+                open_by_date=o.open_by_date,
+                audience=o.audience,
+                seen_on=[
+                    SeenOn(
+                        url=e["url"], channel=e.get("channel"), last_confirmed_at=e.get("last_confirmed_at")
+                    )
+                    for e in (o.seen_on or [])
+                    if e.get("url")
+                ]
+                or [SeenOn(url=o.offer_url, last_confirmed_at=o.last_confirmed_at)],
             )
         )
     rates = [
@@ -272,8 +280,10 @@ class Repository:
     ) -> tuple[list[ProductView], int]:
         q = self._apply(self._base(), f).order_by(P.Product.bank_id, P.Product.official_name)
         views = [to_view(p, now, self.banks().get(p.bank_id, p.bank_id)) for p in self.s.scalars(q)]
-        if f.has_bonus:  # request-time: expired/stale offers do not count as a bonus
-            views = [v for v in views if any(o.state == "current" for o in v.offers)]
+        if f.has_bonus:  # request-time: expired/stale offers do not count as a bonus; nor do non-public ones
+            views = [
+                v for v in views if any(o.state == "current" and o.audience == "public" for o in v.offers)
+            ]
         return views[(page - 1) * page_size : page * page_size], len(views)
 
     def get(self, product_id: str, now: datetime) -> ProductView | None:

@@ -106,6 +106,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/offers/ranked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Ranked Offers
+         * @description Public offers of Verified products ranked by a dollar estimate (no user inputs; DESIGN §25.3).
+         */
+        get: operations["ranked_offers_api_v1_offers_ranked_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -555,6 +575,21 @@ export interface components {
              */
             travel: number;
         };
+        /** OfferEstimate */
+        OfferEstimate: {
+            /** Bonus Value Cents */
+            bonus_value_cents: number;
+            /** Cents Per Point */
+            cents_per_point?: string | null;
+            /** First Year Fee Cents */
+            first_year_fee_cents?: number | null;
+            /** Monthly Fee Cents */
+            monthly_fee_cents?: number | null;
+            /** Net First Year Cents */
+            net_first_year_cents?: number | null;
+            /** Value Basis */
+            value_basis: string;
+        };
         /** OfferItem */
         OfferItem: {
             /** Bank Name */
@@ -578,6 +613,12 @@ export interface components {
              * @enum {string}
              */
             amount_qualifier: "exact" | "up_to" | "starting_at" | "tiered";
+            /**
+             * Audience
+             * @default public
+             * @enum {string}
+             */
+            audience: "public" | "targeted" | "referral" | "preapproved";
             /** Eligibility Restrictions */
             eligibility_restrictions?: string | null;
             /** Expiration Date */
@@ -601,6 +642,8 @@ export interface components {
             offer_type: string;
             /** Offer Url */
             offer_url: string;
+            /** Open By Date */
+            open_by_date?: string | null;
             /** Qualification Window Count */
             qualification_window_count?: number | null;
             /** Qualification Window Days */
@@ -621,6 +664,8 @@ export interface components {
             requirement_type?: string | null;
             /** Reward Unit */
             reward_unit: string;
+            /** Seen On */
+            seen_on?: components["schemas"]["SeenOn"][];
             /** State */
             state: string;
             /** Tiers */
@@ -652,6 +697,21 @@ export interface components {
             page_size: number;
             /** Total */
             total: number;
+        };
+        /** ProductBrief */
+        ProductBrief: {
+            /** Bank Name */
+            bank_name: string;
+            /** Id */
+            id: string;
+            /** Label */
+            label: string;
+            /** Name */
+            name: string;
+            /** Official Url */
+            official_url: string;
+            /** Product Type */
+            product_type: string;
         };
         /** ProductView */
         ProductView: {
@@ -724,6 +784,51 @@ export interface components {
              * Format: date-time
              */
             verified_at: string;
+        };
+        /** PublicOffersResponse */
+        PublicOffersResponse: {
+            /** Assumptions */
+            assumptions: string[];
+            /**
+             * Disclaimer
+             * @default Not financial advice. Product terms change; confirm all details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, and rankings are not paid.
+             */
+            disclaimer: string;
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            /** Items */
+            items: components["schemas"]["RankedOffer"][];
+            /** Point Values */
+            point_values: {
+                [key: string]: unknown;
+            };
+            /** Product Type */
+            product_type: string;
+            /**
+             * Sort
+             * @enum {string}
+             */
+            sort: "value" | "bonus" | "requirement" | "ending";
+            /** Unranked */
+            unranked: components["schemas"]["UnrankedOffer"][];
+        };
+        /** RankedOffer */
+        RankedOffer: {
+            estimate: components["schemas"]["OfferEstimate"];
+            /**
+             * Non Public Offers
+             * @default 0
+             */
+            non_public_offers: number;
+            offer: components["schemas"]["OfferView"];
+            /** Other Public Offers */
+            other_public_offers?: components["schemas"]["OfferView"][];
+            product: components["schemas"]["ProductBrief"];
+            /** Rank */
+            rank: number;
         };
         /** RateConditionView */
         RateConditionView: {
@@ -875,6 +980,18 @@ export interface components {
             /** State */
             state?: ("AL" | "AK" | "AZ" | "AR" | "CA" | "CO" | "CT" | "DE" | "DC" | "FL" | "GA" | "HI" | "ID" | "IL" | "IN" | "IA" | "KS" | "KY" | "LA" | "ME" | "MD" | "MA" | "MI" | "MN" | "MS" | "MO" | "MT" | "NE" | "NV" | "NH" | "NJ" | "NM" | "NY" | "NC" | "ND" | "OH" | "OK" | "OR" | "PA" | "RI" | "SC" | "SD" | "TN" | "TX" | "UT" | "VT" | "VA" | "WA" | "WV" | "WI" | "WY") | null;
         };
+        /**
+         * SeenOn
+         * @description One official page (channel) that showed the offer.
+         */
+        SeenOn: {
+            /** Channel */
+            channel?: string | null;
+            /** Last Confirmed At */
+            last_confirmed_at?: string | null;
+            /** Url */
+            url: string;
+        };
         /** SourcesResponse */
         SourcesResponse: {
             /** Banks */
@@ -885,6 +1002,13 @@ export interface components {
             }[];
             /** Notes */
             notes: string[];
+        };
+        /** UnrankedOffer */
+        UnrankedOffer: {
+            offer: components["schemas"]["OfferView"];
+            product: components["schemas"]["ProductBrief"];
+            /** Reason */
+            reason: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -1099,6 +1223,8 @@ export interface operations {
                 bank?: string | null;
                 /** @description include expired/stale/recheck offers (labeled) */
                 include_inactive?: boolean;
+                /** @description include targeted, referral and pre-approved offers (labeled by audience) */
+                include_non_public?: boolean;
             };
             header?: never;
             path?: never;
@@ -1113,6 +1239,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OffersPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ranked_offers_api_v1_offers_ranked_get: {
+        parameters: {
+            query?: {
+                type?: string;
+                /** @description value | bonus | requirement | ending */
+                sort?: "value" | "bonus" | "requirement" | "ending";
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicOffersResponse"];
                 };
             };
             /** @description Validation Error */

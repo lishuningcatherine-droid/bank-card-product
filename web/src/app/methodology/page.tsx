@@ -6,7 +6,7 @@ import { getMethodology } from "@/lib/api/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Methodology", description: "How scores, values and verification work. All weights are public." };
+export const metadata: Metadata = { title: "Methodology", description: "How offers are ranked, how values are estimated and how verification works." };
 
 type Weights = Record<string, number>;
 
@@ -26,7 +26,8 @@ export default async function Methodology() {
   let m: Record<string, unknown> | null = null;
   try { m = await getMethodology(); } catch { m = null; }
   const s = (m?.scoring ?? {}) as Record<string, { weights?: Weights }>;
-  const pv = (m?.point_values ?? {}) as { default_cents_per_point?: number };
+  const pv = (m?.point_values ?? {}) as { default_cents_per_point?: number; programs?: Record<string, { cents_per_point: number; basis?: string }> };
+  const ranking = (m?.public_offer_ranking ?? []) as string[];
   return (
     <div className="max-w-3xl space-y-8">
       <PageTitle title="Methodology" intro="Recommendations are deterministic: the same inputs and data always give the same ranking. There is no machine learning and no paid placement." />
@@ -37,6 +38,24 @@ export default async function Methodology() {
           <li>Only offers that are current, public, recently verified and not pending a recheck. Expired offers are evaluated at the time of your request and never shown as current.</li>
           <li>Partially verified products appear in browse and compare, with the missing items listed, but not in recommendations.</li>
         </ul>
+      </section>
+      <section id="public-offers" className="space-y-2">
+        <h2 className="text-xl">How the home page ranks public offers</h2>
+        <p>The home page ranks the offers banks show to everyone, without asking anything about you. It shows dollar estimates, never scores.</p>
+        {ranking.length ? (
+          <ul className="list-disc space-y-1 pl-5">{ranking.map((a) => <li key={a}>{a}</li>)}</ul>
+        ) : null}
+        <table className="w-full text-sm">
+          <caption className="text-left font-medium text-ink-900">Point and mile values used in estimates</caption>
+          <thead><tr className="text-ink-500"><th scope="col" className="py-1 text-left font-normal">Program</th><th scope="col" className="py-1 text-right font-normal">Cents each</th><th scope="col" className="py-1 text-left font-normal pl-4">Basis</th></tr></thead>
+          <tbody className="divide-y divide-border">
+            <tr><th scope="row" className="py-1 text-left font-normal">All programs not listed below</th><td className="py-1 text-right tabular">{pv.default_cents_per_point ?? 1}¢</td><td className="py-1 pl-4">default</td></tr>
+            {Object.entries(pv.programs ?? {}).map(([k, v]) => (
+              <tr key={k}><th scope="row" className="py-1 text-left font-normal">{k}</th><td className="py-1 text-right tabular">{v.cents_per_point}¢</td><td className="py-1 pl-4">{v.basis ?? ""}</td></tr>
+            ))}
+          </tbody>
+        </table>
+        <p className="text-sm text-ink-500">A program gets its own value only when the issuer publishes a fixed cash-redemption value; otherwise the default applies. Targeted, referral and pre-approved offers are shown on product pages with that label, and are never ranked or recommended.</p>
       </section>
       <section className="space-y-2">
         <h2 className="text-xl">How value is counted</h2>

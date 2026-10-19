@@ -228,7 +228,7 @@ def write_reports(
         if label == "verified":
             ready.append(row)
         for off in p.offers:
-            st = offer_state(off.status, off.expiration_date, off.last_confirmed_at, now, off.audience)
+            st = offer_state(off.status, off.expiration_date, off.last_confirmed_at, now)
             if st == "expired":
                 expired.append(
                     {

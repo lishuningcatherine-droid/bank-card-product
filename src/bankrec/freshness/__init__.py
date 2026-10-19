@@ -34,15 +34,13 @@ def offer_state(
     expiration_date: date | None,
     last_confirmed_at: datetime | None,
     now: datetime,
-    audience: str = "public",
 ) -> str:
-    """current | expired | stale | uncertain | targeted | recheck_pending — evaluated at request time."""
+    """current | expired | stale | uncertain | recheck_pending — evaluated at request time. Who the offer is for is
+    its ``audience`` (public | targeted | referral | preapproved), kept apart from this lifecycle state."""
     if expiration_date is not None and expiration_date < today_et(now):
         return "expired"
     if status != "current":
         return status
-    if audience != "public":
-        return "targeted"
     if is_stale(last_confirmed_at, "offer", now):
         return "stale"
     return "current"

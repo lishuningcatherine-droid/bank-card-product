@@ -1149,3 +1149,43 @@ def min_amount(doc: PageDoc, ctx: ExtractionContext, key: str) -> Sourced[Any]:
         return ctx.field(0, lab[1], method=lab[2])
     amt = parse_money(lab[0])
     return ctx.field(amt, lab[1], method=lab[2]) if amt is not None else placeholder_or_missing(ctx, lab[0])
+
+
+# Offer wording that says the offer is not for everyone (DESIGN §25.1). Read on the offer's own words (block and
+# footnotes) only: product pages also advertise refer-a-friend programs, which say nothing about the offer shown.
+_AUDIENCE_WORDS: list[tuple[str, re.Pattern[str]]] = [
+    (
+        "referral",
+        re.compile(
+            r"\b(?:you\s+were|you've\s+been|you\s+have\s+been)\s+referred\b|\breferral\s+(?:offer|bonus|link)\b|"
+            r"\bwhen\s+referred\s+by\b|\bthrough\s+(?:a|this)\s+referral\b",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "preapproved",
+        re.compile(
+            r"\bpre-?approved\b|\bpre-?selected\b|\byou(?:'ve|\s+have)\s+been\s+selected\b", re.IGNORECASE
+        ),
+    ),
+    (
+        "targeted",
+        re.compile(
+            r"\boffer\s+(?:is\s+)?(?:only\s+)?(?:available|valid)\s+(?:only\s+)?(?:to|for)\s+(?:select|selected|"
+            r"targeted|eligible\s+recipients|the\s+recipient)\b|\bnon-?transferable\s+offer\b|"
+            r"\bthis\s+offer\s+is\s+for\s+you\b|\bpersonalized\s+offer\b",
+            re.IGNORECASE,
+        ),
+    ),
+]
+_AUDIENCE_RANK = {"public": 0, "targeted": 1, "preapproved": 2, "referral": 3}
+
+
+def offer_audience(declared: str, words: str) -> tuple[str, str | None]:
+    """(audience, the words that set it). The registered audience is the floor; the offer's own words can only make it
+    less public, never more."""
+    best, why = declared, None
+    for aud, pat in _AUDIENCE_WORDS:
+        if (m := pat.search(words)) and _AUDIENCE_RANK[aud] > _AUDIENCE_RANK[best]:
+            best, why = aud, m.group(0)
+    return best, why

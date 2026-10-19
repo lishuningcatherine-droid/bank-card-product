@@ -15,6 +15,7 @@ from sqlalchemy import func, select
 from bankrec.db import prod as P
 from bankrec.db import staging as S
 from bankrec.failures import Failure
+from bankrec.model import SourceKind
 from tests.integration.helpers import FIX, mutate, registry, run, source
 
 pytestmark = pytest.mark.db
@@ -477,3 +478,29 @@ def test_duplicate_pair_accepted_distinct_is_not_raised_again(session, settings,
         )
     ).all()
     assert again == []
+
+
+def test_same_offer_on_two_official_pages_is_one_offer_seen_on_both(session, settings) -> None:  # type: ignore[no-untyped-def]
+    reg = registry()
+    a = source(reg, "everyday-cash")
+    b = a.model_copy(
+        update={
+            "slug": "everyday-cash-offer",
+            "source_kind": SourceKind.offer_detail,
+            "priority": 90,
+            "source_url": HttpUrl("https://www.examplebank.example/offers/everyday-cash"),
+        }
+    )
+    reg.sources.append(b)
+    run(session, settings, reg, [a, b])
+    [o] = session.scalars(select(P.Offer)).all()
+    assert o.audience == "public"
+    seen = {(e["url"], e["source_id"]) for e in o.seen_on}
+    assert seen == {
+        ("https://www.examplebank.example/credit-cards/everyday-cash", "example_bank:everyday-cash"),
+        ("https://www.examplebank.example/offers/everyday-cash", "example_bank:everyday-cash-offer"),
+    }
+    run(session, settings, reg, [a, b])  # confirming again updates the entries, never duplicates them
+    o = session.scalars(select(P.Offer)).one()
+    session.refresh(o)
+    assert len(o.seen_on) == 2

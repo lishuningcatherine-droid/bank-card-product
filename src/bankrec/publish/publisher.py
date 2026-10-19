@@ -32,6 +32,7 @@ OFFER_COLUMNS = [
         "offer_key",
         "product_id",
         "capture_conditions",
+        "seen_on",
         "retrieved_at",
         "verified_at",
         "last_confirmed_at",
@@ -308,6 +309,28 @@ def offer_values(o: MergedOffer) -> dict[str, Any]:
     return {k: d.get(k) for k in OFFER_COLUMNS}
 
 
+def seen_on(entries: list[dict[str, Any]], o: MergedOffer, now: datetime) -> list[dict[str, Any]]:
+    """Record that ``o``'s page showed the offer now. One entry per official URL; the same offer on another page
+    (another channel) adds an entry instead of replacing the first (DESIGN §25.2)."""
+    out = [dict(e) for e in entries]
+    stamp = now.isoformat()
+    for e in out:
+        if e.get("url") == o.meta.url:
+            e.update(source_id=o.meta.source_id, channel=o.rec.channel, last_confirmed_at=stamp)
+            break
+    else:
+        out.append(
+            {
+                "url": o.meta.url,
+                "source_id": o.meta.source_id,
+                "channel": o.rec.channel,
+                "first_seen_at": stamp,
+                "last_confirmed_at": stamp,
+            }
+        )
+    return sorted(out, key=lambda e: str(e.get("first_seen_at") or ""))
+
+
 def publish_offer(
     session: Session,
     product: P.Product,
@@ -328,6 +351,7 @@ def publish_offer(
             **offer_values(o),
             tiers=jsonable([t.model_dump() for t in o.rec.tiers]),
             capture_conditions=o.meta.capture_conditions,
+            seen_on=seen_on([], o, now),
             retrieved_at=o.meta.retrieved_at,
             verified_at=now,
             last_confirmed_at=now,
@@ -353,6 +377,7 @@ def publish_offer(
         row.verified_at = row.last_confirmed_at = now
         row.status, row.recheck_reason = "current", None
         row.capture_conditions = o.meta.capture_conditions
+        row.seen_on = seen_on(row.seen_on or [], o, now)
         # Same offer (same key): descriptive columns follow the current reading, so a representation fix (e.g. a
         # window kept in its stated unit) reaches existing rows without a new offer version.
         for k, v in offer_values(o).items():

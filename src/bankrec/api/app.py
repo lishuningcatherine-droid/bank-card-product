@@ -38,6 +38,8 @@ from bankrec.recommend import recommend as run_recommend
 from bankrec.recommend.common import DISCLAIMER
 from bankrec.recommend.config import point_values, scoring
 from bankrec.recommend.models import ProductView, RecommendRequest, RecommendResponse
+from bankrec.recommend.public_offers import PublicOffersResponse, Sort, ranking_assumptions
+from bankrec.recommend.public_offers import rank as rank_public_offers
 from bankrec.settings import Settings, get_settings
 
 log = logging.getLogger("bankrec.api")
@@ -287,6 +289,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             raise HTTPException(404, "Product not found")
         return [HistoryEntry(**h) for h in r.history(product_id)]
 
+    @app.get(prefix + "/offers/ranked", response_model=PublicOffersResponse, tags=["offers"])
+    def ranked_offers(
+        r: Repo,
+        type: Annotated[str, Query(pattern="^(credit_card|checking|savings)$")] = "credit_card",
+        sort: Annotated[Sort, Query(description="value | bonus | requirement | ending")] = "value",
+        limit: Annotated[int, Query(ge=1, le=100)] = 50,
+    ) -> PublicOffersResponse:
+        """Public offers of Verified products ranked by a dollar estimate (no user inputs; DESIGN §25.3)."""
+        t = now()
+        return rank_public_offers(r.all_of_type(type, t), type, sort, t, limit)
+
     @app.get(prefix + "/offers", response_model=OffersPage, tags=["offers"])
     def offers(
         r: Repo,
@@ -295,11 +308,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         include_inactive: Annotated[
             bool, Query(description="include expired/stale/recheck offers (labeled)")
         ] = False,
+        include_non_public: Annotated[
+            bool,
+            Query(description="include targeted, referral and pre-approved offers (labeled by audience)"),
+        ] = False,
     ) -> OffersPage:
         items = []
         for p in r.list_products(Filters(type=type, bank=bank), now(), 1, 10_000)[0]:
             for o in p.offers:
-                if include_inactive or o.state == "current":
+                if (include_inactive or o.state == "current") and (
+                    include_non_public or o.audience == "public"
+                ):
                     items.append(
                         OfferItem(
                             product_id=p.id,
@@ -350,6 +369,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {
             "scoring": scoring(),
             "point_values": point_values(),
+            "public_offer_ranking": ranking_assumptions(),
             "freshness": fresh(),
             "change_policy": change_policy(),
             "validation": {

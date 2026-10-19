@@ -138,6 +138,31 @@ async def test_offers_current_public_only(client: httpx.AsyncClient, session) ->
     session.commit()
     assert (await client.get("/api/v1/offers")).json()["total"] == 7
     assert (await client.get("/api/v1/offers", params={"include_inactive": True})).json()["total"] == 7
+    # non-public offers are listed only on request, labelled with their audience, and never ranked
+    labelled = (await client.get("/api/v1/offers", params={"include_non_public": True})).json()
+    assert labelled["total"] == 8
+    assert [i["offer"]["audience"] for i in labelled["items"] if i["offer"]["id"] == str(o.id)] == [
+        "targeted"
+    ]
+    ranked = (await client.get("/api/v1/offers/ranked", params={"type": o.product.product_type})).json()
+    assert str(o.id) not in {r["offer"]["id"] for r in ranked["items"]}
+
+
+async def test_ranked_public_offers_have_dollar_estimates_and_no_scores(client: httpx.AsyncClient) -> None:
+    body = (await client.get("/api/v1/offers/ranked", params={"type": "credit_card"})).json()
+    assert body["items"] and [r["rank"] for r in body["items"]] == list(range(1, len(body["items"]) + 1))
+    for r in body["items"]:
+        assert r["offer"]["audience"] == "public" and r["offer"]["state"] == "current"
+        assert r["estimate"]["bonus_value_cents"] > 0
+        assert "score" not in r and "components" not in r
+    nets = [r["estimate"]["net_first_year_cents"] for r in body["items"]]
+    known = [n for n in nets if n is not None]
+    assert known == sorted(known, reverse=True)
+    assert all(u["offer"]["amount_qualifier"] in ("up_to", "starting_at") for u in body["unranked"])
+    assert any("¢" in a for a in body["assumptions"])
+    m = (await client.get("/api/v1/methodology")).json()
+    assert m["public_offer_ranking"] == body["assumptions"]
+    assert (await client.get("/api/v1/offers/ranked", params={"sort": "score"})).status_code == 422
 
 
 async def test_expired_offer_hidden_at_request_time(client: httpx.AsyncClient, session) -> None:  # type: ignore[no-untyped-def]

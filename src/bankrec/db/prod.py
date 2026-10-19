@@ -265,7 +265,7 @@ class Offer(ProdBase):
             "(requirement_qualifier = 'starting_at' AND requirement_max_cents IS NULL)",
             name="requirement_qualifier_shape",
         ),
-        CheckConstraint("audience IN ('public','targeted')", name="audience"),
+        CheckConstraint("audience IN ('public','targeted','referral','preapproved')", name="audience"),
         CheckConstraint(
             "status IN ('current','expired','uncertain','targeted','recheck_pending')", name="status"
         ),
@@ -311,7 +311,7 @@ class Offer(ProdBase):
     promo_code: Mapped[str | None] = mapped_column(Text)
     start_date: Mapped[date | None] = mapped_column(Date)
     expiration_date: Mapped[date | None] = mapped_column(Date)
-    audience: Mapped[str] = mapped_column(String(10))
+    audience: Mapped[str] = mapped_column(String(12))
     eligibility_restrictions: Mapped[str | None] = mapped_column(Text)
     offer_url: Mapped[str] = mapped_column(Text)
     terms_url: Mapped[str | None] = mapped_column(Text)
@@ -320,6 +320,8 @@ class Offer(ProdBase):
     note: Mapped[str | None] = mapped_column(Text)
     tiers: Mapped[list[dict[str, Any]]] = mapped_column(J, default=list)
     capture_conditions: Mapped[dict[str, Any] | None] = mapped_column(J)
+    # every official page that showed this offer: [{url, source_id, channel, first_seen_at, last_confirmed_at}]
+    seen_on: Mapped[list[dict[str, Any]]] = mapped_column(J, default=list)
     retrieved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     verified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     last_confirmed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))

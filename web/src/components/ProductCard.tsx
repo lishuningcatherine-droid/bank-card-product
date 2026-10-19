@@ -10,7 +10,8 @@ import { StatusLabel } from "./StatusLabel";
 import { VerificationBadge } from "./VerificationBadge";
 
 export function ProductCard({ product }: { product: Product }) {
-  const offer = product.offers?.[0];
+  // the card shows a public offer; targeted, referral and pre-approved ones are on the detail page, labelled
+  const offer = product.offers?.find((o) => o.audience === "public");
   return (
     <article className="flex flex-col rounded-lg border border-border bg-surface p-5 shadow-card">
       <p className="text-sm text-ink-500">{product.bank_name}</p>

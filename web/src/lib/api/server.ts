@@ -1,6 +1,6 @@
 import "server-only";
 
-import type { CompareResponse, HistoryEntry, Page, Product, SourcesResponse } from "./types";
+import type { CompareResponse, HistoryEntry, OfferSort, Page, Product, PublicOffers, SourcesResponse } from "./types";
 
 /** Server-side API client. Responses are cached with tags so the pipeline can revalidate them on publish. */
 const BASE = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -23,6 +23,11 @@ export const TYPE_PATH = { credit_card: "credit-cards", checking: "checking-acco
 export function listProducts(type: keyof typeof TYPE_PATH, params: URLSearchParams): Promise<Page> {
   const qs = params.toString();
   return get<Page>(`/${TYPE_PATH[type]}${qs ? `?${qs}` : ""}`, [`listing:${type}`, "listing:all"]);
+}
+
+/** Public offers of Verified products, ranked by a dollar estimate (home page; no user inputs). */
+export function getRankedOffers(type: keyof typeof TYPE_PATH, sort: OfferSort, limit = 12): Promise<PublicOffers> {
+  return get<PublicOffers>(`/offers/ranked?type=${type}&sort=${sort}&limit=${limit}`, [`listing:${type}`, "listing:all"]);
 }
 
 export function getProduct(id: string): Promise<Product> {

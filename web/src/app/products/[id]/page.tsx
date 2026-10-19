@@ -39,7 +39,8 @@ export default async function ProductPage({ params }: Props) {
   const history = await getHistory(id).catch(() => []);
   const d = p.details as Record<string, unknown>;
   const missingFields = p.missing_fields ?? [];
-  const offers = p.offers ?? [];
+  // public offers first; each offer names the official page(s) it came from (offers can differ by channel)
+  const offers = [...(p.offers ?? [])].sort((a, b) => Number(a.audience !== "public") - Number(b.audience !== "public"));
   const rates = p.reward_rates ?? [];
   const benefits = p.benefits ?? [];
   return (
@@ -84,8 +85,9 @@ export default async function ProductPage({ params }: Props) {
           {missingFields.length ? <p className="mt-2 text-sm"><StatusLabel status="missing" /> Not found on the source page: {missingFields.join(", ").replaceAll("_", " ")}.</p> : null}
         </div>
         <div>
-          <h2 className="text-xl">Current offer</h2>
-          <div className="mt-3 rounded-md border border-border p-4">
+          <h2 className="text-xl">{offers.length > 1 ? `Offers (${offers.length})` : "Current offer"}</h2>
+          {offers.length > 1 ? <p className="mt-1 text-sm text-ink-500">Banks can show different offers on different official pages. Each offer below names the page it came from.</p> : null}
+          <div className="mt-3 divide-y divide-border rounded-md border border-border [&>*]:p-4">
             {offers.length ? offers.map((o) => <OfferBlock key={o.id} offer={o} />) : (
               <p className="text-sm">{p.offer_absent_note ?? "No public offer was found on the official page when we last checked."}</p>
             )}

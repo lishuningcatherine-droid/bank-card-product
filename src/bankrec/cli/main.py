@@ -399,7 +399,7 @@ def report_stale() -> None:
             if p.product_type == "savings" and is_stale(p.apy_confirmed_at, "apy", now):
                 typer.echo(f"apy    {p.bank_id:<18} {p.official_name}")
             for o in p.offers:
-                st = offer_state(o.status, o.expiration_date, o.last_confirmed_at, now, o.audience)
+                st = offer_state(o.status, o.expiration_date, o.last_confirmed_at, now)
                 if st in {"stale", "expired"}:
                     typer.echo(f"offer  {p.bank_id:<18} {p.official_name}  {o.offer_type} {st}")
 

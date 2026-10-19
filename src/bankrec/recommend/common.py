@@ -78,8 +78,9 @@ def components(raw: dict[str, float], weights: dict[str, float]) -> tuple[float,
 
 
 def eligible_offers(p: ProductView) -> list[OfferView]:
-    """Current, public, fresh, not expired, not recheck-pending — evaluated at request time by the repository."""
-    return [o for o in p.offers if o.state == "current"]
+    """Current, public, fresh, not expired, not recheck-pending — evaluated at request time by the repository.
+    Targeted, referral and pre-approved offers are never recommended (DESIGN §25.1)."""
+    return [o for o in p.offers if o.state == "current" and o.audience == "public"]
 
 
 # Scoring-time approximations only (stored values keep the page's unit): a month is 30 days, a billing cycle or
