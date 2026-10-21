@@ -326,6 +326,26 @@ def review_approve(
     typer.echo(res)
 
 
+@review_app.command("auto-approve")
+def review_auto_approve(
+    dry_run: bool = typer.Option(False, "--dry-run", help="list what would be approved"),
+    log: Annotated[Path, typer.Option(help="spot-check log to regenerate")] = Path("docs/AUTO_APPROVED.md"),
+) -> None:
+    """Approve pure, page-evidenced additions that pass every check; everything else waits for the owner."""
+    from bankrec.review import auto
+
+    with _session() as s:
+        rows = auto.run(s, _registry(False, require=False), _now(), dry_run=dry_run)
+        if not dry_run:
+            s.commit()
+            auto.write_log(s, log, _now())
+    for r in rows:
+        typer.echo(
+            f"{'would approve' if dry_run else 'approved'} {r['id']}  {r['product']}  {r['content']}  {r['source']}"
+        )
+    typer.echo(f"{len(rows)} item(s)")
+
+
 @review_app.command("reject")
 def review_reject(
     item_id: int,

@@ -1404,3 +1404,15 @@ subtracting it (it depends on waivers). "Up to" / "starting at" amounts and rest
 and are listed apart, unranked. The response carries the assumptions, also served by `/methodology` as
 `public_offer_ranking` and shown on the methodology page with the point-value table. No score, component or weight is
 returned.
+
+## 26. Phase 2 (owner decisions 2026-10-20)
+
+### 26.1 Review authority and auto-approval
+Standing owner rule, replacing all earlier temporary rules: Claude may approve an item itself only when it is a pure
+addition backed by page text that passes every check (capture quality gate, completeness, consistency). Any change
+or removal of an existing value waits for the owner. `bankrec review auto-approve` applies exactly this
+(`src/bankrec/review/auto.py`): an open `product / major_change` item with no conflict, no failed rule and no missing
+key field, whose every change is a filled empty field, a new offer of a type the product had none of
+(`offer_appeared`; never `offer_changed`), or earn rates / benefits gaining entries while every published entry stays
+identical. Approvals use reviewer `claude-auto` and are listed in `docs/AUTO_APPROVED.md` (regenerated on each run);
+each report to the owner lists them.
