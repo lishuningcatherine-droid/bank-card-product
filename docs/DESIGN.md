@@ -1445,3 +1445,10 @@ hotel and airline points never enter the cash ranking.
 effective as of 11/24/2025."). Shown in key facts as "Rate effective 11/24/2025 per bank page" (or "Rate accurate as of
 … per bank page", following the page's word), with the sentence as the tooltip. Both fields are informational in the
 change policy (a new date is not a review item).
+
+### 26.6 No scores or weights outside the server
+The deterministic score (weights in `config/scoring.yaml`) remains the baseline ordering, but `Result.score` and
+`Result.components` are internal: excluded from serialization and from the OpenAPI schema. `/methodology` serves
+`factors` (what each ranking considers, in words) instead of the weights. The results page shows rank, dollar
+estimates (ongoing, promotional, first-year, multi-year), reasons, limitations and assumptions; the methodology page
+shows the factors and the point-value table. A web test fails if a component reads a score, its components or weights.

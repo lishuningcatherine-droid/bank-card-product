@@ -933,8 +933,6 @@ export interface components {
             assumptions?: string[];
             /** Break Even */
             break_even?: string | null;
-            /** Components */
-            components: components["schemas"]["Component"][];
             current_offer?: components["schemas"]["OfferView"] | null;
             /** Fee Text */
             fee_text: string;
@@ -949,8 +947,6 @@ export interface components {
             product: components["schemas"]["ProductView"];
             /** Rank */
             rank: number;
-            /** Score */
-            score: number;
             /** Top Features */
             top_features?: string[];
             values: components["schemas"]["Values"];

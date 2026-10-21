@@ -7,6 +7,7 @@ from decimal import Decimal
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
+from pydantic.json_schema import SkipJsonSchema
 
 Dollars = Annotated[int, Field(ge=0, le=50_000)]
 Importance = Literal["low", "medium", "high"]
@@ -278,8 +279,10 @@ class Achievability(BaseModel):
 class Result(BaseModel):
     rank: int
     product: ProductView
-    score: float
-    components: list[Component]
+    # Internal only (owner decision 2026-10-19): the deterministic baseline score and its components order the
+    # results and feed the ranking layer, but are never serialized to the API or shown (DESIGN §26.6).
+    score: SkipJsonSchema[float] = Field(exclude=True)
+    components: SkipJsonSchema[list[Component]] = Field(exclude=True)
     values: Values
     fee_text: str
     current_offer: OfferView | None = None

@@ -8,29 +8,15 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Methodology", description: "How offers are ranked, how values are estimated and how verification works." };
 
-type Weights = Record<string, number>;
-
-function WeightTable({ title, weights }: { title: string; weights: Weights }) {
-  return (
-    <table className="w-full text-sm">
-      <caption className="text-left font-medium text-ink-900">{title}</caption>
-      <thead><tr className="text-ink-500"><th scope="col" className="py-1 text-left font-normal">Component</th><th scope="col" className="py-1 text-right font-normal">Weight</th></tr></thead>
-      <tbody className="divide-y divide-border">
-        {Object.entries(weights).map(([k, v]) => <tr key={k}><th scope="row" className="py-1 text-left font-normal">{k.replaceAll("_", " ")}</th><td className="py-1 text-right tabular">{v}</td></tr>)}
-      </tbody>
-    </table>
-  );
-}
-
 export default async function Methodology() {
   let m: Record<string, unknown> | null = null;
   try { m = await getMethodology(); } catch { m = null; }
-  const s = (m?.scoring ?? {}) as Record<string, { weights?: Weights }>;
+  const factors = (m?.factors ?? {}) as Record<string, string[]>;
   const pv = (m?.point_values ?? {}) as { default_cents_per_point?: number; programs?: Record<string, { cents_per_point: number; basis?: string }> };
   const ranking = (m?.public_offer_ranking ?? []) as string[];
   return (
     <div className="max-w-3xl space-y-8">
-      <PageTitle title="Methodology" intro="Recommendations are deterministic: the same inputs and data always give the same ranking. There is no machine learning and no paid placement." />
+      <PageTitle title="Methodology" intro="The default ranking is deterministic: the same answers and data always give the same order. There is no paid placement." />
       <section className="space-y-2">
         <h2 className="text-xl">What can be recommended</h2>
         <ul className="list-disc space-y-1 pl-5">
@@ -68,12 +54,18 @@ export default async function Methodology() {
           <li>Checking bonuses show an explicit &ldquo;requirement achievable&rdquo; test from your direct deposits. Savings bonuses require both the new-money deposit and the holding period.</li>
         </ul>
       </section>
-      {m === null ? <ErrorState>The scoring configuration could not be loaded.</ErrorState> : (
-        <section className="space-y-4">
-          <h2 className="text-xl">Score weights</h2>
-          {s.credit_card?.weights ? <WeightTable title="Credit cards" weights={s.credit_card.weights} /> : null}
-          {s.checking?.weights ? <WeightTable title="Checking accounts" weights={s.checking.weights} /> : null}
-          {s.savings?.weights ? <WeightTable title="Savings accounts" weights={s.savings.weights} /> : null}
+      {m === null ? <ErrorState>The methodology could not be loaded.</ErrorState> : (
+        <section className="space-y-3">
+          <h2 className="text-xl">What personal recommendations consider</h2>
+          <p>Your answers are compared with each Verified product on these points. Results show dollar estimates and the reasons behind them, never a score.</p>
+          {([["credit_card", "Credit cards"], ["checking", "Checking accounts"], ["savings", "Savings accounts"]] as const).map(([k, title]) => (
+            factors[k]?.length ? (
+              <div key={k}>
+                <h3 className="text-base">{title}</h3>
+                <ul className="mt-1 list-disc space-y-1 pl-5">{factors[k]!.map((f) => <li key={f}>{f}</li>)}</ul>
+              </div>
+            ) : null
+          ))}
         </section>
       )}
       <section className="space-y-2">

@@ -30,3 +30,13 @@ describe("wording ban", () => {
     expect(text).toContain('rel="noopener noreferrer"');
   });
 });
+
+describe("no scores or weights in the front end (owner decision 2026-10-19)", () => {
+  it("no component reads a result score, its components or scoring weights", () => {
+    for (const f of files(SRC)) {
+      const text = readFileSync(f, "utf8");
+      expect(text, f).not.toMatch(/\.score\b|\.components\b|ScoreBreakdown|\bweights?\b\s*[:=]/);
+      expect(text, f).not.toMatch(/score of 100|Score weights/i);
+    }
+  });
+});

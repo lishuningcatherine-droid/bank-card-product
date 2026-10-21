@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Your results", robots: { index: fals
 export default function ResultsPage() {
   return (
     <>
-      <PageTitle title="Your recommendations" intro="Step 3 of 3. Ranked by a transparent score. Open any result to see exactly how it was calculated." />
+      <PageTitle title="Your recommendations" intro="Step 3 of 3. Each result shows its estimated dollar value, why it fits your answers, and the assumptions behind the estimate." />
       <Results />
     </>
   );

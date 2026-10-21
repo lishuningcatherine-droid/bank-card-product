@@ -211,7 +211,8 @@ async def test_recommend_cards(client: httpx.AsyncClient) -> None:
     names = [x["product"]["name"] for x in r["results"]]
     assert "Example Bank Secured Card" not in names and "Example Bank Business Cash Card" not in names
     for x in r["results"]:
-        assert x["product"]["label"] == "verified" and x["why"] and x["components"]
+        assert x["product"]["label"] == "verified" and x["why"]
+        assert "score" not in x and "components" not in x  # internal only (DESIGN §26.6)
         v = x["values"]
         assert v["first_year_cents"] == v["ongoing_annual_cents"] + v["promotional_cents"] + (
             x["product"]["details"]["annual_fee_cents"]
@@ -345,10 +346,8 @@ async def test_rate_limit(seeded) -> None:  # type: ignore[no-untyped-def]
 
 async def test_methodology_and_sources(client: httpx.AsyncClient) -> None:
     m = (await client.get("/api/v1/methodology")).json()
-    assert (
-        m["scoring"]["credit_card"]["weights"]["ongoing"] == 0.3
-        and m["point_values"]["default_cents_per_point"]
-    )
+    assert m["factors"]["credit_card"] and m["point_values"]["default_cents_per_point"]
+    assert "scoring" not in m and "weights" not in json.dumps(m)  # weights are never published (DESIGN §26.6)
     s = (await client.get("/api/v1/sources")).json()
     ids = {b["bank_id"] for b in s["banks"]}
     assert {"chase", "capital_one", "bank_of_america", "american_express", "us_bank", "example_bank"} <= ids

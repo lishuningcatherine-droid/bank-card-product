@@ -150,3 +150,39 @@ def intro_waived_months(p: ProductView) -> int:
     if isinstance(iw, dict) and iw.get("unit") == "month" and isinstance(iw.get("count"), int):
         return min(12, int(iw["count"]))
     return 0
+
+
+# What each ranking takes into account, in words. Served by /methodology and shown on the methodology page; the
+# weights in config/scoring.yaml and the resulting scores are internal (owner decision 2026-10-19, DESIGN §26.6).
+FACTORS: dict[str, list[str]] = {
+    "credit_card": [
+        "Ongoing annual value: rewards on your stated spending, using each card's caps and post-cap rates, plus the "
+        "statement credits you select, minus the annual fee.",
+        "First-year value: ongoing value plus a welcome bonus you can reach with your spending, and first-year fee "
+        "differences.",
+        "How well the card's reward categories match where you spend.",
+        "Your main goal (cash back, travel, welcome bonus, low interest, balance transfer, building credit).",
+        "Foreign transaction fees, when you travel abroad or ask to avoid them.",
+        "Travel benefits, when you travel often.",
+        "The issuer's own credit guidance, when you share a broad credit range.",
+        "How complete the verified information is.",
+    ],
+    "checking": [
+        "First-year value: a bonus you can reach with your direct deposits, minus monthly fees that would not be "
+        "waived for you.",
+        "How comfortably your deposits meet the bonus requirement, and how long qualifying takes.",
+        "How long the account must stay open or funded for the bonus.",
+        "Whether avoiding the monthly fee needs a balance.",
+        "Branch or online access, as you prefer.",
+        "How complete the verified information is.",
+    ],
+    "savings": [
+        "Interest on the amount you plan to deposit, for as long as you plan to keep it, at the APY for your "
+        "balance.",
+        "A bonus you can reach with that deposit and holding period.",
+        "Whether you prefer ongoing APY or a bonus.",
+        "Withdrawal limits against how often you may need your money.",
+        "Monthly fees that would not be waived for you.",
+        "How complete the verified information is.",
+    ],
+}

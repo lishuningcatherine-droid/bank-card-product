@@ -1765,13 +1765,6 @@
       ],
       "title": "Break Even"
      },
-     "components": {
-      "items": {
-       "$ref": "#/components/schemas/Component"
-      },
-      "title": "Components",
-      "type": "array"
-     },
      "current_offer": {
       "anyOf": [
        {
@@ -1833,10 +1826,6 @@
       "title": "Rank",
       "type": "integer"
      },
-     "score": {
-      "title": "Score",
-      "type": "number"
-     },
      "top_features": {
       "items": {
        "type": "string"
@@ -1858,8 +1847,6 @@
     "required": [
      "rank",
      "product",
-     "score",
-     "components",
      "values",
      "fee_text"
     ],

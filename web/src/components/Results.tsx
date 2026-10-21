@@ -10,7 +10,6 @@ import { decodeRequest, encodeRequest } from "@/lib/request-hash";
 import { CreditCheckboxes } from "./CreditCheckboxes";
 import { Disclaimer } from "./Disclaimer";
 import { OfferBlock } from "./OfferBlock";
-import { ScoreBreakdown } from "./ScoreBreakdown";
 import { SourceLink } from "./SourceLink";
 import { EmptyState, ErrorState, SkeletonCards } from "./States";
 import { ValueSplit } from "./ValueSplit";
@@ -24,13 +23,10 @@ function ResultCard({ r }: { r: Result }) {
   const p = r.product;
   return (
     <article className="rounded-lg border border-border bg-surface p-5 shadow-card" aria-labelledby={`r-${p.id}`}>
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <p className="text-sm text-ink-500">#{r.rank} · {p.bank_name}</p>
-          <h2 id={`r-${p.id}`} className="text-xl"><Link href={`/products/${p.id}`}>{p.name}</Link></h2>
-          <div className="mt-1 flex flex-wrap gap-2"><VerificationBadge product={p} /></div>
-        </div>
-        <p className="text-right"><span className="tabular text-2xl font-semibold text-ink-900">{r.score.toFixed(1)}</span><span className="block text-xs text-ink-500">score of 100</span></p>
+      <div>
+        <p className="text-sm text-ink-500">#{r.rank} · {p.bank_name}</p>
+        <h2 id={`r-${p.id}`} className="text-xl"><Link href={`/products/${p.id}`}>{p.name}</Link></h2>
+        <div className="mt-1 flex flex-wrap gap-2"><VerificationBadge product={p} /></div>
       </div>
       <p className="mt-2 text-sm font-medium text-ink-900">{r.fee_text}</p>
       {r.over_budget_note ? <p className="mt-1 text-sm text-warning">{r.over_budget_note}</p> : null}
@@ -55,7 +51,6 @@ function ResultCard({ r }: { r: Result }) {
           <p className="text-xs text-ink-500">Verified {longDate(p.verified_at)} · <SourceLink href={p.official_url} /></p>
         </div>
       </div>
-      <div className="mt-4"><ScoreBreakdown result={r} /></div>
     </article>
   );
 }

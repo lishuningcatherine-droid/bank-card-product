@@ -35,8 +35,8 @@ from bankrec.api.security import (
 from bankrec.db import prod as P
 from bankrec.db.session import engine_for
 from bankrec.recommend import recommend as run_recommend
-from bankrec.recommend.common import DISCLAIMER
-from bankrec.recommend.config import point_values, scoring
+from bankrec.recommend.common import DISCLAIMER, FACTORS
+from bankrec.recommend.config import point_values
 from bankrec.recommend.models import ProductView, RecommendRequest, RecommendResponse
 from bankrec.recommend.public_offers import Group, PublicOffersResponse, Sort, ranking_assumptions
 from bankrec.recommend.public_offers import rank as rank_public_offers
@@ -370,7 +370,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
         vp = validation_policy()
         return {
-            "scoring": scoring(),
+            # what the recommendations consider, in words; weights and scores are never published (DESIGN §26.6)
+            "factors": FACTORS,
             "point_values": point_values(),
             "public_offer_ranking": ranking_assumptions(),
             "freshness": fresh(),
