@@ -1469,3 +1469,20 @@ questionnaire inputs, with a way to delete.
   in the crontab) removes rows older than `EVENT_RETENTION_DAYS` (180).
 - The API's read-only database role gets only `INSERT`/`DELETE` (and `SELECT (anon_id)` for the delete) on this table.
   Events have their own rate-limit window so they never use up the recommendation limit.
+
+### 26.8 Ranking layer and training interface
+Owner rule: the deterministic scorer stays the baseline; ML is only a replaceable ranking layer and may not become the
+default without real labelled data.
+- `src/bankrec/rank/`: `BaselineRanker` (keeps the deterministic order; the default) and `LinearRanker` (a logistic
+  model over `features.py`: baseline position, public offer present, log bonus estimate, fee). The API applies
+  `active_ranker()` after the deterministic engine; `RecommendResponse.ranker` names it and is echoed in events.
+- Features are product-side and position only, because no answers are stored (§26.7): a model can learn how people
+  respond to products as the baseline ordered them for their answers, not new personalisation.
+- `config/ranking.yaml` `active: baseline`. A model artifact becomes active only if every gate passes: trained on
+  recorded consented events (`data_source: events`; synthetic data never passes), at least `min_lists` views and
+  `min_clicked_lists` clicked views, held-out NDCG@10 above the baseline's, and `approved_by` set by the owner. A model
+  that fails a gate is logged and the baseline is used.
+- Training interface: `bankrec ml train --type … --out models/x.json` (baseline-ordered views only, 80/20 split by
+  view, writes weights, training facts and held-out metrics; never activates), `bankrec ml check <artifact>`,
+  `bankrec ml approve <artifact> --by <owner>`. Products are read as published today (a known limitation: offers may
+  have changed since the view).

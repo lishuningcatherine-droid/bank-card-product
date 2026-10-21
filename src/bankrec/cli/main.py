@@ -29,6 +29,7 @@ revalidate_app = typer.Typer(no_args_is_help=True, help="Next.js on-demand reval
 registry_app = typer.Typer(no_args_is_help=True, help="Source registry.")
 crosscheck_app = typer.Typer(no_args_is_help=True, help="Regulator cross-checks (CFPB).")
 api_app = typer.Typer(no_args_is_help=True, help="API utilities.")
+ml_app = typer.Typer(no_args_is_help=True, help="Ranking-model training interface (DESIGN §26.8).")
 events_app = typer.Typer(no_args_is_help=True, help="Consented anonymous ranking events (DESIGN §26.7).")
 for name, sub in [
     ("review", review_app),
@@ -40,6 +41,7 @@ for name, sub in [
     ("crosscheck", crosscheck_app),
     ("api", api_app),
     ("events", events_app),
+    ("ml", ml_app),
 ]:
     app.add_typer(sub, name=name)
 
@@ -593,3 +595,57 @@ def events_delete(anon_id: str) -> None:
         n = ev.delete_for(s, uuid.UUID(anon_id))
         s.commit()
     typer.echo(f"deleted {n} event(s)")
+
+
+# --------------------------------------------------------------------------------------------- ml
+@ml_app.command("train")
+def ml_train(
+    type: Annotated[str, typer.Option("--type", help="credit_card | checking | savings")],
+    out: Annotated[Path, typer.Option(help="artifact path, e.g. models/cards-v1.json")],
+    model_id: Annotated[str | None, typer.Option("--id")] = None,
+) -> None:
+    """Train on recorded consented events and write an artifact with held-out metrics. It does NOT activate it."""
+    from bankrec.rank import train as T
+    from bankrec.rank.rankers import gate_failures, policy
+
+    now = _now()
+    with _session() as s:
+        rows = T.build_dataset(s, type, now, allow_test_only=get_settings().allow_test_only)
+    if not rows:
+        typer.echo("no consented events for this product type yet; nothing to train on")
+        raise typer.Exit(1)
+    art = T.train(
+        rows,
+        product_type=type,
+        data_source="events",
+        now=now,
+        model_id=model_id or f"{type}-{now:%Y%m%d%H%M}",
+    )
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(art, indent=1) + "\n", encoding="utf-8")
+    typer.echo(f"wrote {out}: {art['training']['n_lists']} views, metrics {art['metrics']}")
+    for reason in gate_failures(art, policy()):
+        typer.echo(f"  not deployable yet: {reason}")
+
+
+@ml_app.command("check")
+def ml_check(artifact: Path) -> None:
+    """List the gates an artifact fails (config/ranking.yaml); exit 1 if any."""
+    from bankrec.rank.rankers import gate_failures, load_artifact, policy
+
+    bad = gate_failures(load_artifact(artifact), policy())
+    for reason in bad:
+        typer.echo(f"fails: {reason}")
+    typer.echo("all gates pass" if not bad else f"{len(bad)} gate(s) fail")
+    raise typer.Exit(1 if bad else 0)
+
+
+@ml_app.command("approve")
+def ml_approve(artifact: Path, by: Annotated[str, typer.Option(help="the owner's name")]) -> None:
+    """Record the owner's approval in the artifact. Activation still needs config/ranking.yaml `active` and every
+    other gate."""
+    art = json.loads(artifact.read_text(encoding="utf-8"))
+    art["approved_by"] = by
+    art["approved_at"] = _now().isoformat()
+    artifact.write_text(json.dumps(art, indent=1) + "\n", encoding="utf-8")
+    typer.echo(f"approved by {by}; activate it by setting `active: {artifact}` in config/ranking.yaml")

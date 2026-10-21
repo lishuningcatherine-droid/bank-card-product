@@ -35,6 +35,7 @@ from bankrec.api.security import (
 )
 from bankrec.db import prod as P
 from bankrec.db.session import engine_for
+from bankrec.rank.rankers import active_ranker
 from bankrec.recommend import recommend as run_recommend
 from bankrec.recommend.common import DISCLAIMER, FACTORS
 from bankrec.recommend.config import point_values
@@ -361,7 +362,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     def recommend(body: RecommendRequest, r: Repo) -> RecommendResponse:
         # Stateless: inputs are used for this computation only — never stored or logged.
         t = now()
-        return run_recommend(r.all_of_type(body.product_type, t), body, t)
+        # the deterministic baseline, re-ordered only by a ranking model that passed every gate (DESIGN §26.8)
+        return active_ranker().rerank(run_recommend(r.all_of_type(body.product_type, t), body, t))
 
     @app.get(prefix + "/methodology", tags=["methodology"])
     def methodology() -> dict[str, Any]:

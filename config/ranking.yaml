@@ -1,0 +1,10 @@
+# Ranking layer (DESIGN §26.8). The deterministic scorer (config/scoring.yaml) is the baseline and the default.
+# A learned model may replace its ordering only when ALL of the gates below hold; otherwise the baseline is used and
+# the API reports ranker "baseline". Owner decision 2026-10-19: no model becomes the default without real labelled
+# data.
+active: baseline            # baseline, or a model artifact path relative to the repository (e.g. models/cards-v1.json)
+gates:
+  min_lists: 1000           # results views with consented events (real data only) in the training set
+  min_clicked_lists: 200    # of which views with at least one click
+  must_beat_baseline: true  # held-out NDCG@10 of the model above the baseline's
+  require_owner_approval: true  # the artifact's approved_by must be set (bankrec ml approve)
