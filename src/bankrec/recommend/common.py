@@ -133,6 +133,8 @@ def deposit_notes(p: ProductView, offer: OfferView | None) -> list[str]:
         out.append(f"Who can open (as stated by the bank): {who}")
     if offer is not None and offer.eligibility_restrictions:
         out.append(f"Bonus eligibility (as stated by the bank): {offer.eligibility_restrictions}")
+    if d.get("min_opening_deposit_cents") is None:
+        out.append("Minimum opening deposit: not stated — confirm with the bank.")
     iw = d.get("intro_fee_waiver")
     if isinstance(iw, dict) and iw.get("count"):
         unit = "statement periods" if iw.get("unit") == "statement_period" else "months"

@@ -219,3 +219,15 @@ def test_intro_fee_waiver_and_bank_stated_eligibility_are_shown_not_inferred() -
     assert res["Months"].values.first_year_cents == -1200 * 10
     assert "New accounts: monthly fee waived for the first 2 statement periods." in res["Periods"].limitations
     assert f"Who can open (as stated by the bank): {who}" in res["Periods"].limitations
+
+
+def test_unstated_opening_deposit_never_excludes_and_a_stated_one_excludes_only_on_the_users_limit() -> None:
+    stated = acct("checking", "Stated", monthly_fee_cents=0, min_opening_deposit_cents=10000)
+    unstated = acct("checking", "Unstated", monthly_fee_cents=0)
+    res = checking.recommend([stated, unstated], creq(), NOW)
+    assert {r.product.name for r in res.results} == {"Stated", "Unstated"}
+    note = "Minimum opening deposit: not stated — confirm with the bank."
+    assert note in next(r for r in res.results if r.product.name == "Unstated").limitations
+    limited = checking.recommend([stated, unstated], creq(max_opening_deposit=50), NOW)
+    assert [r.product.name for r in limited.results] == ["Unstated"]
+    assert [e.name for e in limited.excluded] == ["Stated"]

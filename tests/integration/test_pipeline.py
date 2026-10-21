@@ -504,3 +504,56 @@ def test_same_offer_on_two_official_pages_is_one_offer_seen_on_both(session, set
     o = session.scalars(select(P.Offer)).one()
     session.refresh(o)
     assert len(o.seen_on) == 2
+
+
+def test_review_item_is_superseded_when_a_later_run_validates_the_record(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    reg = registry()
+    other = mutate(tmp_path, "card_everyday_cash.html", "3% of each transaction", "2% of each transaction")
+    a = source(reg, "everyday-cash")
+    b = a.model_copy(
+        update={
+            "slug": "everyday-cash-offer",
+            "fixture_path": str(other),
+            "source_url": HttpUrl("https://www.examplebank.example/credit-cards/everyday-cash/offer"),
+        }
+    )
+    reg.sources.append(b)
+    run(session, settings, reg, [a, b])
+    item = session.scalar(select(S.ManualReviewItem).where(S.ManualReviewItem.reason_code == "conflict"))
+    assert item.state == "open"
+    run(session, settings, reg, [a], reprocess=True)
+    session.refresh(item)
+    assert item.state == "superseded"
+    assert _product(session, "Example Bank Everyday Cash Card") is not None
+
+
+def test_product_with_a_degraded_supplementary_page_is_held(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    # Chase Savings, 2026-10-21: the rates page came back without its table; the product and fees pages alone
+    # lacked the APY, so the record went to review and lost its Verified label. A product any of whose published
+    # pages is degraded is now held: no review item, no recheck, prod unchanged.
+    reg = registry()
+    a = source(reg, "everyday-cash")
+    b = a.model_copy(
+        update={
+            "slug": "everyday-cash-offer",
+            "source_kind": SourceKind.offer_detail,
+            "priority": 90,
+            "source_url": HttpUrl("https://www.examplebank.example/offers/everyday-cash"),
+        }
+    )
+    reg.sources.append(b)
+    run(session, settings, reg, [a, b])
+    assert not _product(session, "Example Bank Everyday Cash Card").recheck_pending
+    html = (FIX / "card_everyday_cash.html").read_text()
+    s, e = (
+        html.index('<ul class="earn-rates">'),
+        html.index("</ul>", html.index('<ul class="earn-rates">')) + 5,
+    )
+    shell = tmp_path / "cash_shell.html"
+    shell.write_text(html[:s] + html[e:])
+    r = run(session, settings, reg, [a, b.model_copy(update={"fixture_path": str(shell)})], reprocess=True)
+    assert {o.source.slug: o.failure for o in r.sources}["everyday-cash-offer"] is Failure.CAPTURE_DEGRADED
+    assert [p.decision for p in r.products] == ["held"]
+    assert not r.review_items
+    session.expire_all()
+    assert not _product(session, "Example Bank Everyday Cash Card").recheck_pending

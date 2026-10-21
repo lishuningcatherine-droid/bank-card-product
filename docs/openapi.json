@@ -395,6 +395,19 @@
       "title": "Max Monthly Fee",
       "type": "integer"
      },
+     "max_opening_deposit": {
+      "anyOf": [
+       {
+        "maximum": 1000000.0,
+        "minimum": 0.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max Opening Deposit"
+     },
      "monthly_direct_deposit": {
       "default": 0,
       "maximum": 100000.0,

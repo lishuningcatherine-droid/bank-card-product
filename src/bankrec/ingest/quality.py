@@ -25,7 +25,9 @@ _SECTIONS: dict[str, re.Pattern[str]] = {
     ),
     "fee": re.compile(r"\bannual\s+fee\b|\bmonthly\s+(?:service\s+|maintenance\s+)?fee\b", re.I),
     "apr": re.compile(r"\d{1,2}\.\d{2}%\s*(?:to|-|–|—)\s*\d{1,2}\.\d{2}%"),
-    "apy": re.compile(r"\bAPY\b"),
+    # the word alone is not the section: a rates page whose table did not load still says "Annual Percentage Yield"
+    "apy": re.compile(r"\bAPY\b|annual\s+percentage\s+yield", re.I),
+    "apy_value": re.compile(r"\b\d{1,2}\.\d{2,3}\s*%"),
 }
 
 
@@ -37,7 +39,8 @@ def quality_policy() -> dict[str, Any]:
 
 def sections(text: str, headings: list[str]) -> dict[str, bool]:
     out = {"product_heading": bool([h for h in headings if h.strip()])}
-    out.update({k: bool(p.search(text)) for k, p in _SECTIONS.items()})
+    out.update({k: bool(p.search(text)) for k, p in _SECTIONS.items() if k != "apy_value"})
+    out["apy"] = out["apy"] and bool(_SECTIONS["apy_value"].search(text))
     return out
 
 

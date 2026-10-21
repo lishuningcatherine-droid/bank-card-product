@@ -118,6 +118,8 @@ class CheckingRequest(Strict):
     state: STATES | None = None
     access_preference: Literal["branch", "online", "either"] = "either"
     bonus_importance: Importance = "medium"
+    # the most the user can deposit to open the account, when they say so; only a stated minimum above it excludes
+    max_opening_deposit: Annotated[int, Field(ge=0, le=1_000_000)] | None = None
 
 
 class SavingsRequest(Strict):

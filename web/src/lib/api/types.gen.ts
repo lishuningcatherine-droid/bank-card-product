@@ -436,6 +436,8 @@ export interface components {
              * @default 0
              */
             max_monthly_fee: number;
+            /** Max Opening Deposit */
+            max_opening_deposit?: number | null;
             /**
              * Monthly Direct Deposit
              * @default 0

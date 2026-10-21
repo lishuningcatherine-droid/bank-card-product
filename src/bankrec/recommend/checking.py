@@ -133,6 +133,20 @@ def recommend(
         if req.state and states and req.state not in states:
             excluded.append(Excluded(product_id=p.id, name=p.name, reason=f"not offered in {req.state}"))
             continue
+        min_open = d.get("min_opening_deposit_cents")
+        if (
+            req.max_opening_deposit is not None
+            and min_open is not None
+            and min_open > req.max_opening_deposit * 100
+        ):
+            excluded.append(
+                Excluded(
+                    product_id=p.id,
+                    name=p.name,
+                    reason=f"minimum opening deposit {usd(min_open)} is more than you can deposit to open",
+                )
+            )
+            continue
         monthly = int(d.get("monthly_fee_cents") or 0)
         waived, waiver, unknown = fee_waived(d.get("fee_waivers"), req) if monthly else (True, None, [])
         eff_monthly = 0 if waived else monthly

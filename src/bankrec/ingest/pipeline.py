@@ -90,7 +90,7 @@ class ProductOutcome:
     bank_id: str
     product_type: str
     name: str
-    decision: str  # published_new | published_version | confirmed | review | rejected
+    decision: str  # published_new | published_version | confirmed | review | rejected | held
     status: str
     detail: str = ""
     changes: list[dict[str, Any]] = field(default_factory=list)
@@ -719,13 +719,16 @@ class Pipeline:
             enqueue_revalidation(self.s, product_tags(p), at)
 
     # ------------------------------------------------------------------------------------------------ resolve/publish
-    def _supersede_reviews(self, key: str, now: datetime, why: str) -> None:
-        """Close open major-change items for ``key`` that a later run made moot (logged as a decision)."""
+    def _supersede_reviews(
+        self, key: str, now: datetime, why: str, reasons: tuple[str, ...] = ("major_change",)
+    ) -> None:
+        """Close open product items for ``key`` that a later run made moot (logged as a decision)."""
         for it in self.s.scalars(
             select(S.ManualReviewItem).where(
                 S.ManualReviewItem.canonical_key == key,
                 S.ManualReviewItem.state == "open",
-                S.ManualReviewItem.reason_code == "major_change",
+                S.ManualReviewItem.item_kind == "product",
+                S.ManualReviewItem.reason_code.in_(reasons),
             )
         ):
             it.state = "superseded"
@@ -810,9 +813,43 @@ class Pipeline:
                 )
                 groups[key].append((c, meta, v, cid))
         now = self.now()
+        held = self._held_keys()
         for key, items in groups.items():
+            if key in held:
+                # One of this product's published pages came back degraded (e.g. a rates page whose table did not
+                # load): judging the record from its other pages would report the degraded page's values as missing.
+                # Prod keeps its values; the product is evaluated again when every page reads cleanly.
+                self.result.products.append(
+                    ProductOutcome(
+                        key,
+                        items[0][0].bank_id,
+                        items[0][0].product_type.value,
+                        items[0][0].name or "",
+                        "held",
+                        "held",
+                        f"capture degraded on {', '.join(sorted(held[key]))}",
+                    )
+                )
+                continue
             self._publish_group(key, items, now)
         self._fuzzy(list(groups))
+
+    def _held_keys(self) -> dict[str, set[str]]:
+        """Canonical keys of published products that took values from a source whose capture is degraded this run."""
+        degraded = [o.source.source_id for o in self.result.sources if o.failure is Failure.CAPTURE_DEGRADED]
+        held: dict[str, set[str]] = defaultdict(set)
+        if not degraded:
+            return held
+        rows = self.s.execute(
+            select(P.Product.canonical_key, P.FieldProvenance.source_id)
+            .join(P.FieldProvenance, P.FieldProvenance.product_id == P.Product.id)
+            .where(P.FieldProvenance.source_id.in_(degraded))
+            .distinct()
+        )
+        for key, sid in rows:
+            if sid:
+                held[key].add(sid)
+        return held
 
     def _publish_group(
         self, key: str, items: list[tuple[ProductCandidate, Meta, Verdict, uuid.UUID]], now: datetime
@@ -909,6 +946,11 @@ class Pipeline:
                 enqueue_revalidation(self.s, product_tags(existing), now)
             return
 
+        # a record that failed validation earlier (e.g. under a stricter required-field policy) and now passes:
+        # its old "needs review" item no longer describes anything to decide
+        self._supersede_reviews(
+            key, now, "a later run validated this record", reasons=("needs_review", "conflict")
+        )
         valid_offers = [o for o in mp.offers if o.status == "valid"]
         for o in mp.offers:
             po.offers.append(

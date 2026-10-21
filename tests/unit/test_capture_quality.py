@@ -43,3 +43,14 @@ def test_shrunk_text_is_degraded_and_no_baseline_passes() -> None:
     short = "Example Bank Card\n3% cash back on dining\nAnnual fee $0\nAPR 19.99% - 29.99%\n"
     assert assess(short, ["Example Bank Card"], (full, ["Example Bank Card"])).degraded
     assert not assess(short, ["Example Bank Card"], None).degraded
+
+
+def test_rates_page_without_its_rate_table_is_degraded() -> None:
+    # Chase Savings rates, ZIP 90024, 2026-10-21: the 06:12 capture still says "Annual Percentage Yield" but the
+    # table ("0.01% 0.01%") did not load; it passed the gate and sent Chase Savings to review (item 403).
+    good = (FIX / "chase/chase-savings-rates-90024-2026-10-21.txt").read_text(encoding="utf-8")
+    bad = (FIX / "chase/chase-savings-rates-90024-2026-10-21-no-table.txt").read_text(encoding="utf-8")
+    heading = ["Savings account interest rates"]
+    q = assess(bad, heading, (good, heading))
+    assert q.degraded and q.missing == ["apy"]
+    assert not assess(good, heading, (good, heading)).degraded

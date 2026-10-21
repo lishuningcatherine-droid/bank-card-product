@@ -87,6 +87,12 @@ function CheckingQuiz({ go }: { go: (r: CheckingRequest) => void }) {
           {r.can_maintain_balance ? <NumberField label="Roughly how much" name="bal" max={1000000} value={r.approx_balance ?? 0} onChange={(approx_balance) => up({ approx_balance })} /> : null}
         </div>
         <NumberField label="Maximum monthly fee you'd pay" name="fee" max={50} value={r.max_monthly_fee ?? 0} onChange={(max_monthly_fee) => up({ max_monthly_fee })} />
+        <div className="space-y-2">
+          <Toggle label="I can only deposit a limited amount to open the account" checked={r.max_opening_deposit != null}
+            onChange={(on) => up({ max_opening_deposit: on ? 100 : null })}
+            hint="Accounts are excluded only when the bank states a higher minimum opening deposit." />
+          {r.max_opening_deposit != null ? <NumberField label="Most I can deposit to open" name="open" max={1000000} value={r.max_opening_deposit} onChange={(max_opening_deposit) => up({ max_opening_deposit })} /> : null}
+        </div>
         <label className="flex flex-col text-sm font-medium text-ink-900">
           State
           <select value={r.state ?? ""} onChange={(e) => up({ state: (e.target.value || null) as CheckingRequest["state"] })} className="mt-1 min-h-11 rounded-md border border-border-strong bg-surface px-3 font-normal">

@@ -1416,3 +1416,17 @@ key field, whose every change is a filled empty field, a new offer of a type the
 (`offer_appeared`; never `offer_changed`), or earn rates / benefits gaining entries while every published entry stays
 identical. Approvals use reviewer `claude-auto` and are listed in `docs/AUTO_APPROVED.md` (regenerated on each run);
 each report to the owner lists them.
+
+### 26.2 Minimum opening deposit is not a Verified requirement
+Owner decision 2026-10-20, replacing §24.21's "stays in review": `min_opening_deposit_cents` is neither required
+(checking) nor key (savings). When no allowed page states it, the record publishes and the UI says "Minimum opening
+deposit: not stated — confirm with the bank" (key facts and recommendation notes); nothing is inferred. A checking
+account is excluded only when the user states the most they can deposit to open (`max_opening_deposit`) and the bank
+states a higher minimum; savings keeps its existing test against the deposit the user plans. A record that later
+validates closes its own stale `needs_review` / `conflict` items (`superseded`, reviewer `pipeline`).
+
+### 26.3 Capture gate: a rates page without rates, and products held on a degraded page
+The `apy` section now needs a percentage figure as well as the words APY / Annual Percentage Yield: Chase's rates page
+(2026-10-21 06:12) loaded without its table but still said "Annual Percentage Yield", passed, and the product and
+fees pages alone sent Chase Savings to review. Also, when any page a published product took values from is degraded
+in a run, the product is `held` for that run: no merge from the remaining pages, no review item, no recheck flag.
