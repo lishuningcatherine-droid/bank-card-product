@@ -183,6 +183,9 @@ class CheckingAccountDetails(ProdBase):
     # {count, unit (statement_period | month, as stated), qualifier (exact | at_least), text}: new-account fee waiver
     intro_fee_waiver: Mapped[dict[str, Any] | None] = mapped_column(J)
     apy_tiers: Mapped[list[dict[str, Any]] | None] = mapped_column(J)
+    # the date the bank's page says its rates are effective / accurate as of, and that sentence
+    rate_as_of_date: Mapped[date | None] = mapped_column(Date)
+    rate_as_of_text: Mapped[str | None] = mapped_column(Text)
     eligible_states: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
     customer_eligibility: Mapped[str | None] = mapped_column(Text)
     access_model: Mapped[str | None] = mapped_column(String(10))
@@ -199,6 +202,8 @@ class SavingsAccountDetails(ProdBase):
     product: Mapped[Product] = relationship(back_populates="savings")
     apy_pct: Mapped[Decimal | None] = mapped_column(Rate)
     apy_tiers: Mapped[list[dict[str, Any]] | None] = mapped_column(J)
+    rate_as_of_date: Mapped[date | None] = mapped_column(Date)
+    rate_as_of_text: Mapped[str | None] = mapped_column(Text)
     rate_type_note: Mapped[str | None] = mapped_column(Text)
     min_opening_deposit_cents: Mapped[int | None] = mapped_column(BigInteger)
     min_balance_cents: Mapped[int | None] = mapped_column(BigInteger)

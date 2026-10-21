@@ -17,6 +17,7 @@ against the official pages captured on 2026-10-18 (Chase, Capital One, Bank of A
 from __future__ import annotations
 
 import re
+from datetime import date
 from decimal import Decimal
 
 from bankrec.model import FeeWaiver
@@ -342,4 +343,24 @@ def footnote_apy_tiers(lines: list[str]) -> tuple[list[tuple[int, int | None, De
             if rows[0][0] != 0 or rows[-1][1] is not None:
                 return None
             return rows, ln.strip()
+    return None
+
+
+_RATE_AS_OF = re.compile(
+    r"\b(?P<kind>effective|accurate)\s+as\s+of\s+(?P<m>\d{1,2})/(?P<d>\d{1,2})/(?P<y>\d{4})\b", re.I
+)
+_RATE_WORDS = re.compile(r"\b(?:APYs?|annual\s+percentage\s+yields?|rates?)\b", re.I)
+
+
+def rate_as_of(lines: list[str]) -> tuple[date, str] | None:
+    """The date the page says its rates are effective or accurate as of ("Advertised rates are variable and effective
+    as of 11/24/2025."), with the sentence. Template text without a date ("effective as of for ZIP code") is skipped."""
+    for ln in lines:
+        for sent in _SENT.split(ln):
+            if (m := _RATE_AS_OF.search(sent)) and _RATE_WORDS.search(sent):
+                try:
+                    d = date(int(m.group("y")), int(m.group("m")), int(m.group("d")))
+                except ValueError:
+                    continue
+                return d, sent.strip()
     return None

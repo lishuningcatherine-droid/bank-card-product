@@ -777,6 +777,10 @@ class DeclarativeAdapter:
         if fee.value == 0:
             c.fields["fee_waivers"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
             c.fields["intro_fee_waiver"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
+        ro = D.rate_as_of(lines)
+        if ro is not None and ctx.locate(ro[1]) is not None:
+            c.fields["rate_as_of_date"] = ctx.field(ro[0], ro[1], method="label_regex", name="rate_as_of")
+            c.fields["rate_as_of_text"] = ctx.field(ro[1], ro[1], method="label_regex", name="rate_as_of")
         # a rate sheet lists many products ("Minimum to open: $1,000 CDs / $1,000 IRAs"): its generic labels are
         # never read as this account's opening deposit
         rate_sheet = page.page_type in (PageType.pdf_terms, PageType.terms_page)

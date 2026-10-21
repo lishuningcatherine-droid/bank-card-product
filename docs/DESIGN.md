@@ -1438,3 +1438,10 @@ listed yet). `points`: every other point or mile, including hotel and airline pr
 its dollar figure is labelled "estimated, assumes X¢/point". The two are never ranked together: the home page shows
 "Cash offers" and "Points and miles offers" as separate lists. Until the owner supplies program values, non-fixed
 hotel and airline points never enter the cash ranking.
+
+### 26.5 Rate date as stated by the bank
+`rate_as_of_date` / `rate_as_of_text` (checking and savings, migration 0014): the date a page says its rates are
+"effective as of" or "accurate as of", only from a sentence about rates or APY ("Advertised rates are variable and
+effective as of 11/24/2025."). Shown in key facts as "Rate effective 11/24/2025 per bank page" (or "Rate accurate as of
+… per bank page", following the page's word), with the sentence as the tooltip. Both fields are informational in the
+change policy (a new date is not a review item).

@@ -73,6 +73,7 @@ TEXT_SUMMARY_FIELDS = {
     "eligibility_restrictions",
     "credit_profile_guidance",
     "redemption_restriction",
+    "rate_as_of_text",
 }
 
 

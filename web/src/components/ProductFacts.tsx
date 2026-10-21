@@ -48,11 +48,13 @@ export function keyFacts(p: Product): { label: string; value: React.ReactNode }[
       { label: "Minimum opening deposit", value: openingDeposit(d.min_opening_deposit_cents) },
       { label: "Fee waivers", value: Array.isArray(d.fee_waivers) && d.fee_waivers.length ? `${d.fee_waivers.length} ways to waive` : d.monthly_fee_cents === 0 ? "Not needed" : missing },
       ...(tiers?.length ? [{ label: "Interest (APY)", value: tierList(tiers) }] : []),
+      ...rateAsOf(d),
       ...whoCanOpen(d.customer_eligibility),
     ];
   }
   return [
     { label: "APY", value: d.apy_pct != null ? <span className="tabular">{pct(d.apy_pct as string)}</span> : tiers?.length ? tierList(tiers) : missing },
+    ...rateAsOf(d),
     { label: "Monthly fee", value: val(d.monthly_fee_cents, (x) => usd(x as number)) },
     ...introWaiver(d),
     { label: "Minimum opening deposit", value: openingDeposit(d.min_opening_deposit_cents) },
@@ -63,6 +65,19 @@ export function keyFacts(p: Product): { label: string; value: React.ReactNode }[
 /** Not a Verified requirement (owner decision 2026-10-20): when unstated, say so instead of "Information missing". */
 export function openingDeposit(v: unknown): React.ReactNode {
   return v == null ? <span className="text-ink-500">Not stated — confirm with the bank</span> : <span className="tabular">{usd(v as number)}</span>;
+}
+
+/** "Rate effective 11/24/2025 per bank page": the date the bank's page states, in its own wording (effective /
+ * accurate as of). The page's sentence is the tooltip. */
+export function rateAsOfText(isoDate: string, sentence: string | null | undefined): string {
+  const [y, m, day] = isoDate.split("-");
+  const when = `${m}/${day}/${y}`;
+  return /\baccurate\s+as\s+of\b/i.test(sentence ?? "") ? `Rate accurate as of ${when} per bank page` : `Rate effective ${when} per bank page`;
+}
+
+function rateAsOf(d: D) {
+  const iso = d.rate_as_of_date as string | null | undefined;
+  return iso ? [{ label: "Rate date", value: <span className="tabular" title={`“${String(d.rate_as_of_text ?? "")}”`}>{rateAsOfText(iso, d.rate_as_of_text as string | null)}</span> }] : [];
 }
 
 type Tier = { min_balance_cents: number; max_balance_cents: number | null; apy_pct: string };

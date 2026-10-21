@@ -135,3 +135,11 @@ describe("RankedOfferCard requirementText", () => {
     expect(requirementText({ requirement_type: null, requirement_min_cents: null, requirement_max_cents: null, requirement_qualifier: null, qualification_window_count: null, qualification_window_unit: null })).toBeNull();
   });
 });
+
+describe("rateAsOfText", () => {
+  it("shows the bank page's rate date in its own wording", async () => {
+    const { rateAsOfText } = await import("@/components/ProductFacts");
+    expect(rateAsOfText("2025-11-24", "Advertised rates are variable and effective as of 11/24/2025.")).toBe("Rate effective 11/24/2025 per bank page");
+    expect(rateAsOfText("2026-10-18", "The Annual Percentage Yield (APY) as advertised is accurate as of 10/18/2026.")).toBe("Rate accurate as of 10/18/2026 per bank page");
+  });
+});

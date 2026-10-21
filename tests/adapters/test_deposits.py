@@ -222,3 +222,11 @@ def test_chase_offer_page_intro_waiver_from_footnote() -> None:
 def test_no_fee_account_has_no_intro_waiver() -> None:
     c = one("capital_one", "360-checking", "360-checking-2026-10-19.html")
     assert c.fields["intro_fee_waiver"].null_reason is NullReason.not_applicable
+
+
+def test_rate_effective_date_as_stated_by_the_bank() -> None:
+    c = one("us_bank", "bank-smartly-checking", "bank-smartly-checking-2026-10-19.html")
+    assert c.value("rate_as_of_date") == date(2025, 11, 24)
+    assert c.value("rate_as_of_text") == "Advertised rates are variable and effective as of 11/24/2025."
+    a = one("american_express", "rewards-checking", "rewards-checking-2026-10-19.html")
+    assert a.value("rate_as_of_date") == date(2026, 10, 18)
