@@ -1452,3 +1452,20 @@ The deterministic score (weights in `config/scoring.yaml`) remains the baseline 
 `factors` (what each ranking considers, in words) instead of the weights. The results page shows rank, dollar
 estimates (ongoing, promotional, first-year, multi-year), reasons, limitations and assumptions; the methodology page
 shows the factors and the point-value table. A web test fails if a component reads a score, its components or weights.
+
+### 26.7 Consented, anonymous ranking events
+Owner rules: off by default, recorded only after the visitor explicitly opts in, anonymous events only, never the
+questionnaire inputs, with a way to delete.
+- **Two switches, both off by default:** the operator's `EVENT_LOGGING_ENABLED` (when false, `POST /events` is 404 and
+  the opt-in control is hidden) and the visitor's opt-in ("Help improve rankings (optional)" on the results and
+  privacy pages). The opt-in is a random id in the visitor's localStorage — no cookie.
+- **Stored** (`analytics.ranking_events`, migration 0015): anonymous id, a per-results-view list id, the event
+  (`results_shown`, `result_opened`, `official_link_clicked`, `compare_added`), product type, product id and 1-based
+  position, the ordered product ids shown, the ranker id, and the hour. **Never stored:** answers (raw or derived), IP,
+  user agent, cookies, referrer, exact time. The request model forbids extra fields, so an answer sent by mistake is
+  refused, not dropped silently.
+- **Deletion:** "Delete my data" (`POST /events/delete {anon_id}`, always available, even with logging off) removes
+  every row of that id; `bankrec events delete <id>` for requests made outside the site; `bankrec events purge` (daily
+  in the crontab) removes rows older than `EVENT_RETENTION_DAYS` (180).
+- The API's read-only database role gets only `INSERT`/`DELETE` (and `SELECT (anon_id)` for the delete) on this table.
+  Events have their own rate-limit window so they never use up the recommendation limit.

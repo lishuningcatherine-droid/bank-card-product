@@ -66,7 +66,7 @@ def engine(db_url: str):  # type: ignore[no-untyped-def]
         tables = (
             c.execute(
                 text(
-                    "select schemaname||'.'||tablename from pg_tables where schemaname in ('staging','prod')"
+                    "select schemaname||'.'||tablename from pg_tables where schemaname in ('staging','prod','analytics')"
                 )
             )
             .scalars()

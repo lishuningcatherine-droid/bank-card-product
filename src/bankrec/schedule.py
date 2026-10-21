@@ -15,6 +15,7 @@ def crontab(binary: str = "bankrec") -> str:
     for tier, spec in config()["tiers"].items():
         lines.append(f"{spec['schedule']} {binary} ingest --tier {tier} --trigger cron")
     lines.append("*/5 * * * * " + binary + " revalidate dispatch")
+    lines.append("17 3 * * * " + binary + " events purge")  # consented ranking events past their retention
     return "\n".join(lines) + "\n"
 
 

@@ -29,6 +29,7 @@ revalidate_app = typer.Typer(no_args_is_help=True, help="Next.js on-demand reval
 registry_app = typer.Typer(no_args_is_help=True, help="Source registry.")
 crosscheck_app = typer.Typer(no_args_is_help=True, help="Regulator cross-checks (CFPB).")
 api_app = typer.Typer(no_args_is_help=True, help="API utilities.")
+events_app = typer.Typer(no_args_is_help=True, help="Consented anonymous ranking events (DESIGN §26.7).")
 for name, sub in [
     ("review", review_app),
     ("report", report_app),
@@ -38,6 +39,7 @@ for name, sub in [
     ("registry", registry_app),
     ("crosscheck", crosscheck_app),
     ("api", api_app),
+    ("events", events_app),
 ]:
     app.add_typer(sub, name=name)
 
@@ -563,3 +565,31 @@ def api_serve(host: str = "127.0.0.1", port: int = 8000) -> None:
 def main() -> None:  # pragma: no cover
     os.environ.setdefault("PYTHONUNBUFFERED", "1")
     app(sys.argv[1:])
+
+
+# --------------------------------------------------------------------------------------------- events
+@events_app.command("purge")
+def events_purge(
+    days: Annotated[int | None, typer.Option(help="retention in days (default EVENT_RETENTION_DAYS)")] = None,
+) -> None:
+    """Delete events older than the retention period (run daily by the scheduler or cron)."""
+    from bankrec import events as ev
+
+    keep = days if days is not None else get_settings().event_retention_days
+    with _session() as s:
+        n = ev.purge(s, _now(), keep)
+        s.commit()
+    typer.echo(f"purged {n} event(s) older than {keep} days")
+
+
+@events_app.command("delete")
+def events_delete(anon_id: str) -> None:
+    """Delete every event of one anonymous id (a visitor's request made outside the site)."""
+    import uuid
+
+    from bankrec import events as ev
+
+    with _session() as s:
+        n = ev.delete_for(s, uuid.UUID(anon_id))
+        s.commit()
+    typer.echo(f"deleted {n} event(s)")

@@ -306,6 +306,8 @@ class Excluded(BaseModel):
 class RecommendResponse(BaseModel):
     product_type: str
     generated_at: datetime
+    # which ranking ordered the results: "baseline" (deterministic) or a ranking-model id (DESIGN §26.8)
+    ranker: str = "baseline"
     results: list[Result]
     excluded: list[Excluded] = Field(default_factory=list)
     disclaimer: str

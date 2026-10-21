@@ -601,6 +601,121 @@
     "title": "Component",
     "type": "object"
    },
+   "DeleteIn": {
+    "additionalProperties": false,
+    "properties": {
+     "anon_id": {
+      "format": "uuid",
+      "title": "Anon Id",
+      "type": "string"
+     }
+    },
+    "required": [
+     "anon_id"
+    ],
+    "title": "DeleteIn",
+    "type": "object"
+   },
+   "EventIn": {
+    "additionalProperties": false,
+    "properties": {
+     "anon_id": {
+      "format": "uuid",
+      "title": "Anon Id",
+      "type": "string"
+     },
+     "consent": {
+      "const": true,
+      "title": "Consent",
+      "type": "boolean"
+     },
+     "event": {
+      "enum": [
+       "results_shown",
+       "result_opened",
+       "official_link_clicked",
+       "compare_added"
+      ],
+      "title": "Event",
+      "type": "string"
+     },
+     "list_id": {
+      "format": "uuid",
+      "title": "List Id",
+      "type": "string"
+     },
+     "position": {
+      "anyOf": [
+       {
+        "maximum": 100.0,
+        "minimum": 1.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Position"
+     },
+     "product_id": {
+      "anyOf": [
+       {
+        "maxLength": 64,
+        "minLength": 1,
+        "pattern": "^[A-Za-z0-9_.:-]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
+     "product_type": {
+      "enum": [
+       "credit_card",
+       "checking",
+       "savings"
+      ],
+      "title": "Product Type",
+      "type": "string"
+     },
+     "ranker": {
+      "default": "baseline",
+      "maxLength": 64,
+      "pattern": "^[a-z0-9_.:-]+$",
+      "title": "Ranker",
+      "type": "string"
+     },
+     "shown": {
+      "anyOf": [
+       {
+        "items": {
+         "maxLength": 64,
+         "minLength": 1,
+         "pattern": "^[A-Za-z0-9_.:-]+$",
+         "type": "string"
+        },
+        "maxItems": 50,
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Shown"
+     }
+    },
+    "required": [
+     "consent",
+     "anon_id",
+     "list_id",
+     "event",
+     "product_type"
+    ],
+    "title": "EventIn",
+    "type": "object"
+   },
    "Excluded": {
     "properties": {
      "name": {
@@ -1718,6 +1833,11 @@
       "title": "Product Type",
       "type": "string"
      },
+     "ranker": {
+      "default": "baseline",
+      "title": "Ranker",
+      "type": "string"
+     },
      "results": {
       "items": {
        "$ref": "#/components/schemas/Result"
@@ -2680,6 +2800,109 @@
     "summary": "Credit Cards",
     "tags": [
      "products"
+    ]
+   }
+  },
+  "/api/v1/events": {
+   "post": {
+    "operationId": "record_event_api_v1_events_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/EventIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "204": {
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Record Event",
+    "tags": [
+     "events"
+    ]
+   }
+  },
+  "/api/v1/events/config": {
+   "get": {
+    "operationId": "events_config_api_v1_events_config_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "title": "Response Events Config Api V1 Events Config Get",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Events Config",
+    "tags": [
+     "events"
+    ]
+   }
+  },
+  "/api/v1/events/delete": {
+   "post": {
+    "description": "Deletes every event recorded under this anonymous id. Always available, even when logging is off.",
+    "operationId": "delete_events_api_v1_events_delete_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/DeleteIn"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": {
+          "type": "integer"
+         },
+         "title": "Response Delete Events Api V1 Events Delete Post",
+         "type": "object"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Delete Events",
+    "tags": [
+     "events"
     ]
    }
   },

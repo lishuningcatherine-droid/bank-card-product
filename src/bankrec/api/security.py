@@ -72,12 +72,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         self, request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         if request.method == "POST":
-            key = request.client.host if request.client else "unknown"
+            # opted-in ranking events have their own, larger window so they never use up the recommendation limit
+            events = "/events" in request.url.path
+            key = (request.client.host if request.client else "unknown") + (":events" if events else "")
+            limit = self.per_minute * 4 if events else self.per_minute
             now = time.monotonic()
             q = self.hits[key]
             while q and now - q[0] > 60:
                 q.popleft()
-            if len(q) >= self.per_minute:
+            if len(q) >= limit:
                 r = problem(429, "Too many requests", "Please wait a minute and try again.")
                 r.headers["Retry-After"] = "60"
                 return r

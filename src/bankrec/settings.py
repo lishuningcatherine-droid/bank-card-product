@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     e2e_test_data: bool = Field(False, alias="E2E_TEST_DATA")
     rate_limit_per_minute: int = Field(30, alias="API_POST_RATE_LIMIT_PER_MINUTE")
     sentry_dsn: str | None = Field(None, alias="SENTRY_DSN")
+    # Consented anonymous ranking events (DESIGN §26.7). Off unless the operator turns it on; even then nothing is
+    # recorded until a visitor opts in. Events older than the retention are purged by `bankrec events purge`.
+    event_logging_enabled: bool = Field(False, alias="EVENT_LOGGING_ENABLED")
+    event_retention_days: int = Field(180, alias="EVENT_RETENTION_DAYS")
     data_dir: Path = Field(DATA_DIR, alias="BANKREC_DATA_DIR")
     reports_dir: Path = Field(REPORTS_DIR, alias="BANKREC_REPORTS_DIR")
 

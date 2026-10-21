@@ -5,10 +5,12 @@ import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import type { CardRequest, RecommendRequest, RecommendResponse, Result } from "@/lib/api/types";
 import { longDate } from "@/lib/format";
+import { newListId, track } from "@/lib/ranking-events";
 import { decodeRequest, encodeRequest } from "@/lib/request-hash";
 
 import { CreditCheckboxes } from "./CreditCheckboxes";
 import { Disclaimer } from "./Disclaimer";
+import { EventConsent } from "./EventConsent";
 import { OfferBlock } from "./OfferBlock";
 import { SourceLink } from "./SourceLink";
 import { EmptyState, ErrorState, SkeletonCards } from "./States";
@@ -19,13 +21,15 @@ const API = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
 
 type State = { kind: "loading" } | { kind: "error"; message: string } | { kind: "missing" } | { kind: "ok"; data: RecommendResponse };
 
-function ResultCard({ r }: { r: Result }) {
+type Clicked = (r: Result, event: "result_opened" | "official_link_clicked") => void;
+
+function ResultCard({ r, onClick }: { r: Result; onClick: Clicked }) {
   const p = r.product;
   return (
     <article className="rounded-lg border border-border bg-surface p-5 shadow-card" aria-labelledby={`r-${p.id}`}>
       <div>
         <p className="text-sm text-ink-500">#{r.rank} · {p.bank_name}</p>
-        <h2 id={`r-${p.id}`} className="text-xl"><Link href={`/products/${p.id}`}>{p.name}</Link></h2>
+        <h2 id={`r-${p.id}`} className="text-xl"><Link href={`/products/${p.id}`} onClick={() => onClick(r, "result_opened")}>{p.name}</Link></h2>
         <div className="mt-1 flex flex-wrap gap-2"><VerificationBadge product={p} /></div>
       </div>
       <p className="mt-2 text-sm font-medium text-ink-900">{r.fee_text}</p>
@@ -48,7 +52,7 @@ function ResultCard({ r }: { r: Result }) {
             <section aria-label="Limitations"><h3 className="text-base">Limitations</h3><ul className="mt-1 list-disc pl-5 text-sm">{r.limitations.map((l) => <li key={l}>{l}</li>)}</ul></section>
           ) : null}
           {r.assumptions && r.assumptions.length ? <p className="text-xs text-ink-500">Assumptions: {r.assumptions.join(" ")}</p> : null}
-          <p className="text-xs text-ink-500">Verified {longDate(p.verified_at)} · <SourceLink href={p.official_url} /></p>
+          <p className="text-xs text-ink-500">Verified {longDate(p.verified_at)} · <span onClickCapture={() => onClick(r, "official_link_clicked")}><SourceLink href={p.official_url} /></span></p>
         </div>
       </div>
     </article>
@@ -100,6 +104,17 @@ export function Results() {
   };
   const retry = () => setAttempt((a) => a + 1);
 
+  // one id per results view, for consented anonymous ranking events (sent only after an opt-in; DESIGN §26.7)
+  const ok = state.kind === "ok" ? state.data : null;
+  const listId = useMemo(() => (ok ? newListId() : ""), [ok]);
+  useEffect(() => {
+    if (!ok || !ok.results.length) return;
+    void track({ event: "results_shown", list_id: listId, product_type: ok.product_type, shown: ok.results.map((r) => r.product.id), ranker: ok.ranker ?? "baseline" });
+  }, [ok, listId]);
+  const clicked: Clicked = (r, event) => {
+    if (ok) void track({ event, list_id: listId, product_type: ok.product_type, product_id: r.product.id, position: r.rank, ranker: ok.ranker ?? "baseline" });
+  };
+
   if (state.kind === "missing") return <EmptyState title="No answers yet" href="/recommend" cta="Start the questions">Answer a few questions to see recommendations.</EmptyState>;
   if (state.kind === "loading") return <SkeletonCards count={3} />;
   if (state.kind === "error") return <ErrorState retry={retry}>{state.message}</ErrorState>;
@@ -126,7 +141,7 @@ export function Results() {
         </EmptyState>
       ) : (
         <ol className="space-y-6" aria-label="Ranked results">
-          {data.results.map((r) => <li key={r.product.id}><ResultCard r={r} /></li>)}
+          {data.results.map((r) => <li key={r.product.id}><ResultCard r={r} onClick={clicked} /></li>)}
         </ol>
       )}
       {data.excluded && data.excluded.length ? (
@@ -135,6 +150,7 @@ export function Results() {
           <ul className="mt-2 list-disc pl-5">{data.excluded.map((e) => <li key={e.product_id}>{e.name}: {e.reason}</li>)}</ul>
         </details>
       ) : null}
+      <EventConsent />
       <Disclaimer />
     </div>
   );

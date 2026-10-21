@@ -3,11 +3,11 @@ from __future__ import annotations
 from alembic import context
 from sqlalchemy import create_engine, pool
 
-from bankrec.db import prod, staging  # noqa: F401  (register models)
-from bankrec.db.base import ProdBase, StagingBase
+from bankrec.db import analytics, prod, staging  # noqa: F401  (register models)
+from bankrec.db.base import AnalyticsBase, ProdBase, StagingBase
 from bankrec.settings import get_settings
 
-target_metadata = [StagingBase.metadata, ProdBase.metadata]
+target_metadata = [StagingBase.metadata, ProdBase.metadata, AnalyticsBase.metadata]
 
 
 def include_name(name, type_, parent_names):  # type: ignore[no-untyped-def]

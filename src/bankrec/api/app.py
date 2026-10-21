@@ -13,6 +13,7 @@ from fastapi.responses import JSONResponse
 from sqlalchemy import select, text
 from sqlalchemy.orm import Session, sessionmaker
 
+from bankrec import events as ev
 from bankrec.api.repository import Filters, Repository
 from bankrec.api.schemas import (
     BankSource,
@@ -391,6 +392,30 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ],
             "disclaimer": DISCLAIMER,
         }
+
+    # ---- consented, anonymous ranking events (DESIGN §26.7)
+    @app.get(prefix + "/events/config", tags=["events"])
+    def events_config() -> dict[str, Any]:
+        return {
+            "enabled": st.event_logging_enabled,
+            "retention_days": st.event_retention_days,
+            "stored": ev.STORED,
+            "never_stored": ev.NEVER_STORED,
+        }
+
+    @app.post(prefix + "/events", status_code=204, tags=["events"])
+    def record_event(body: ev.EventIn, s: Annotated[Session, Depends(session)]) -> None:
+        if not st.event_logging_enabled:
+            raise HTTPException(404, "Not found")
+        ev.record(s, body, now())
+        s.commit()
+
+    @app.post(prefix + "/events/delete", tags=["events"])
+    def delete_events(body: ev.DeleteIn, s: Annotated[Session, Depends(session)]) -> dict[str, int]:
+        """Deletes every event recorded under this anonymous id. Always available, even when logging is off."""
+        n = ev.delete_for(s, body.anon_id)
+        s.commit()
+        return {"deleted": n}
 
     @app.get(prefix + "/sources", response_model=SourcesResponse, tags=["sources"])
     def sources(s: Annotated[Session, Depends(session)], r: Repo) -> SourcesResponse:

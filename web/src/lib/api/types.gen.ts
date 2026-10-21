@@ -55,6 +55,60 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Record Event */
+        post: operations["record_event_api_v1_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Events Config */
+        get: operations["events_config_api_v1_events_config_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Delete Events
+         * @description Deletes every event recorded under this anonymous id. Always available, even when logging is off.
+         */
+        post: operations["delete_events_api_v1_events_delete_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/health": {
         parameters: {
             query?: never;
@@ -488,6 +542,53 @@ export interface components {
             normalized: number;
             /** Weight */
             weight: number;
+        };
+        /** DeleteIn */
+        DeleteIn: {
+            /**
+             * Anon Id
+             * Format: uuid
+             */
+            anon_id: string;
+        };
+        /** EventIn */
+        EventIn: {
+            /**
+             * Anon Id
+             * Format: uuid
+             */
+            anon_id: string;
+            /**
+             * Consent
+             * @constant
+             */
+            consent: true;
+            /**
+             * Event
+             * @enum {string}
+             */
+            event: "results_shown" | "result_opened" | "official_link_clicked" | "compare_added";
+            /**
+             * List Id
+             * Format: uuid
+             */
+            list_id: string;
+            /** Position */
+            position?: number | null;
+            /** Product Id */
+            product_id?: string | null;
+            /**
+             * Product Type
+             * @enum {string}
+             */
+            product_type: "credit_card" | "checking" | "savings";
+            /**
+             * Ranker
+             * @default baseline
+             */
+            ranker: string;
+            /** Shown */
+            shown?: string[] | null;
         };
         /** Excluded */
         Excluded: {
@@ -923,6 +1024,11 @@ export interface components {
             generated_at: string;
             /** Product Type */
             product_type: string;
+            /**
+             * Ranker
+             * @default baseline
+             */
+            ranker: string;
             /** Results */
             results: components["schemas"]["Result"][];
         };
@@ -1171,6 +1277,94 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Page"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    record_event_api_v1_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EventIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    events_config_api_v1_events_config_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+        };
+    };
+    delete_events_api_v1_events_delete_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["DeleteIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: number;
+                    };
                 };
             };
             /** @description Validation Error */

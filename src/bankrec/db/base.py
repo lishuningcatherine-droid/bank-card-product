@@ -18,3 +18,9 @@ class StagingBase(DeclarativeBase):
 
 class ProdBase(DeclarativeBase):
     metadata = MetaData(schema="prod", naming_convention=NAMING)
+
+
+class AnalyticsBase(DeclarativeBase):
+    """Consented, anonymous ranking events (DESIGN §26.7). The API role may insert and delete here, nothing else."""
+
+    metadata = MetaData(schema="analytics", naming_convention=NAMING)
