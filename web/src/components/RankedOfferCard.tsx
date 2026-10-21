@@ -42,8 +42,8 @@ export function RankedOfferCard({ item }: { item: RankedOffer }) {
       <div className="text-sm"><OfferTiers offer={o} /></div>
       <dl className="mt-3 space-y-1 text-sm">
         <div className="flex justify-between gap-3">
-          <dt className="text-ink-500">Estimated bonus value</dt>
-          <dd className="tabular text-right text-ink-900">{usd(e.bonus_value_cents)}{e.value_basis !== "cash" ? <span className="block text-xs text-ink-500">at {e.value_basis}</span> : null}</dd>
+          <dt className="text-ink-500">{e.group === "points" ? "Estimated value" : "Bonus value"}</dt>
+          <dd className="tabular text-right text-ink-900">{usd(e.bonus_value_cents)}{e.value_basis !== "cash" ? <span className="block text-xs text-ink-500">{e.value_basis}</span> : null}</dd>
         </div>
         {card ? (
           <>
@@ -52,7 +52,7 @@ export function RankedOfferCard({ item }: { item: RankedOffer }) {
               <dd className="tabular text-right">{e.first_year_fee_cents == null ? "Not stated" : usd(e.first_year_fee_cents)}</dd>
             </div>
             <div className="flex justify-between gap-3 font-medium">
-              <dt className="text-ink-700">Bonus minus first-year fee</dt>
+              <dt className="text-ink-700">{e.group === "points" ? "Estimate minus first-year fee" : "Bonus minus first-year fee"}</dt>
               <dd className="tabular text-right text-ink-900">{e.net_first_year_cents == null ? "—" : usd(e.net_first_year_cents)}</dd>
             </div>
           </>

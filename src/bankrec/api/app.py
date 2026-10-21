@@ -38,7 +38,7 @@ from bankrec.recommend import recommend as run_recommend
 from bankrec.recommend.common import DISCLAIMER
 from bankrec.recommend.config import point_values, scoring
 from bankrec.recommend.models import ProductView, RecommendRequest, RecommendResponse
-from bankrec.recommend.public_offers import PublicOffersResponse, Sort, ranking_assumptions
+from bankrec.recommend.public_offers import Group, PublicOffersResponse, Sort, ranking_assumptions
 from bankrec.recommend.public_offers import rank as rank_public_offers
 from bankrec.settings import Settings, get_settings
 
@@ -295,10 +295,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         type: Annotated[str, Query(pattern="^(credit_card|checking|savings)$")] = "credit_card",
         sort: Annotated[Sort, Query(description="value | bonus | requirement | ending")] = "value",
         limit: Annotated[int, Query(ge=1, le=100)] = 50,
+        group: Annotated[
+            Group, Query(description="cash | points (ranked separately, DESIGN §26.4)")
+        ] = "cash",
     ) -> PublicOffersResponse:
         """Public offers of Verified products ranked by a dollar estimate (no user inputs; DESIGN §25.3)."""
         t = now()
-        return rank_public_offers(r.all_of_type(type, t), type, sort, t, limit)
+        return rank_public_offers(r.all_of_type(type, t), type, sort, t, limit, group)
 
     @app.get(prefix + "/offers", response_model=OffersPage, tags=["offers"])
     def offers(

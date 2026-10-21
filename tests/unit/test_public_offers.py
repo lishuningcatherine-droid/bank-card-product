@@ -57,13 +57,13 @@ def test_estimate_values_points_at_default_and_subtracts_first_year_fee() -> Non
     e = estimate(p, offer("o"))
     assert not isinstance(e, str)
     assert (e.bonus_value_cents, e.first_year_fee_cents, e.net_first_year_cents) == (60000, 0, 60000)
-    assert e.value_basis == "1.0¢ per point (default)"
+    assert (e.group, e.value_basis) == ("points", "estimated, assumes 1.0¢/point")
     cash = estimate(
         card("B", [], annual_fee_cents=9500),
         offer("c", reward_unit="cents", amount_min=20000, amount_max=20000),
     )
     assert not isinstance(cash, str)
-    assert (cash.value_basis, cash.net_first_year_cents) == ("cash", 10500)
+    assert (cash.group, cash.value_basis, cash.net_first_year_cents) == ("cash", "cash", 10500)
 
 
 def test_up_to_and_restricted_currency_offers_are_not_valued() -> None:
@@ -81,11 +81,14 @@ def test_rank_only_public_current_offers_of_verified_products() -> None:
         card("Stale", [offer("stale", state="stale", amount_min=200000, amount_max=200000)]),
         card("Up to", [offer("upto", amount_qualifier="up_to", amount_min=None, amount_max=100000)]),
     ]
-    res = rank(products, "credit_card", "value", NOW)
+    res = rank(products, "credit_card", "value", NOW, group="points")
     # value = bonus minus first-year fee: 60,000 points at 1.0¢ with no fee beats 90,000 points with a $550 fee
     assert [(r.rank, r.product.name) for r in res.items] == [(1, "Free"), (2, "Big")]
     assert [u.product.name for u in res.unranked] == ["Up to"]
-    assert [r.product.name for r in rank(products, "credit_card", "bonus", NOW).items] == ["Big", "Free"]
+    assert [r.product.name for r in rank(products, "credit_card", "bonus", NOW, group="points").items] == [
+        "Big",
+        "Free",
+    ]
     assert any("1.0¢" in a for a in res.assumptions)
 
 
@@ -95,7 +98,7 @@ def test_same_product_offers_on_two_channels_rank_once_with_the_other_listed() -
         "landing", amount_min=75000, amount_max=75000, offer_url="https://www.examplebank.example/offers/x"
     )
     targeted = offer("mail", audience="targeted", amount_min=100000, amount_max=100000)
-    [r] = rank([card("A", [page, landing, targeted])], "credit_card", "value", NOW).items
+    [r] = rank([card("A", [page, landing, targeted])], "credit_card", "value", NOW, group="points").items
     assert r.offer.id == "landing"
     assert [o.id for o in r.other_public_offers] == ["page"]
     assert r.non_public_offers == 1
@@ -115,8 +118,12 @@ def test_ending_and_requirement_sorts() -> None:
     )
     b = card("B", [offer("b", expiration_date=date(2026, 12, 1))])
     c = card("C", [offer("c")])
-    assert [r.product.name for r in rank([a, b, c], "credit_card", "ending", NOW).items] == ["B", "A", "C"]
-    assert rank([a, b, c], "credit_card", "requirement", NOW).items[0].product.name == "A"
+    assert [r.product.name for r in rank([a, b, c], "credit_card", "ending", NOW, group="points").items] == [
+        "B",
+        "A",
+        "C",
+    ]
+    assert rank([a, b, c], "credit_card", "requirement", NOW, group="points").items[0].product.name == "A"
 
 
 def test_non_public_offers_are_never_recommended() -> None:
@@ -134,3 +141,38 @@ def test_offer_audience_only_narrows() -> None:
     assert offer_audience("public", "This offer is only available to selected recipients.")[0] == "targeted"
     # a registered audience is never made more public by the wording
     assert offer_audience("referral", "Earn 60,000 bonus points")[0] == "referral"
+
+
+def test_cash_and_points_offers_are_never_ranked_together() -> None:
+    cash = card("Cash", [offer("c", reward_unit="cents", amount_min=20000, amount_max=20000)])
+    hotel = card(
+        "Hotel", [offer("h", amount_min=190000, amount_max=190000)], reward_program="Example Hotel Points"
+    )
+    both = card("Both", [offer("bc", reward_unit="cents", amount_min=10000, amount_max=10000), offer("bp")])
+    assert [r.product.name for r in rank([cash, hotel, both], "credit_card", "value", NOW).items] == [
+        "Cash",
+        "Both",
+    ]
+    pts = rank([cash, hotel, both], "credit_card", "value", NOW, group="points")
+    assert [(r.product.name, r.offer.id) for r in pts.items] == [("Hotel", "h"), ("Both", "bp")]
+    assert all(r.estimate.value_basis.startswith("estimated, assumes") for r in pts.items)
+
+
+def test_a_fixed_cash_value_program_ranks_with_cash(monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from bankrec.recommend import config, public_offers
+
+    pv = {
+        "default_cents_per_point": 1.0,
+        "programs": {
+            "Example Rewards": {
+                "cents_per_point": 1.0,
+                "basis": "Example Bank cash redemption page",
+                "fixed_cash_value": True,
+            }
+        },
+    }
+    monkeypatch.setattr(config, "point_values", lambda: pv)
+    monkeypatch.setattr(public_offers, "point_values", lambda: pv)
+    fixed = card("Fixed", [offer("f")], reward_program="Example Rewards")
+    [r] = rank([fixed], "credit_card", "value", NOW).items
+    assert r.estimate.value_basis == "fixed value: 1.0¢ per point (Example Bank cash redemption page)"

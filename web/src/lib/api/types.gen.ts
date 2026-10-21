@@ -585,6 +585,12 @@ export interface components {
             cents_per_point?: string | null;
             /** First Year Fee Cents */
             first_year_fee_cents?: number | null;
+            /**
+             * Group
+             * @default cash
+             * @enum {string}
+             */
+            group: "cash" | "points";
             /** Monthly Fee Cents */
             monthly_fee_cents?: number | null;
             /** Net First Year Cents */
@@ -801,6 +807,12 @@ export interface components {
              * Format: date-time
              */
             generated_at: string;
+            /**
+             * Group
+             * @default cash
+             * @enum {string}
+             */
+            group: "cash" | "points";
             /** Items */
             items: components["schemas"]["RankedOffer"][];
             /** Point Values */
@@ -1261,6 +1273,8 @@ export interface operations {
                 /** @description value | bonus | requirement | ending */
                 sort?: "value" | "bonus" | "requirement" | "ending";
                 limit?: number;
+                /** @description cash | points (ranked separately, DESIGN §26.4) */
+                group?: "cash" | "points";
             };
             header?: never;
             path?: never;

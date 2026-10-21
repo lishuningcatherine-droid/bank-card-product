@@ -20,11 +20,16 @@ from bankrec.recommend.config import cents_per_point, point_values
 from bankrec.recommend.models import OfferView, ProductView
 
 Sort = Literal["value", "bonus", "requirement", "ending"]
+# cash: cash bonuses and points with an issuer-published fixed cash value; points: every other point or mile, whose
+# dollar figure is only an estimate at the default value (owner decision 2026-10-20: never ranked together)
+Group = Literal["cash", "points"]
 
 
 class OfferEstimate(BaseModel):
+    group: Group = "cash"
     bonus_value_cents: int
-    value_basis: str  # "cash", or the points assumption ("1.0¢ per point (default)")
+    # "cash", "fixed value: 1.0¢ per point (basis)" or "estimated, assumes 1.0¢/point"
+    value_basis: str
     cents_per_point: Decimal | None = None
     first_year_fee_cents: int | None = None  # cards: annual fee charged in the first year, when stated
     monthly_fee_cents: int | None = None  # deposit accounts: shown, not subtracted
@@ -60,6 +65,7 @@ class UnrankedOffer(BaseModel):
 
 class PublicOffersResponse(BaseModel):
     product_type: str
+    group: Group = "cash"
     sort: Sort
     generated_at: datetime
     items: list[RankedOffer]
@@ -89,6 +95,12 @@ def _cpp_text(cpp: Decimal) -> str:
     return s if "." in s else f"{s}.0"
 
 
+def fixed_value(program: object) -> bool:
+    """True only for a program listed with an issuer-published fixed cash-redemption value."""
+    prog = (point_values().get("programs") or {}).get(str(program or ""))
+    return bool(prog and prog.get("fixed_cash_value"))
+
+
 def estimate(p: ProductView, o: OfferView) -> OfferEstimate | str:
     """The dollar estimate of ``o``, or the reason it is not valued."""
     if o.amount_qualifier not in ("exact", "tiered") or o.amount_max is None:
@@ -102,8 +114,12 @@ def estimate(p: ProductView, o: OfferView) -> OfferEstimate | str:
         cpp, src = cents_per_point(d.get("reward_program"))
         unit = "mile" if o.reward_unit == "miles" else "point"
         value = _cents(Decimal(o.amount_max) * cpp)
-        basis = f"{_cpp_text(cpp)}¢ per {unit} ({src})"
-    est = OfferEstimate(bonus_value_cents=value, value_basis=basis, cents_per_point=cpp)
+        if fixed_value(d.get("reward_program")):
+            basis = f"fixed value: {_cpp_text(cpp)}¢ per {unit} ({src})"
+        else:
+            basis = f"estimated, assumes {_cpp_text(cpp)}¢/{unit}"
+    group: Group = "cash" if o.reward_unit == "cents" or fixed_value(d.get("reward_program")) else "points"
+    est = OfferEstimate(group=group, bonus_value_cents=value, value_basis=basis, cents_per_point=cpp)
     if p.product_type == "credit_card":
         fee = d.get("intro_annual_fee_cents")
         fee = d.get("annual_fee_cents") if fee is None else fee
@@ -135,8 +151,11 @@ def ranking_assumptions() -> list[str]:
     pv = point_values()
     return [
         "Only Verified products and current, public offers from official bank pages are ranked.",
-        f"Points and miles are valued at {pv['default_cents_per_point']}¢ each unless a program has its own value "
-        "on the methodology page; portal and transfer-partner values are not used.",
+        "Cash offers (cash back, and points with an issuer-published fixed cash value) and points or miles offers "
+        "are ranked separately, never together.",
+        f"Points and miles without a fixed cash value are shown in their own amounts; their dollar figure is an "
+        f"estimate that assumes {pv['default_cents_per_point']}¢ each, and portal or transfer-partner values are "
+        "not used.",
         "Card estimates subtract the annual fee charged in the first year; a card whose fee is not stated is "
         "listed after the others.",
         "Deposit-account estimates are the bonus itself; the monthly fee is shown but not subtracted, because "
@@ -148,7 +167,12 @@ def ranking_assumptions() -> list[str]:
 
 
 def rank(
-    products: list[ProductView], product_type: str, sort: Sort, now: datetime, limit: int = 50
+    products: list[ProductView],
+    product_type: str,
+    sort: Sort,
+    now: datetime,
+    limit: int = 50,
+    group: Group = "cash",
 ) -> PublicOffersResponse:
     items: list[RankedOffer] = []
     unranked: list[UnrankedOffer] = []
@@ -159,12 +183,15 @@ def rank(
         if not public:
             continue
         non_public = sum(1 for o in p.offers if o.audience != "public" and o.state == "current")
-        valued = [(o, e) for o in public if isinstance(e := estimate(p, o), OfferEstimate)]
-        if not valued:
+        all_valued = [(o, e) for o in public if isinstance(e := estimate(p, o), OfferEstimate)]
+        valued = [(o, e) for o, e in all_valued if e.group == group]
+        if not all_valued:
             o = public[0]
             reason = estimate(p, o)
             assert isinstance(reason, str)
             unranked.append(UnrankedOffer(product=_brief(p), offer=o, reason=reason))
+            continue
+        if not valued:
             continue
         best, est = max(
             valued, key=lambda oe: (oe[1].bonus_value_cents, -(oe[0].expiration_date or date.max).toordinal())
@@ -187,6 +214,7 @@ def rank(
     assumptions = ranking_assumptions()
     return PublicOffersResponse(
         product_type=product_type,
+        group=group,
         sort=sort,
         generated_at=now,
         items=items,

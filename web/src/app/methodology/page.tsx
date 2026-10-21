@@ -55,7 +55,7 @@ export default async function Methodology() {
             ))}
           </tbody>
         </table>
-        <p className="text-sm text-ink-500">A program gets its own value only when the issuer publishes a fixed cash-redemption value; otherwise the default applies. Targeted, referral and pre-approved offers are shown on product pages with that label, and are never ranked or recommended.</p>
+        <p className="text-sm text-ink-500">A program gets its own value only when the issuer publishes a fixed cash-redemption value, and only those programs rank with cash offers. Every other point or mile (including hotel and airline programs) is ranked separately, shown in its own amount, and its dollar figure is labelled as an estimate at the default value. Targeted, referral and pre-approved offers are shown on product pages with that label, and are never ranked or recommended.</p>
       </section>
       <section className="space-y-2">
         <h2 className="text-xl">How value is counted</h2>

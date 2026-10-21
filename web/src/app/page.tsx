@@ -26,13 +26,32 @@ function pick<V extends string>(v: unknown, allowed: readonly V[], fallback: V):
   return typeof v === "string" && (allowed as readonly string[]).includes(v) ? (v as V) : fallback;
 }
 
+function OfferList({ id, title, intro, items }: { id: string; title?: string; intro?: string; items: PublicOffers["items"] }) {
+  return (
+    <div className="space-y-3" aria-labelledby={title ? `${id}-h` : undefined}>
+      {title ? <h3 id={`${id}-h`} className="text-xl">{title}</h3> : null}
+      {intro ? <p className="text-sm text-ink-700">{intro}</p> : null}
+      {items.length ? (
+        <ol className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {items.map((it) => <li key={it.offer.id}><RankedOfferCard item={it} /></li>)}
+        </ol>
+      ) : <p className="text-sm text-ink-500">None right now.</p>}
+    </div>
+  );
+}
+
 export default async function Home({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
   const type = pick<T>(sp.type, TYPES.map((t) => t[0]), "credit_card");
   const sort = pick<OfferSort>(sp.sort, SORTS.map((s) => s.value), "value");
+  // Cash offers and points/miles offers are never ranked together (owner decision 2026-10-20); deposit bonuses are cash.
   let data: PublicOffers | null = null;
+  let points: PublicOffers | null = null;
   try {
-    data = await getRankedOffers(type, sort);
+    [data, points] = await Promise.all([
+      getRankedOffers(type, sort, "cash"),
+      type === "credit_card" ? getRankedOffers(type, sort, "points") : Promise.resolve(null),
+    ]);
   } catch {
     data = null;
   }
@@ -77,16 +96,21 @@ export default async function Home({ searchParams }: { searchParams: Promise<SP>
         </nav>
         {data === null ? (
           <ErrorState>We couldn&apos;t load offers right now. Please try again in a moment.</ErrorState>
-        ) : data.items.length === 0 ? (
+        ) : data.items.length === 0 && !points?.items.length ? (
           <EmptyState title="No public bonus right now" href={browse[2]} cta={`Browse all ${browse[1].toLowerCase()}`}>
             No Verified {browse[1].toLowerCase()} show a current public bonus on their official pages.
           </EmptyState>
         ) : (
-          <ol className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {data.items.map((it) => (
-              <li key={it.offer.id}><RankedOfferCard item={it} /></li>
-            ))}
-          </ol>
+          <>
+            <OfferList id="cash" title={type === "credit_card" ? "Cash offers" : undefined}
+              intro={type === "credit_card" ? "Cash back and statement-credit bonuses, plus points with a cash value the issuer publishes as fixed." : undefined}
+              items={data.items} />
+            {points ? (
+              <OfferList id="points" title="Points and miles offers"
+                intro="Shown in points or miles. The dollar figure is only an estimate at the assumed value per point; these offers are ranked on their own, never against cash offers."
+                items={points.items} />
+            ) : null}
+          </>
         )}
         {data?.unranked.length ? (
           <div className="rounded-md border border-border p-4 text-sm">

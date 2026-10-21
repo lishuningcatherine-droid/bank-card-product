@@ -1430,3 +1430,11 @@ The `apy` section now needs a percentage figure as well as the words APY / Annua
 (2026-10-21 06:12) loaded without its table but still said "Annual Percentage Yield", passed, and the product and
 fees pages alone sent Chase Savings to review. Also, when any page a published product took values from is degraded
 in a run, the product is `held` for that run: no merge from the remaining pages, no review item, no recheck flag.
+
+### 26.4 Cash and points offers ranked separately (owner decision 2026-10-20)
+`/offers/ranked?group=cash|points`. `cash`: bonuses paid in cash or statement credit, and points of a program listed in
+`config/point_values.yaml` with `fixed_cash_value: true` (an issuer-published fixed cash-redemption value; none
+listed yet). `points`: every other point or mile, including hotel and airline programs; shown in its own amount, and
+its dollar figure is labelled "estimated, assumes X¢/point". The two are never ranked together: the home page shows
+"Cash offers" and "Points and miles offers" as separate lists. Until the owner supplies program values, non-fixed
+hotel and airline points never enter the cash ranking.

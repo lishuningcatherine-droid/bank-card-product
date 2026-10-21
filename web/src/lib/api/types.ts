@@ -18,3 +18,4 @@ export type PublicOffers = S["PublicOffersResponse"];
 export type RankedOffer = S["RankedOffer"];
 export type UnrankedOffer = S["UnrankedOffer"];
 export type OfferSort = PublicOffers["sort"];
+export type OfferGroup = NonNullable<PublicOffers["group"]>;

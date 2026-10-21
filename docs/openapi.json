@@ -795,6 +795,15 @@
       ],
       "title": "First Year Fee Cents"
      },
+     "group": {
+      "default": "cash",
+      "enum": [
+       "cash",
+       "points"
+      ],
+      "title": "Group",
+      "type": "string"
+     },
      "monthly_fee_cents": {
       "anyOf": [
        {
@@ -1430,6 +1439,15 @@
      "generated_at": {
       "format": "date-time",
       "title": "Generated At",
+      "type": "string"
+     },
+     "group": {
+      "default": "cash",
+      "enum": [
+       "cash",
+       "points"
+      ],
+      "title": "Group",
       "type": "string"
      },
      "items": {
@@ -2858,6 +2876,22 @@
        "minimum": 1,
        "title": "Limit",
        "type": "integer"
+      }
+     },
+     {
+      "description": "cash | points (ranked separately, DESIGN \u00a726.4)",
+      "in": "query",
+      "name": "group",
+      "required": false,
+      "schema": {
+       "default": "cash",
+       "description": "cash | points (ranked separately, DESIGN \u00a726.4)",
+       "enum": [
+        "cash",
+        "points"
+       ],
+       "title": "Group",
+       "type": "string"
       }
      }
     ],
