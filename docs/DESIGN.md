@@ -1486,3 +1486,10 @@ default without real labelled data.
   view, writes weights, training facts and held-out metrics; never activates), `bankrec ml check <artifact>`,
   `bankrec ml approve <artifact> --by <owner>`. Products are read as published today (a known limitation: offers may
   have changed since the view).
+
+### 26.9 Personal card results: cash and points cards ranked apart
+The owner's point-value rule (§26.4) applies to personal recommendations too: each card result carries
+`value_group` — `cash` (cash back, store currencies, points with an issuer-published fixed cash value) or `points`
+(other points and miles). Cash cards are ranked first and points cards on their own, ranks restarting in each group;
+a ranking model re-orders only within a group. Points results say "Estimated: assumes X¢ per point (basis)". Reasons
+are in dollars ("$650 of your $1,750 monthly spending earns a bonus rate"), not percentages.

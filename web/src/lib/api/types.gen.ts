@@ -1055,6 +1055,8 @@ export interface components {
             rank: number;
             /** Top Features */
             top_features?: string[];
+            /** Value Group */
+            value_group?: ("cash" | "points") | null;
             values: components["schemas"]["Values"];
             /** Why */
             why?: components["schemas"]["Reason"][];

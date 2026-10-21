@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
-from typing import Any
+from typing import Any, Literal
 
 from bankrec.recommend.common import (
     DISCLAIMER,
@@ -535,9 +535,11 @@ def recommend(
             raw["possible_offer_signal"] = sig_n
         score, comps = components(raw, weights)
         results.append(_result(c, req, score, comps, now))
-    results.sort(key=lambda r: (-r.score, -r.values.ongoing_annual_cents, r.product.name))
-    for n, r in enumerate(results, start=1):
-        r.rank = n
+    # cash and points/miles cards are ranked separately (owner decision 2026-10-20): cash first, ranks per group
+    results.sort(
+        key=lambda r: (r.value_group == "points", -r.score, -r.values.ongoing_annual_cents, r.product.name)
+    )
+    renumber(results)
     return RecommendResponse(
         product_type="credit_card",
         generated_at=now,
@@ -593,8 +595,16 @@ def _result(c: CardCalc, req: CardRequest, score: float, comps: list[Any], now: 
     if c.p.reward_rates and d.get("reward_currency") != "cashback":
         pass
     assumptions = []
+    group = value_group(d)
     if d.get("reward_currency") in {"points", "miles"}:
-        assumptions.append(f"Assumes {c.cpp.normalize():f}¢ per point ({c.cpp_basis}).")
+        unit = "mile" if d.get("reward_currency") == "miles" else "point"
+        cpp = f"{c.cpp.normalize():f}"
+        cpp = cpp if "." in cpp else f"{cpp}.0"
+        assumptions.append(
+            f"Estimated: assumes {cpp}¢ per {unit} ({c.cpp_basis})."
+            if group == "points"
+            else f"Assumes {cpp}¢ per {unit}, the issuer's fixed cash value ({c.cpp_basis})."
+        )
     assumptions.append("Spending is spread evenly across the year; rewards use your stated monthly amounts.")
     over = None
     if fee > req.max_annual_fee * 100:
@@ -610,6 +620,7 @@ def _result(c: CardCalc, req: CardRequest, score: float, comps: list[Any], now: 
         score=score,
         components=comps,
         values=values,
+        value_group=group,
         fee_text=fee_text,
         current_offer=c.offer or c.possible,
         possible_welcome_offer=possible,
@@ -628,10 +639,13 @@ def _reason(key: str, c: CardCalc, req: CardRequest) -> Reason:
     d = c.p.details
     if key == "category_match":
         cats = [t.replace("_", " ") for t in c.top]
+        spend: dict[str, int] = req.monthly_spend.model_dump()
+        total = sum(spend.values())
+        matched = round(c.matched_share * total)
         return Reason(
             code=key,
-            params={"categories": cats, "share": round(c.matched_share, 2)},
-            text=f"{int(c.matched_share * 100)}% of your spending earns a bonus rate"
+            params={"categories": cats, "matched_monthly_dollars": matched, "monthly_dollars": total},
+            text=f"${matched:,} of your ${total:,} monthly spending earns a bonus rate"
             + (f" ({', '.join(cats)})." if cats else "."),
         )
     if key == "ongoing":
@@ -671,3 +685,20 @@ def _reason(key: str, c: CardCalc, req: CardRequest) -> Reason:
     if key == "credit_profile_fit":
         return Reason(code=key, text="Fits the issuer's published credit guidance (or none is published).")
     return Reason(code=key, text="Travel benefits fit how often you travel.")
+
+
+def value_group(d: dict[str, Any]) -> Literal["cash", "points"]:
+    """Points and miles without an issuer-published fixed cash value are only estimated: their own group."""
+    from bankrec.recommend.public_offers import fixed_value
+
+    if d.get("reward_currency") in {"points", "miles"} and not fixed_value(d.get("reward_program")):
+        return "points"
+    return "cash"
+
+
+def renumber(results: list[Result]) -> None:
+    """Ranks restart in each value group (cards); other products have one group."""
+    n: dict[str | None, int] = {}
+    for r in results:
+        n[r.value_group] = n.get(r.value_group, 0) + 1
+        r.rank = n[r.value_group]

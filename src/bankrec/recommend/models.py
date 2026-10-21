@@ -284,6 +284,9 @@ class Result(BaseModel):
     score: SkipJsonSchema[float] = Field(exclude=True)
     components: SkipJsonSchema[list[Component]] = Field(exclude=True)
     values: Values
+    # cards: "cash" (cash back, store currencies, points with an issuer-published fixed cash value) or "points" (other
+    # points and miles, valued only by an estimate). The two are ranked separately, never together (DESIGN §26.9).
+    value_group: Literal["cash", "points"] | None = None
     fee_text: str
     current_offer: OfferView | None = None
     possible_welcome_offer: str | None = None

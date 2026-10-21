@@ -336,3 +336,28 @@ def test_unverified_foreign_fee_only_matters_when_the_user_avoids_foreign_fees()
         [card(foreign_tx_fee_pct=Decimal("3"))], req(goal="travel", avoid_foreign_fee=True), NOW
     )
     assert r.results
+
+
+def test_cash_and_points_cards_are_ranked_separately_and_points_are_labelled_estimates() -> None:
+    cash = card("Cash", rates=[rate("other", "2")])
+    hotel = card(
+        "Hotel",
+        rates=[rate("other", "10", "x")],
+        reward_currency="points",
+        base_rate=Decimal("10"),
+        reward_program="Example Hotel Points",
+        is_co_branded=True,
+    )
+    miles = card("Miles", rates=[rate("other", "2", "x")], reward_currency="miles", base_rate=Decimal("2"))
+    res = cards.recommend(
+        [hotel, miles, cash], req(goal="travel", monthly_spend=spend(other=1000)), NOW
+    ).results
+    # the hotel card's 10X at the assumed 1.0¢ out-"earns" 2% cash back, yet cash cards come first, ranked apart
+    assert [(r.value_group, r.rank, r.product.name) for r in res] == [
+        ("cash", 1, "Cash"),
+        ("points", 1, "Hotel"),
+        ("points", 2, "Miles"),
+    ]
+    hotel_r = next(r for r in res if r.product.name == "Hotel")
+    assert "Estimated: assumes 1.0¢ per point (default)." in hotel_r.assumptions
+    assert not any("%" in w.text for r in res for w in r.why)

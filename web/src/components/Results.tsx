@@ -59,6 +59,17 @@ function ResultCard({ r, onClick }: { r: Result; onClick: Clicked }) {
   );
 }
 
+/** Cards: cash-type and points/miles cards are ranked separately and shown apart (owner decision 2026-10-20). */
+function groups(results: Result[]): { key: string; title?: string; intro?: string; items: Result[] }[] {
+  if (!results.some((r) => r.value_group)) return [{ key: "all", items: results }];
+  const cash = results.filter((r) => r.value_group !== "points");
+  const points = results.filter((r) => r.value_group === "points");
+  return [
+    ...(cash.length ? [{ key: "cash", title: "Cash back cards", intro: "Rewards paid as cash back or statement credit (or points with a cash value the issuer fixes).", items: cash }] : []),
+    ...(points.length ? [{ key: "points", title: "Points and miles cards", intro: "Ranked on their own. Their dollar values are estimates at the value per point shown in each card's assumptions; change it above.", items: points }] : []),
+  ];
+}
+
 const hashListeners = new Set<() => void>();
 function subscribeHash(cb: () => void): () => void {
   hashListeners.add(cb);
@@ -140,9 +151,17 @@ export function Results() {
           Only Verified products are recommended. {data.excluded?.length ? `${data.excluded.length} product(s) were excluded — see below.` : ""}
         </EmptyState>
       ) : (
-        <ol className="space-y-6" aria-label="Ranked results">
-          {data.results.map((r) => <li key={r.product.id}><ResultCard r={r} onClick={clicked} /></li>)}
-        </ol>
+        <div className="space-y-8">
+          {groups(data.results).map((g) => (
+            <section key={g.key} aria-labelledby={`g-${g.key}`} className="space-y-3">
+              {g.title ? <h2 id={`g-${g.key}`} className="text-2xl">{g.title}</h2> : null}
+              {g.intro ? <p className="text-sm text-ink-700">{g.intro}</p> : null}
+              <ol className="space-y-6" aria-label={g.title ?? "Ranked results"}>
+                {g.items.map((r) => <li key={r.product.id}><ResultCard r={r} onClick={clicked} /></li>)}
+              </ol>
+            </section>
+          ))}
+        </div>
       )}
       {data.excluded && data.excluded.length ? (
         <details className="rounded-md border border-border p-3 text-sm">

@@ -1953,6 +1953,21 @@
       "title": "Top Features",
       "type": "array"
      },
+     "value_group": {
+      "anyOf": [
+       {
+        "enum": [
+         "cash",
+         "points"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Value Group"
+     },
      "values": {
       "$ref": "#/components/schemas/Values"
      },

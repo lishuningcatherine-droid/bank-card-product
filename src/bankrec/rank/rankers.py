@@ -46,11 +46,15 @@ class LinearRanker:
     def rerank(self, resp: RecommendResponse) -> RecommendResponse:
         if self.product_types and resp.product_type not in self.product_types:
             return BaselineRanker().rerank(resp)
-        scored = [(self.score(features(r.product, r.rank)), r.rank, r) for r in resp.results]
-        ordered = [
-            r.model_copy(update={"rank": n})
-            for n, (_, _, r) in enumerate(sorted(scored, key=lambda t: (-t[0], t[1])), 1)
+        from bankrec.recommend.cards import renumber
+
+        # re-order within each value group only: cash and points cards are never ranked together (DESIGN §26.9)
+        scored = [
+            (r.value_group == "points", -self.score(features(r.product, r.rank)), r.rank, r)
+            for r in resp.results
         ]
+        ordered = [r.model_copy() for *_, r in sorted(scored, key=lambda t: t[:3])]
+        renumber(ordered)
         return resp.model_copy(update={"results": ordered, "ranker": self.id})
 
 
