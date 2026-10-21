@@ -36,7 +36,8 @@ test("capture", async ({ page }) => {
     await page.goto(`/recommend/${type}`);
     if (type === "checking") await page.getByLabel("Approximate monthly direct deposit").fill("2500");
     await page.getByRole("button", { name: "See my recommendations" }).click();
-    await expect(page.getByRole("list", { name: "Ranked results" })).toBeVisible();
+    // card results are grouped (cash back / points and miles); deposit results are one list
+    await expect(page.getByRole("list", { name: /^(Ranked results|Cash back cards)$/ })).toBeVisible();
     await shot(page, name);
   }
   await page.goto("/credit-cards");

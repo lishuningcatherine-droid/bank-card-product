@@ -13,7 +13,8 @@ test.describe("critical flows (Example Bank test data)", () => {
     await page.getByLabel("Everything else").fill("2000");
     await page.getByRole("button", { name: "See my recommendations" }).click();
     await expect(page).toHaveURL(/recommend\/results#/);
-    const results = page.getByRole("list", { name: "Ranked results" });
+    // card results are grouped: cash back cards first, points and miles cards ranked apart (DESIGN §26.9)
+    const results = page.getByRole("list", { name: "Cash back cards" });
     await expect(results.getByRole("article").first()).toBeVisible();
     const first = results.getByRole("article").first();
     await expect(first.locator("dt", { hasText: "Ongoing annual value" })).toBeVisible();
@@ -46,7 +47,7 @@ test.describe("critical flows (Example Bank test data)", () => {
   test("checking: achievability test is shown", async ({ page }) => {
     await page.goto("/recommend/checking");
     await page.getByLabel("Approximate monthly direct deposit").fill("2500");
-    await page.getByLabel("State").selectOption("NY");
+    await page.getByRole("combobox", { name: /^State/ }).selectOption("NY");
     await page.getByRole("button", { name: "See my recommendations" }).click();
     const card = page.getByRole("article").filter({ hasText: "Example Bank Everyday Checking" });
     await expect(card.getByText("Requirement achievable: yes")).toBeVisible();
