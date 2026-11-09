@@ -1,0 +1,6 @@
+# Verbatim official pages. Raw captured bytes, unmodified.
+# method: rendered in a fresh Playwright context (no cookies, no login), robots.txt checked first
+# columns: file | url | http_status | content_type | bytes | retrieved_at_utc
+aadvantage-business.html | https://www.citi.com/credit-cards/citi-aadvantage-business-credit-card | 200 | text/html; charset=utf-8 | 832705 | 2026-11-09T23:46:58Z
+double-cash.html | https://www.citi.com/credit-cards/citi-double-cash-credit-card | 200 | text/html; charset=utf-8 | 837703 | 2026-11-09T23:46:41Z
+strata-premier.html | https://www.citi.com/credit-cards/citi-strata-premier-credit-card | 200 | text/html; charset=utf-8 | 864761 | 2026-11-09T23:46:25Z

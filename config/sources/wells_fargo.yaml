@@ -1,0 +1,27 @@
+# wells_fargo card pages registered 2026-11-09 for the offer tracker. robots.txt checked the same day (see config/banks/wells_fargo.yaml).
+bank_id: wells_fargo
+sources:
+- bank_id: wells_fargo
+  slug: active-cash
+  product_type: credit_card
+  source_url: https://creditcards.wellsfargo.com/active-cash-credit-card/
+  source_kind: product_detail
+  parser_name: wells_fargo
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Wells Fargo Active Cash® Card
+  has_offers: true
+  notes: card page; registered 2026-11-09 for the offer tracker (config/tracker/cards.yaml)
+- bank_id: wells_fargo
+  slug: autograph
+  product_type: credit_card
+  source_url: https://creditcards.wellsfargo.com/autograph-visa-credit-card/
+  source_kind: product_detail
+  parser_name: wells_fargo
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Wells Fargo Autograph® Card
+  has_offers: true
+  notes: card page; registered 2026-11-09 for the offer tracker (config/tracker/cards.yaml)

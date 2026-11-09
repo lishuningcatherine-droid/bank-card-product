@@ -43,6 +43,9 @@ class BankConfig(BaseModel):
     boilerplate_phrases: list[str] = Field(default_factory=list)
     # Elements that hold the product name when the page's h1 is a promotion (classifier "product heading" signal).
     product_heading_selectors: list[str] = Field(default_factory=list)
+    # brand words a page heading may drop from the official name ("Active Cash® Credit Card" for "Wells Fargo
+    # Active Cash® Card"); only the classifier's heading match uses them, never the stored name
+    heading_drops_brand: list[str] = Field(default_factory=list)
     cfpb_issuer_names: list[str] = Field(default_factory=list)
     discovery: Discovery = Field(default_factory=Discovery)
     known_limitations: list[str] = Field(default_factory=list)

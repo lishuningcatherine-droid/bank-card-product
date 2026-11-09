@@ -34,16 +34,16 @@ _POST_CAP = re.compile(
 )
 _ROTATING = re.compile(
     r"\b(?:rotating|bonus categories (?:that change )?each quarter|quarterly bonus categories|"
-    r"categories each quarter)\b",
+    r"categories each quarter|(?:different )?places you shop each quarter)\b",
     re.IGNORECASE,
 )
 _ACTIVATION = re.compile(r"\b(?:activate|activation|enroll(?:ment)?|opt[- ]in)\b", re.IGNORECASE)
 _PORTAL = re.compile(
     r"\b(?:booked|purchased|reserved|made)\s+(?:directly\s+)?(?:through|via|on)\s+(?:the\s+)?"
-    r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|"
+    r"(?:chase travel|capital one travel|amex ?travel|american express travel|ultimate rewards|cititravel\.com|"
     r"(?:[A-Z][\w.]+\s+){0,3}(?:travel\s+)?(?:portal|center|centre))|\btravel portal\b|"
     r"\b(?:on|through|via|with)\s+(?:all\s+purchases\s+through\s+)?(?:chase travel|capital one (?:business )?travel|"
-    r"amex ?travel|american express travel)\b|\bin the travel center\b|"
+    r"amex ?travel|american express travel|citi travel®?(?: portal)?)(?!\w)|\bin the travel center\b|"
     # Amex's own portal names wherever they appear ("... or Amex Travel App™"): never the category "travel"
     r"\bamex\s?travel(?:\.com)?(?:\s+app)?\b|"
     # United cards: "hotel stays when you prepay directly through Renowned Hotels and Resorts for United® Cardmembers"

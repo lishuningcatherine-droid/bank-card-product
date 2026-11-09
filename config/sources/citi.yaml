@@ -1,0 +1,52 @@
+# citi card pages registered 2026-11-09 for the offer tracker. robots.txt checked the same day (see config/banks/citi.yaml).
+bank_id: citi
+sources:
+- bank_id: citi
+  slug: strata-premier
+  product_type: credit_card
+  source_url: https://www.citi.com/credit-cards/citi-strata-premier-credit-card
+  source_kind: product_detail
+  parser_name: citi
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Citi Strata Premier® Card
+  has_offers: true
+  notes: card page; registered 2026-11-09 for the offer tracker (config/tracker/cards.yaml)
+- bank_id: citi
+  slug: double-cash
+  product_type: credit_card
+  source_url: https://www.citi.com/credit-cards/citi-double-cash-credit-card
+  source_kind: product_detail
+  parser_name: citi
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Citi Double Cash® Card
+  has_offers: true
+  notes: card page; registered 2026-11-09 for the offer tracker (config/tracker/cards.yaml)
+- bank_id: citi
+  slug: custom-cash
+  product_type: credit_card
+  source_url: https://www.citi.com/credit-cards/citi-custom-cash-credit-card
+  source_kind: product_detail
+  parser_name: citi
+  requires_render: true
+  enabled: false
+  priority: 100
+  expected_entity: Citi Custom Cash® Card
+  has_offers: true
+  notes: 'disabled 2026-11-09: the page states "Citi is no longer accepting applications
+    for the Citi Custom Cash® Card product as of May 28, 2026."'
+- bank_id: citi
+  slug: aadvantage-business
+  product_type: credit_card
+  source_url: https://www.citi.com/credit-cards/citi-aadvantage-business-credit-card
+  source_kind: product_detail
+  parser_name: citi
+  requires_render: true
+  enabled: true
+  priority: 100
+  expected_entity: Citi® / AAdvantage Business™ World Elite Mastercard®
+  has_offers: true
+  notes: business card page; registered 2026-11-09 for the offer tracker

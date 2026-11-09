@@ -1,0 +1,28 @@
+# Wells Fargo. robots.txt checked 2026-11-09: creditcards.wellsfargo.com allows all paths; on www.wellsfargo.com,
+# /biz/business-credit/credit-cards/ and /credit-cards/documents/ are disallowed.
+bank_id: wells_fargo
+display_name: "Wells Fargo"
+official_domains: [wellsfargo.com]
+adapter: wells_fargo
+capture_timezone: America/New_York
+product_types:
+  credit_card:
+    availability: offered
+    evidence_url: "https://creditcards.wellsfargo.com/"
+    note: "consumer card pages from creditcards.wellsfargo.com/sitemap.xml"
+  checking: {availability: unknown, note: "not surveyed"}
+  savings: {availability: unknown, note: "not surveyed"}
+meaningful_query_params: []
+referral_url_patterns: []
+boilerplate_phrases: []
+product_heading_selectors: []
+# the h1 drops the bank name ("Active Cash® Credit Card")
+heading_drops_brand: ["Wells Fargo"]
+cfpb_issuer_names: []
+discovery:
+  robots_url: "https://creditcards.wellsfargo.com/robots.txt"
+  sitemaps: ["https://creditcards.wellsfargo.com/sitemap.xml"]
+known_limitations:
+  - "Business card pages (www.wellsfargo.com/biz/business-credit/credit-cards/) are disallowed by robots.txt:
+    business card offers can only be entered manually."
+  - "Credit card agreements under /credit-cards/documents/ are disallowed by robots.txt and never fetched."

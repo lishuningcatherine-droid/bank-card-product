@@ -11,7 +11,7 @@ categories:
   car_rental: {label: Car rental, synonyms: ["car rental reservations", "car reservations", "car rental agencies", "car rentals", "car rental", "rental cars", "rental car"]}
   # "Flights" are airline purchases, not travel in general (which would also cover hotels, cars, cruises).
   airline: {label: Airline, synonyms: ["flights booked directly with airlines", "flights booked directly",
-                                       "flights booked direct", "prepaid air", "air reservations", "airline purchases", "flight purchases", "airfare", "flights", "airline"]}
+                                       "flights booked direct", "prepaid air", "air reservations", "airline purchases", "flight purchases", "airfare", "air travel", "flights", "airline"]}
   hotel: {label: Hotel, synonyms: ["hotel stays", "hotels", "prepaid hotels", "hotels booked direct", "hotel accommodations", "hotel"]}
   gas: {label: Gas, synonyms: ["gas stations", "gas", "fuel", "u.s. gas stations"]}
   ev_charging: {label: EV charging, synonyms: ["ev charging", "electric vehicle charging"]}
@@ -25,7 +25,7 @@ categories:
   # Business categories (spot-check round 1, findings 2 and 8). Not mapped to the consumer spend categories.
   office_supply: {label: Office supply stores, synonyms: ["office supply stores", "office supply store purchases", "office supply"]}
   telecom: {label: Internet, cable & phone, synonyms: ["internet, cable and phone services", "internet, cable, and phone services",
-                                                      "cell phone service providers", "cell phone services", "phone services",
+                                                      "cell phone service providers", "cell phone services", "phone services", "phone plans",
                                                       "internet, cable, and phone", "internet, cable and phone"]}
   advertising: {label: Advertising, synonyms: ["advertising purchases made with social media sites and search engines",
                                                "social media and search engine advertising", "social media & search engine advertising",
@@ -48,4 +48,4 @@ categories:
   merchant: {label: Specific merchant, synonyms: ["lyft rides", "lyft", "peloton equipment and accessory purchases",
                                                   "peloton equipment", "peloton purchases", "peloton"]}
   rotating: {label: Rotating bonus categories, synonyms: ["bonus categories", "quarterly categories", "rotating categories"]}
-  other: {label: Everything else, synonyms: ["all other purchases", "all other card purchases", "all card purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase", "everyday purchases", "other eligible purchases"]}
+  other: {label: Everything else, synonyms: ["all other purchases", "all other card purchases", "all card purchases", "all purchases", "every purchase", "everything else", "other purchases", "all other eligible purchases", "on every purchase", "everyday purchases", "other eligible purchases", "net purchases"]}

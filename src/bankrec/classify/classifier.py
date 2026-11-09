@@ -143,8 +143,13 @@ def classify(
     source_kind: str,
     boilerplate: list[str] | None = None,
     heading_selectors: list[str] | None = None,
+    heading_drops_brand: list[str] | None = None,
 ) -> Classification:
     """Content rules (stage 5) for a successfully retrieved HTML page."""
+    heading_names = [expected_entity] + [
+        re.sub(r"^\s*" + re.escape(b) + r"\s+", "", expected_entity, flags=re.IGNORECASE)
+        for b in heading_drops_brand or []
+    ]
     sig: list[str] = []
     text = doc.text
     for b in boilerplate or []:
@@ -207,7 +212,7 @@ def classify(
     headings = [*doc.h1, doc.title]  # deposit pages often name the product only in the title
     for sel in heading_selectors or []:
         headings += [doc.node_text(n).replace("\n", " ") for n in doc.select(sel)]
-    h1_match = any(name_present(expected_entity, h) for h in headings)
+    h1_match = any(name_present(n, h) for n in heading_names for h in headings)
     if h1_match:
         sig.append("product_h1")
     in_text = name_present(expected_entity, text)
