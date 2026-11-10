@@ -21,7 +21,7 @@ test.describe("critical flows (Example Bank test data)", () => {
     await expect(first.locator("dt", { hasText: "First-year value" })).toBeVisible();
     await expect(first.getByText("Why this matches you")).toBeVisible();
     await expect(page.getByText(/Possible welcome offer: up to/).first()).toBeVisible();
-    await expect(page.getByText("Not financial advice.").first()).toBeVisible();
+    await expect(page.getByText(/Not financial advice/).first()).toBeVisible();
     // adjustable point valuation re-ranks without losing inputs
     await page.getByLabel(/Value of a point or mile/).fill("1.5");
     await page.getByLabel(/Value of a point or mile/).blur();

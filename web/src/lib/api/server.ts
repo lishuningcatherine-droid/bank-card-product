@@ -1,6 +1,20 @@
 import "server-only";
 
-import type { CompareResponse, HistoryEntry, OfferGroup, OfferSort, Page, Product, PublicOffers, SourcesResponse } from "./types";
+import type {
+  ApplicationRule,
+  Campaign,
+  CampaignDetail,
+  CampaignPage,
+  CompareResponse,
+  HistoryEntry,
+  OfferGroup,
+  OfferSort,
+  Page,
+  PointValue,
+  Product,
+  PublicOffers,
+  SourcesResponse,
+} from "./types";
 
 /** Server-side API client. Responses are cached with tags so the pipeline can revalidate them on publish. */
 const BASE = process.env.API_INTERNAL_URL ?? process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
@@ -55,4 +69,27 @@ export async function compare(ids: string[]): Promise<CompareResponse> {
   });
   if (!res.ok) throw new ApiError(res.status, `API ${res.status}`);
   return (await res.json()) as CompareResponse;
+}
+
+/** Offer campaigns (DESIGN §27.9). ``pv`` = the visitor's own cents-per-point values ("chase_ur:1.25,…"). */
+export function listCampaigns(params: URLSearchParams): Promise<CampaignPage> {
+  const qs = params.toString();
+  return get<CampaignPage>(`/campaigns${qs ? `?${qs}` : ""}`, ["campaigns", "listing:credit_card"]);
+}
+
+export function getCampaign(id: string, pv?: string): Promise<CampaignDetail> {
+  const qs = pv ? `?pv=${encodeURIComponent(pv)}` : "";
+  return get<CampaignDetail>(`/campaigns/${encodeURIComponent(id)}${qs}`, ["campaigns", `campaign:${id}`]);
+}
+
+export function getProductCampaigns(productId: string): Promise<Campaign[]> {
+  return get<Campaign[]>(`/products/${encodeURIComponent(productId)}/campaigns`, ["campaigns", `product:${productId}`]);
+}
+
+export function getRules(bank?: string): Promise<ApplicationRule[]> {
+  return get<ApplicationRule[]>(`/rules${bank ? `?bank=${encodeURIComponent(bank)}` : ""}`, ["rules"]);
+}
+
+export function getPointValues(): Promise<PointValue[]> {
+  return get<PointValue[]>("/point-values", ["rules"]);
 }

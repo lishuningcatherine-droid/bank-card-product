@@ -270,6 +270,20 @@ def sync_campaigns(session: Session, card: P.TrackedCard, now: datetime, report:
             if rs.terminal_status in SUCCESS:
                 if seen_now and c.last_verified_at is not None and c.last_verified_at >= rs.at - _SEEN_SLACK:
                     continue  # recorded above as seen/changed
+                if seen_now:
+                    # the page was read, but its changes wait for review, so the offer was not re-confirmed
+                    c.consecutive_failures += 1
+                    _check(
+                        session,
+                        c,
+                        rs.at,
+                        "failed",
+                        report,
+                        run_id=rs.run_id,
+                        source_id=rs.source_id,
+                        detail="page read; its changes are waiting for review, so the offer was not re-confirmed",
+                    )
+                    continue
                 if not seen_now:
                     not_seen = True
                     _check(

@@ -19,3 +19,11 @@ export type RankedOffer = S["RankedOffer"];
 export type UnrankedOffer = S["UnrankedOffer"];
 export type OfferSort = PublicOffers["sort"];
 export type OfferGroup = NonNullable<PublicOffers["group"]>;
+// Offer tracker (DESIGN §27)
+export type Campaign = S["CampaignView"];
+export type CampaignDetail = S["CampaignDetail"];
+export type CampaignPage = S["CampaignPage"];
+export type CampaignTerms = S["Terms"];
+export type CampaignMoment = S["Moment"];
+export type ApplicationRule = S["RuleView"];
+export type PointValue = S["PointValue"];

@@ -2311,7 +2311,7 @@
       "type": "array"
      },
      "disclaimer": {
-      "default": "Not financial advice. Product terms change; confirm all details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, and rankings are not paid.",
+      "default": "For information only. Not financial advice; the bank's official terms prevail. Product terms change; confirm all details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, use no referral links, and rankings are not paid.",
       "title": "Disclaimer",
       "type": "string"
      },
@@ -3694,7 +3694,7 @@
   }
  },
  "info": {
-  "description": "Public, read-only data about published, verified U.S. bank products. Not financial advice. Product terms change; confirm all details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, and rankings are not paid.",
+  "description": "Public, read-only data about published, verified U.S. bank products. For information only. Not financial advice; the bank's official terms prevail. Product terms change; confirm all details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, use no referral links, and rankings are not paid.",
   "title": "Bank Product Recommendation API",
   "version": "1.0.0"
  },

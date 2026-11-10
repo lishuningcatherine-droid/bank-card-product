@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 
 import { PageTitle } from "@/components/Site";
 import { ErrorState } from "@/components/States";
-import { getMethodology } from "@/lib/api/server";
+import { getMethodology, getPointValues } from "@/lib/api/server";
+import type { PointValue } from "@/lib/api/types";
 
 export const dynamic = "force-dynamic";
 
@@ -11,6 +12,8 @@ export const metadata: Metadata = { title: "Methodology", description: "How offe
 export default async function Methodology() {
   let m: Record<string, unknown> | null = null;
   try { m = await getMethodology(); } catch { m = null; }
+  let floors: PointValue[] = [];
+  try { floors = await getPointValues(); } catch { floors = []; }
   const factors = (m?.factors ?? {}) as Record<string, string[]>;
   const pv = (m?.point_values ?? {}) as { default_cents_per_point?: number; programs?: Record<string, { cents_per_point: number; basis?: string }> };
   const ranking = (m?.public_offer_ranking ?? []) as string[];
@@ -25,6 +28,29 @@ export default async function Methodology() {
           <li>Partially verified products appear in browse and compare, with the missing items listed, but not in recommendations.</li>
         </ul>
       </section>
+      <section id="offer-tracker" className="space-y-3">
+        <h2 className="text-xl">How current offers are tracked</h2>
+        <ul className="list-disc space-y-1 pl-5 text-sm">
+          <li><strong>Offers and cards are kept apart.</strong> A card&apos;s lasting features (fees, earn rates, benefits) are separate from its offers. One card can have several offers at once (for example a public offer and a targeted one) and many over time.</li>
+          <li><strong>One offer, many versions.</strong> An offer is identified by its card, channel, type and reward structure. A new version is recorded only when a term changes: amount or unit, tiers, spending requirement, spending period, annual fee, start or end date, eligibility, or channel. Layout changes only update the verification time. Old versions are kept and shown.</li>
+          <li><strong>Status.</strong> Active; Ending soon (an issuer-stated deadline within 14 days); Expired (only when an issuer-stated deadline has passed, or a reviewer confirms it); Withdrawn (only by a reviewer); Needs verification (the official page was read but no longer shows the offer); Data out of date (3 failed checks in a row, or no successful check for 7 days). A failed check never ends an offer. Every status change is logged with its reason and whether it was automatic or manual.</li>
+          <li><strong>Deadlines</strong> are shown in US Eastern time. A time is shown only when the issuer states one (never filled in as 11:59 p.m.); a countdown only when the date, time and time zone are all stated. Without a date we say &ldquo;Deadline unknown&rdquo;. The date we first saw an offer is never presented as its start date. The application deadline is separate from the spending period after approval.</li>
+          <li><strong>History.</strong> &ldquo;Usual level&rdquo; is the median of the public offers this site recorded for the card over the last 24 months. Labels such as &ldquo;highest&rdquo; or &ldquo;better than usual&rdquo; appear only with at least 3 records over at least 12 months, and always say they refer to this site&apos;s records. Third-party history is labelled and can be excluded.</li>
+          <li><strong>Sources.</strong> Offers come from the issuers&apos; official pages. Offers we cannot read automatically (changed pages, targeted or branch offers) are entered by hand with their source and reviewed by a second person before they appear.</li>
+        </ul>
+        <h3 className="text-base">Conservative point values</h3>
+        <p className="text-sm text-ink-700">Points and miles count only at the cash or statement-credit value an official page states. Without one, an offer shows its points and no dollar figure. You can enter your own value on the offers page.</p>
+        <table className="w-full text-sm">
+          <caption className="sr-only">Point value floors</caption>
+          <thead><tr><th scope="col" className="py-1 text-left">Program</th><th scope="col" className="py-1 text-right">Value per point</th><th scope="col" className="py-1 pl-4 text-left">Basis</th></tr></thead>
+          <tbody>
+            {floors.map((f) => (
+              <tr key={f.program}><th scope="row" className="py-1 text-left font-normal">{f.name}</th><td className="py-1 text-right tabular">{f.floor_cents == null ? "No dollar value" : `${f.floor_cents}¢`}</td><td className="py-1 pl-4">{f.excerpt ? <>“{f.excerpt}”{f.source_url ? <> (<a href={f.source_url} target="_blank" rel="noopener noreferrer">source</a>)</> : null}</> : f.note}</td></tr>
+            ))}
+          </tbody>
+        </table>
+      </section>
+
       <section id="public-offers" className="space-y-2">
         <h2 className="text-xl">How the home page ranks public offers</h2>
         <p>The home page ranks the offers banks show to everyone, without asking anything about you. It shows dollar estimates, never scores.</p>

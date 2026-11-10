@@ -1,8 +1,8 @@
 export const DISCLAIMER_LINES = [
-  "Not financial advice.",
+  "For information only. Not financial advice; the bank's official terms prevail.",
   "Terms change. Confirm all details on the official bank website before applying.",
   "Data is checked on a schedule and is not real-time; each product shows when it was last checked.",
-  "We have no affiliate or advertiser relationships, and rankings are not paid.",
+  "We have no affiliate or advertiser relationships, use no referral links, and rankings are not paid.",
 ];
 
 export function Disclaimer({ compact = false }: { compact?: boolean }) {

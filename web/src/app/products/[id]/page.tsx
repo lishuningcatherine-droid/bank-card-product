@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ChangeHistory } from "@/components/ChangeHistory";
@@ -9,9 +10,11 @@ import { keyFacts } from "@/components/ProductFacts";
 import { SourceLink } from "@/components/SourceLink";
 import { StatusLabel } from "@/components/StatusLabel";
 import { VerificationBadge } from "@/components/VerificationBadge";
-import { ApiError, getHistory, getProduct } from "@/lib/api/server";
+import { CampaignStatus, SourceBadge } from "@/components/CampaignStatus";
+import { rewardText, spendText } from "@/components/CampaignTerms";
+import { ApiError, getHistory, getProduct, getProductCampaigns } from "@/lib/api/server";
 import type { Product } from "@/lib/api/types";
-import { CATEGORY_LABEL, CONDITION_LABEL, RESTRICTIVE, TYPE_LABEL, usd } from "@/lib/format";
+import { CATEGORY_LABEL, CONDITION_LABEL, longDate, RESTRICTIVE, TYPE_LABEL, usd } from "@/lib/format";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -36,7 +39,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
   const p = await load(id);
-  const history = await getHistory(id).catch(() => []);
+  const [history, campaigns] = await Promise.all([getHistory(id).catch(() => []), getProductCampaigns(id).catch(() => [])]);
+  const CURRENT = new Set(["active", "ending_soon", "pending_verification", "stale"]);
+  const currentCampaigns = campaigns.filter((c) => CURRENT.has(c.status));
+  const pastCampaigns = campaigns.filter((c) => !CURRENT.has(c.status));
   const d = p.details as Record<string, unknown>;
   const missingFields = p.missing_fields ?? [];
   // public offers first; each offer names the official page(s) it came from (offers can differ by channel)
@@ -94,6 +100,30 @@ export default async function ProductPage({ params }: Props) {
           </div>
         </div>
       </section>
+
+      {campaigns.length ? (
+        <section aria-labelledby="tracked" className="space-y-3">
+          <h2 id="tracked" className="text-xl">Tracked offers and their history</h2>
+          <p className="text-sm text-ink-700">Offers this site follows for this card. Each opens to its full terms, every earlier version, its status changes and its sources.</p>
+          {[["Current", currentCampaigns], ["Past", pastCampaigns]].map(([label, list]) => (list as typeof campaigns).length ? (
+            <div key={label as string}>
+              <h3 className="text-base">{label as string}</h3>
+              <ul className="mt-2 divide-y divide-border rounded-md border border-border">
+                {(list as typeof campaigns).map((c) => (
+                  <li key={c.id} className="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+                    <div>
+                      <Link href={`/offers/${c.id}`} className="font-medium">{c.offer_type_label}: {rewardText(c.terms.total_amount, c.terms.unit, c.terms.unit_name)}</Link>
+                      <span className="block text-ink-500">{spendText(c.terms) ?? "No spending requirement stated"} · {c.channel_label} · {c.deadline_label} · version {c.version}</span>
+                      <span className="block text-xs text-ink-500">First seen {longDate(c.first_seen_at)} · last verified {c.last_verified_at ? longDate(c.last_verified_at) : "—"}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2"><CampaignStatus c={c} /><SourceBadge c={c} /></div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null)}
+        </section>
+      ) : null}
 
       {rates.length ? (
         <section aria-labelledby="rewards">

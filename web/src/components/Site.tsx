@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Disclaimer } from "./Disclaimer";
 
 const NAV = [
+  ["/offers", "Current offers"],
+  ["/offers/match", "Offers for me"],
   ["/credit-cards", "Credit cards"],
   ["/checking-accounts", "Checking"],
   ["/savings-accounts", "Savings"],
@@ -43,7 +45,7 @@ export function SiteFooter() {
         <Disclaimer compact />
         <nav aria-label="Footer">
           <ul className="space-y-1 text-sm">
-            {[["/sources", "Data sources"], ["/methodology", "Methodology"], ["/about", "About"], ["/privacy", "Privacy"], ["/disclaimer", "Disclaimer"]].map(([h, l]) => (
+            {[["/rules", "Application rules"], ["/sources", "Data sources"], ["/methodology", "Methodology"], ["/about", "About"], ["/privacy", "Privacy"], ["/disclaimer", "Disclaimer"]].map(([h, l]) => (
               <li key={h}><Link href={h!}>{l}</Link></li>
             ))}
           </ul>

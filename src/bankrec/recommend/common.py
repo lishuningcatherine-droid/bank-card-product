@@ -8,9 +8,9 @@ from decimal import Decimal
 from bankrec.recommend.models import Component, OfferView, ProductView
 
 DISCLAIMER = (
-    "Not financial advice. Product terms change; confirm all details on the official bank website before applying. "
-    "Data is checked on a schedule and is not real-time. We have no affiliate or advertiser relationships, and "
-    "rankings are not paid."
+    "For information only. Not financial advice; the bank's official terms prevail. Product terms change; confirm all "
+    "details on the official bank website before applying. Data is checked on a schedule and is not real-time. We have "
+    "no affiliate or advertiser relationships, use no referral links, and rankings are not paid."
 )
 
 LABELS = {
