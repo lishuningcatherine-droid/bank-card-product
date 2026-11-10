@@ -35,7 +35,7 @@ export default async function MatchPage({ searchParams }: { searchParams: Promis
       <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-ink-700">
         <span>Marks used:</span><KindBadge kind="official" /><KindBadge kind="community" /><KindBadge kind="profile" /><KindBadge kind="unconfirmed" />
       </div>
-      <p className="mb-6 text-sm text-ink-700">Prefer to browse first? See <Link href="/offers">current offers</Link> or the <Link href="/rules">application rules</Link>.</p>
+      <p className="mb-6 text-sm text-ink-700">Prefer to browse first? See <Link href="/offers" className="underline">current offers</Link> or the <Link href="/rules" className="underline">application rules</Link>.</p>
       <MatchCheck campaignId={campaign} pointValues={pointValues}
         cards={cards.map((c) => ({ card_key: c.card_key, bank_id: c.bank_id, name: `${c.bank_name} ${c.name}`, segment: c.segment }))} />
       <div className="mt-8"><Disclaimer /></div>

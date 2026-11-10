@@ -45,7 +45,7 @@ export default async function Methodology() {
           <thead><tr><th scope="col" className="py-1 text-left">Program</th><th scope="col" className="py-1 text-right">Value per point</th><th scope="col" className="py-1 pl-4 text-left">Basis</th></tr></thead>
           <tbody>
             {floors.map((f) => (
-              <tr key={f.program}><th scope="row" className="py-1 text-left font-normal">{f.name}</th><td className="py-1 text-right tabular">{f.floor_cents == null ? "No dollar value" : `${f.floor_cents}¢`}</td><td className="py-1 pl-4">{f.excerpt ? <>“{f.excerpt}”{f.source_url ? <> (<a href={f.source_url} target="_blank" rel="noopener noreferrer">source</a>)</> : null}</> : f.note}</td></tr>
+              <tr key={f.program}><th scope="row" className="py-1 text-left font-normal">{f.name}</th><td className="py-1 text-right tabular">{f.floor_cents == null ? "No dollar value" : `${f.floor_cents}¢`}</td><td className="py-1 pl-4">{f.excerpt ? <>“{f.excerpt}”{f.source_url ? <> (<a href={f.source_url} target="_blank" rel="noopener noreferrer" className="underline">source</a>)</> : null}</> : f.note}</td></tr>
             ))}
           </tbody>
         </table>

@@ -4,7 +4,7 @@ import { expectAccessible, expectNoHorizontalScroll } from "./helpers";
 
 const PAGES = ["/", "/credit-cards", "/checking-accounts", "/savings-accounts", "/recommend", "/recommend/credit-card",
   "/recommend/checking", "/recommend/savings", "/methodology", "/sources", "/about", "/privacy", "/disclaimer",
-  "/compare", "/does-not-exist"];
+  "/compare", "/offers", "/offers/match", "/rules", "/does-not-exist"];
 
 for (const path of PAGES) {
   test(`axe: ${path}`, async ({ page }) => {
