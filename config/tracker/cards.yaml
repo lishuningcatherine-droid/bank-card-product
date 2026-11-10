@@ -1,4 +1,4 @@
-# The cards the offer tracker follows (DESIGN §27.1): 20 cards, 7 issuers, personal and business. Long-term facts
+# The cards the offer tracker follows (DESIGN §27.1): 25 cards (5 of them starter cards), 7 issuers, personal and business. Long-term facts
 # (fees, earn rates, benefits) come from the published product (prod.products) the card links to; this file adds only
 # what the pipeline does not read: the card's series, its points program, and business-card reporting facts with a
 # source. Unknown facts stay null ("unknown"), never guessed.
@@ -78,10 +78,24 @@ cards:
      source_ids: [wells_fargo:active-cash], series: Active Cash, points_program: null}
   - {card_key: wells_fargo:autograph, bank_id: wells_fargo, canonical_key: "wells_fargo:credit_card:consumer:wells fargo autograph:-",
      source_ids: [wells_fargo:autograph], series: Autograph, points_program: wf_rewards}
+  # Starter cards (owner 2026-11-10): student and secured cards for people with little or no credit history.
+  - {card_key: discover:it-student-cash-back, bank_id: discover, canonical_key: "discover:credit_card:consumer:discover it student cash back:-",
+     source_ids: [discover:it-student-cash-back], series: Discover it, points_program: null, starter: student}
+  - {card_key: capital_one:savor-student, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:savor rewards for students:-",
+     source_ids: [capital_one:savor-student], series: Savor, points_program: null, starter: student}
+  - {card_key: capital_one:quicksilver-student, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:quicksilver rewards for students:-",
+     source_ids: [capital_one:quicksilver-student], series: Quicksilver, points_program: null, starter: student}
+  - {card_key: capital_one:platinum-secured, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:platinum secured:-",
+     source_ids: [capital_one:platinum-secured], series: Platinum, points_program: null, starter: secured}
+  - {card_key: capital_one:quicksilver-secured, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:quicksilver secured:-",
+     source_ids: [capital_one:quicksilver-secured], series: Quicksilver, points_program: null, starter: secured}
 # Pages that cannot be read automatically; their offers are entered by hand (bankrec offers add) and reviewed.
 manual_only:
   - {bank_id: wells_fargo, url: "https://www.wellsfargo.com/biz/business-credit/credit-cards/", why: "robots.txt disallows /biz/business-credit/credit-cards/"}
   - {bank_id: american_express, url: "https://www.americanexpress.com/us/credit-cards/card-application/apply/", why: "offer terms under /apply/ are robots-disallowed; once-per-lifetime wording cannot be captured automatically"}
   - {bank_id: chase, url: "https://sites.chase.com/", why: "Pricing & Terms pages: robots.txt disallows all crawlers"}
   - {bank_id: capital_one, url: "https://card-apis.capitalone.com/", why: "card data API answers robots.txt with 403; pages are read as static HTML only"}
+  - {bank_id: capital_one, url: "https://www.capitalone.com/credit-cards/venture-x/", why: "the static page states no new-cardmember offer (only a referral bonus); the offer is filled in by scripts from card-apis.capitalone.com, which robots.txt blocks — enter it by hand from an official source"}
+  - {bank_id: american_express, url: "https://www.americanexpress.com/us/credit-cards/card/gold-card/", why: "the offer is stated as 'AS HIGH AS' an amount that varies by applicant; entered by hand as an up-to offer (owner 2026-11-10: Amex offers by manual entry)"}
+  - {bank_id: discover, url: "https://www.discover.com/credit-cards/student-credit-card/it-card/", why: "the first-year Cashback Match states no amount; it is not recorded as a fixed-amount campaign"}
   - {bank_id: citi, url: "https://www.citi.com/credit-cards/citi-custom-cash-credit-card", why: "no longer accepting applications as of May 28, 2026 (page text); not tracked"}

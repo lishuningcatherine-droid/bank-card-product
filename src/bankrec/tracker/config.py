@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -23,6 +25,16 @@ def settings() -> dict[str, Any]:
 
 @lru_cache(maxsize=1)
 def cards() -> list[dict[str, Any]]:
+    """The tracked cards. E2E tests point BANKREC_TRACKER_CARDS_FILE at fictional Example Bank cards; that override
+    is refused in production."""
+    override = os.environ.get("BANKREC_TRACKER_CARDS_FILE")
+    if override:
+        if os.environ.get("BANKREC_ENV") == "prod":
+            raise RuntimeError(
+                "BANKREC_TRACKER_CARDS_FILE is for tests only and is refused when BANKREC_ENV=prod"
+            )
+        data = yaml.safe_load(Path(override).read_text(encoding="utf-8")) or {}
+        return list(data.get("cards", []))
     return list(_load("cards").get("cards", []))
 
 

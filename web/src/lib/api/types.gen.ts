@@ -458,7 +458,7 @@ export interface components {
             bank_name: string;
             bonus: components["schemas"]["Judgement"];
             /** Campaign Id */
-            campaign_id: string;
+            campaign_id: string | null;
             /** Card Key */
             card_key: string;
             /** Card Name */
@@ -471,9 +471,20 @@ export interface components {
             /** Eligibility */
             eligibility: components["schemas"]["FindingView"][];
             first_year: components["schemas"]["FirstYear"];
+            /**
+             * Kind
+             * @description card = a tracked card with no current offer: approval and fit only
+             * @default offer
+             * @enum {string}
+             */
+            kind: "offer" | "card";
             offer_appeal: components["schemas"]["Judgement"];
             personal_fit: components["schemas"]["Judgement"];
+            /** Product Id */
+            product_id?: string | null;
             reach: components["schemas"]["Reach"];
+            /** Starter */
+            starter?: ("student" | "secured") | null;
             /** Uncertainty */
             uncertainty: string[];
         };
@@ -782,6 +793,8 @@ export interface components {
             segment: string;
             /** Series */
             series: string | null;
+            /** Starter */
+            starter?: ("student" | "secured") | null;
         };
         /** CheckEntry */
         CheckEntry: {
@@ -948,6 +961,17 @@ export interface components {
             /** Basis Label */
             basis_label: string;
             /**
+             * Boundary
+             * @description unknown only because an answer falls in the window's boundary month
+             * @default false
+             */
+            boundary: boolean;
+            /**
+             * Confidence
+             * @description community rules only
+             */
+            confidence?: ("strong" | "weak") | null;
+            /**
              * Effect
              * @enum {string}
              */
@@ -960,6 +984,11 @@ export interface components {
             name: string;
             /** Needs */
             needs: string[];
+            /**
+             * Officially Verified
+             * @description official rule read by this site on the issuer's own page
+             */
+            officially_verified: boolean;
             /**
              * Outcome
              * @enum {string}
@@ -1128,6 +1157,11 @@ export interface components {
         };
         /** MatchProfile */
         MatchProfile: {
+            /**
+             * Annual Income
+             * @description optional: yearly income you can access, as a range (never an exact figure)
+             */
+            annual_income?: ("none" | "lt_25k" | "25k_50k" | "50k_100k" | "100k_150k" | "150k_plus" | "prefer_not") | null;
             /**
              * As Of
              * @description evaluate as of this date (tests); defaults to today
@@ -1707,6 +1741,8 @@ export interface components {
         RuleView: {
             /** Bank Id */
             bank_id: string;
+            /** Confidence */
+            confidence?: ("strong" | "weak") | null;
             /**
              * Effect
              * @enum {string}

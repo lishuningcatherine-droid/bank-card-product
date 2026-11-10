@@ -113,6 +113,24 @@ def test_page_noise_creates_no_duplicate_campaign(session) -> None:  # type: ign
     assert outcomes == ["seen", "seen"]
 
 
+def test_stale_stored_hash_creates_no_version(session) -> None:  # type: ignore[no-untyped-def]
+    """Regression (2026-11-10): a hash stored under an older definition of the material fields must not make a
+    version when the terms are materially the same; the stored hash is refreshed instead."""
+    p = _product(session)
+    o = _offer(session, p)
+    sync(session, T0)
+    [c] = _campaigns(session)
+    [v] = c.versions
+    v.material_hash = "0" * 40  # as written by an older definition
+    o.offer_url = "https://www.examplebank.example/cards/everyday?tracking=1"  # not a material term
+    t1 = T0 + timedelta(days=1)
+    o.last_confirmed_at = t1
+    _run(session, t1, "published")
+    sync(session, t1)
+    [c] = _campaigns(session)
+    assert len(c.versions) == 1 and c.versions[0].material_hash != "0" * 40
+
+
 def test_failed_checks_never_end_a_campaign(session) -> None:  # type: ignore[no-untyped-def]
     p = _product(session)
     _offer(session, p)

@@ -13,4 +13,7 @@ psql "$ADMIN_URL" -qtc "DROP DATABASE IF EXISTS bankrec_e2e WITH (FORCE)" >/dev/
 psql "$ADMIN_URL" -qtc "CREATE DATABASE bankrec_e2e" >/dev/null
 uv run --frozen bankrec db upgrade >/dev/null
 uv run --frozen bankrec ingest --include-test --bank example_bank >/dev/null
+# offer tracker over the fictional Example Bank cards (the real card list is never used in E2E)
+export BANKREC_TRACKER_CARDS_FILE="$PWD/tests/fixtures/tracker/example_cards.yaml"
+uv run --frozen bankrec offers sync >/dev/null
 exec uv run --frozen bankrec api serve --host 127.0.0.1 --port "${API_PORT:-8010}"

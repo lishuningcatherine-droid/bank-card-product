@@ -49,6 +49,20 @@ BASIS_LABEL = {
     "official": "Issuer's published rule",
     "community": "Community-reported rule (not published by the issuer)",
 }
+
+
+def basis_label(r: dict[str, Any]) -> str:
+    """Official rules say whether this site read them on the issuer's page; community rules say how established
+    they are. Every community label says it is a community-reported rule (owner 2026-11-10)."""
+    if r["source_type"] == "community":
+        if r.get("confidence") == "strong":
+            return "Community-reported rule, widely corroborated (not published by the issuer)"
+        return "Community-reported rule, less established (not published by the issuer)"
+    if r.get("verification") == "third_party_quote":
+        return "Issuer's rule as quoted by a third party — not officially verified"
+    return "Issuer's published rule"
+
+
 HISTORY_LABEL = {
     "none": "no credit history",
     "lt_1y": "less than 1 year of credit history",
@@ -56,6 +70,50 @@ HISTORY_LABEL = {
     "2_5y": "2–5 years of credit history",
     "5y_plus": "more than 5 years of credit history",
 }
+INCOME_LABEL = {
+    "none": "no income",
+    "lt_25k": "under $25,000",
+    "25k_50k": "$25,000–$50,000",
+    "50k_100k": "$50,000–$100,000",
+    "100k_150k": "$100,000–$150,000",
+    "150k_plus": "over $150,000",
+}
+INCOME_TOP = {"none": 0, "lt_25k": 25_000, "25k_50k": 50_000, "50k_100k": 100_000, "100k_150k": 150_000}
+
+
+def income_notes(p: MatchProfile) -> tuple[list[str], list[str]]:
+    """(approval points, things to confirm). Income is optional; no minimum income is published for these cards."""
+    inc = p.annual_income
+    points: list[str] = []
+    confirm: list[str] = []
+    if inc in (None, "prefer_not"):
+        return points, confirm
+    if inc == "none":
+        points.append(
+            "You said you have no income. Card issuers must consider your ability to pay from income or assets"
+            " you can access (Regulation Z, 12 CFR 1026.51); without it, approval is a real risk."
+        )
+        confirm.append("Income or assets you can access: issuers must check your ability to pay.")
+    else:
+        points.append(
+            f"You gave a yearly income of {INCOME_LABEL[inc]}. Issuers weigh income with your existing credit lines;"
+            " they publish no minimum income for these cards."
+        )
+    if p.student:
+        points.append(
+            "If you are under 21, the same rule requires income or assets of your own, or an applicant aged 21 or"
+            " over who is also liable (12 CFR 1026.51(b))."
+        )
+    monthly = p.natural_monthly_spend()
+    top = INCOME_TOP.get(inc)
+    if monthly is not None and top is not None and monthly * 12 > top:
+        confirm.append(
+            f"Your card spending of {usd(monthly * 100)} a month ({usd(monthly * 1200)} a year) is above the income"
+            f" range you gave ({INCOME_LABEL[inc]}); check both figures. Only spend what you can pay in full."
+        )
+    return points, confirm
+
+
 # FICO's published score ranges (config/tracker/settings.yaml credit_ranges); used only as a risk signal together
 # with other answers, never as a cut-off for any card.
 DISCLAIMER = (
@@ -71,6 +129,11 @@ class FindingView(BaseModel):
     basis: Literal["official", "community"]
     basis_label: str
     verification: str
+    officially_verified: bool = Field(description="official rule read by this site on the issuer's own page")
+    confidence: Literal["strong", "weak"] | None = Field(None, description="community rules only")
+    boundary: bool = Field(
+        False, description="unknown only because an answer falls in the window's boundary month"
+    )
     outcome: Literal["conflict", "possible_conflict", "unknown", "clear", "info"]
     outcome_label: str
     explanation: str
@@ -113,10 +176,15 @@ class FirstYear(BaseModel):
 
 
 class Assessment(BaseModel):
-    campaign_id: str
+    kind: Literal["offer", "card"] = Field(
+        "offer", description="card = a tracked card with no current offer: approval and fit only"
+    )
+    campaign_id: str | None
+    product_id: str | None = None
     card_key: str
     card_name: str
     bank_name: str
+    starter: Literal["student", "secured"] | None = None
     action: Action
     action_label: str
     action_reasons: list[str]
@@ -168,6 +236,7 @@ def rule_dict(r: Any) -> dict[str, Any]:
         "excerpt": r.excerpt,
         "notes": list(r.notes or []),
         "verified_at": r.verified_at,
+        "confidence": r.confidence,
     }
 
 
@@ -188,10 +257,13 @@ def finding_view(f: Finding) -> FindingView:
         name=r["name"],
         effect=r["effect"],
         basis=r["source_type"],
-        basis_label=BASIS_LABEL[r["source_type"]],
+        basis_label=basis_label(r),
         verification=r["verification"],
+        officially_verified=r["source_type"] == "official" and r["verification"] == "page_captured",
+        confidence=r.get("confidence"),
+        boundary=f.boundary,
         outcome=f.outcome,
-        outcome_label=OUTCOME_LABEL[f.outcome],
+        outcome_label="Needs checking (boundary month)" if f.boundary else OUTCOME_LABEL[f.outcome],
         explanation=f.explanation,
         needs=f.needs,
         excerpt=r["excerpt"],
@@ -414,20 +486,40 @@ def personal_fit(
     return Judgement(status=status, label=label, points=pts)
 
 
-def credit_signals(p: MatchProfile, ranges: list[dict[str, Any]]) -> tuple[list[str], list[str], list[str]]:
-    """(strong risks, cautions, missing). Never an approval prediction."""
+STARTER_NOTE = {
+    "student": "This is a student card, made for people starting to build credit.",
+    "secured": "This is a secured card: a refundable deposit backs the credit line, and it is made for people"
+    " building or rebuilding credit.",
+}
+
+
+def credit_signals(
+    p: MatchProfile, ranges: list[dict[str, Any]], starter: str | None = None
+) -> tuple[list[str], list[str], list[str]]:
+    """(strong risks, cautions, missing). Never an approval prediction.
+
+    On a starter card a short history is expected, so it is a caution, not a reason to wait; on a secured card the
+    same goes for negative marks and a low score. Approval is still the issuer's decision and never called easy."""
     strong, caution, missing = [], [], []
+    still = " The issuer still reviews your application; this does not mean approval is easy or likely."
     if p.credit_history is None:
         missing.append("How long your credit history is")
     elif p.credit_history in ("none", "lt_1y"):
-        strong.append(
-            f"You have {HISTORY_LABEL[p.credit_history]}. Issuers look at how long and how well you have used"
-            " credit; a short history is a real risk for cards with large bonuses."
-        )
+        if starter:
+            caution.append(f"You have {HISTORY_LABEL[p.credit_history]}. {STARTER_NOTE[starter]}{still}")
+        else:
+            strong.append(
+                f"You have {HISTORY_LABEL[p.credit_history]}. Issuers look at how long and how well you have used"
+                " credit; a short history is a real risk for cards with large bonuses."
+                " Starter cards (student or secured) are checked separately in your results."
+            )
     if p.negative_marks is None:
         missing.append("Whether your credit report shows late payments, collections or a bankruptcy")
     elif p.negative_marks:
-        strong.append("You said your credit report shows late payments, collections or a bankruptcy.")
+        msg = "You said your credit report shows late payments, collections or a bankruptcy."
+        (caution if starter == "secured" else strong).append(
+            msg + (f" {STARTER_NOTE['secured']}{still}" if starter == "secured" else "")
+        )
     if p.credit_score is None:
         caution.append(
             "No credit score given (optional): the check relies on your credit history and report instead."
@@ -437,7 +529,9 @@ def credit_signals(p: MatchProfile, ranges: list[dict[str, Any]]) -> tuple[list[
         if band is not None:
             msg = f"Your FICO score {p.credit_score} is in FICO's “{band['name']}” range ({band['min']}–{band['max']})."
             if band.get("risk") == "high":
-                strong.append(msg + " That is a real risk; the score is not the only factor.")
+                (caution if starter == "secured" else strong).append(
+                    msg + " That is a real risk; the score is not the only factor."
+                )
             elif band.get("risk") == "medium":
                 caution.append(
                     msg
@@ -506,7 +600,10 @@ def assess(
     views = [finding_view(f) for f in findings]
     conflicts = [x for x in views if x.outcome == "conflict"]
 
-    strong, caution, missing = credit_signals(p, list(cfg.get("credit_ranges") or []))
+    strong, caution, missing = credit_signals(
+        p, list(cfg.get("credit_ranges") or []), getattr(v.card, "starter", None)
+    )
+    inc_points, inc_confirm = income_notes(p)
     r = reach(v.terms, p, margin)
     fit = personal_fit(v, p, product, now, overrides or {})
 
@@ -524,7 +621,7 @@ def assess(
         else:
             st = "no_known_conflict"
         if effect == "approval":
-            pts += strong + caution
+            pts += strong + caution + inc_points
             if st == "no_known_conflict" and strong:
                 st = "credit_risk"
             if st == "no_known_conflict" and missing:
@@ -568,9 +665,15 @@ def assess(
         uncertainty.append(f"The offer itself needs re-confirming: {v.status_label.lower()}.")
     if v.terms.end.date is None:
         uncertainty.append("The issuer has not stated an end date; the offer could change at any time.")
-    uncertainty.append(
-        "Issuers also consider your income and existing credit lines, which this check does not ask about."
-    )
+    if p.annual_income in (None, "prefer_not"):
+        uncertainty.append(
+            "Issuers also consider your income and existing credit lines; you have not given an income range."
+        )
+    else:
+        uncertainty.append(
+            "Issuers also consider your existing credit lines, which this check does not ask about."
+        )
+    uncertainty += inc_confirm
 
     # suggested action (strictest condition wins)
     reasons: list[str] = []
@@ -581,11 +684,9 @@ def assess(
     if official_conflict or community_block or r.status == "insufficient" or no_business:
         action = "not_suitable"
         for x in official_conflict:
-            reasons.append(f"{x.name}: {x.explanation} (issuer's published rule)")
+            reasons.append(f"{x.name}: {x.explanation} ({x.basis_label})")
         for x in community_block:
-            reasons.append(
-                f"{x.name}: {x.explanation} (community-reported rule, not published by the issuer)"
-            )
+            reasons.append(f"{x.name}: {x.explanation} ({x.basis_label})")
         if r.status == "insufficient":
             reasons.append(r.text)
         if no_business:
@@ -596,10 +697,10 @@ def assess(
         if r.status in ("tight", "unknown"):
             reasons.append(r.text)
     else:
-        blockers: list[str] = []
+        blockers: list[str] = list(inc_confirm)
         for x in views:
             if x.outcome in ("possible_conflict", "unknown", "conflict"):
-                blockers.append(f"{x.name}: {x.explanation}")
+                blockers.append(f"{x.name}: {x.explanation} ({x.basis_label})")
         if missing:
             blockers.append("Missing: " + "; ".join(m.lower() for m in missing) + ".")
         if r.status in ("tight", "unknown"):
@@ -628,6 +729,8 @@ def assess(
 
     return Assessment(
         campaign_id=v.id,
+        product_id=v.card.product_id,
+        starter=getattr(v.card, "starter", None),
         card_key=card.card_key,
         card_name=v.card.name,
         bank_name=v.card.bank_name or BANK_NAME.get(card.bank_id, card.bank_id),
@@ -716,6 +819,70 @@ def assumptions(margin: float) -> list[str]:
     ]
 
 
+def assess_card(
+    card_view: Any,
+    card: CardFacts,
+    facts: dict[str, CardFacts],
+    rules: list[dict[str, Any]],
+    p: MatchProfile,
+    today: date,
+    *,
+    product: Any | None = None,
+    now: Any = None,
+    overrides: dict[str, float] | None = None,
+) -> Assessment:
+    """A tracked card with no current offer (e.g. a secured or student card): approval rules, credit signals and
+    fit only — there is no bonus to qualify for and no spending requirement."""
+    from bankrec.tracker import views as TV
+
+    end = TV.moment({"date": None, "time": None, "time_known": False, "confirmed": False})
+    assert end is not None
+    fee = card_view.annual_fee_cents
+    terms = TV.Terms(
+        offer_type="other", channel="public", tiers=[], total_amount=None, unit="cash", min_spend_cents=None,
+        window_count=None, window_unit=None, window_start="not_stated", annual_fee_cents=fee,
+        first_year_fee_cents=card_view.first_year_fee_cents, start=None, end=end, eligibility_text=None,
+        verbatim=None, offer_url=card_view.official_url,
+    )  # fmt: skip
+    v = TV.CampaignView(
+        id="", campaign_key=f"{card.card_key}|card", card=card_view, channel="public",
+        channel_label="Public application", offer_type="other", offer_type_label="No current offer",
+        status="active", status_label="No current offer", status_reason=None, source_kind="official",
+        source_label=TV.SOURCE_LABEL["official"], source_name=None, officially_verified=True,
+        first_seen_at=now, last_checked_at=None, last_verified_at=None, version=0, terms=terms,
+        deadline_label="No current offer", countdown_to=None,
+        value=TV.Value(cents=None, depends_on_points_value=False, assumption=None, cents_per_point=None,
+                       first_year_net_cents=None, first_year_fee_cents=card_view.first_year_fee_cents),
+        history=TV.HistoryLabel(code="insufficient_history", text="", records=0, coverage_months=0, median=None,
+                                official_only=False),
+        demo=card_view.demo,
+    )  # fmt: skip
+    approval_rules = [r for r in rules if r["effect"] == "approval"]
+    a = assess(v, card, facts, approval_rules, p, today, product=product, now=now, overrides=overrides)
+    a.kind, a.campaign_id, a.product_id, a.starter = "card", None, card_view.product_id, card_view.starter
+    a.offer_appeal = Judgement(
+        status="no_offer",
+        label="No current welcome offer tracked",
+        points=["This site has no current welcome offer recorded for this card."]
+        + (
+            [
+                "A secured card asks for a refundable security deposit that usually sets your credit line;"
+                " check the deposit terms on the issuer's page."
+            ]
+            if card_view.starter == "secured"
+            else []
+        ),
+    )
+    a.bonus = Judgement(status="no_offer", label="No offer to qualify for", points=[])
+    fee_text = usd(fee) if fee is not None else "not read"
+    a.first_year = FirstYear(
+        reward_cents=None, first_year_fee_cents=card_view.first_year_fee_cents, net_cents=None,
+        depends_on_points_value=False, text=f"No welcome offer; annual fee {fee_text}. Everyday rewards are not included.",
+    )  # fmt: skip
+    a.uncertainty = [u for u in a.uncertainty if "end date" not in u]
+    return a
+
+
 def run(
     session: Any,
     req: Any,
@@ -769,6 +936,27 @@ def run(
                 overrides=dict(req.point_values),
             )
         )
-    items.sort(key=lambda a: (ACTION_ORDER[a.action], a.bank_name, a.card_name))
+    if not wanted:
+        # tracked cards with no current offer (starter cards among them) are checked too, without a bonus part
+        with_offer = {a.card_key for a in items}
+        for key, row in b._cards.items():
+            if key in with_offer or (row.demo and not allow_demo):
+                continue
+            cv = b.card(key)
+            prod = (products or {}).get(cv.product_id or "")
+            items.append(
+                assess_card(
+                    cv,
+                    facts[key],
+                    facts,
+                    rules,
+                    p,
+                    today,
+                    product=prod,
+                    now=now,
+                    overrides=dict(req.point_values),
+                )
+            )
+    items.sort(key=lambda a: (ACTION_ORDER[a.action], a.kind != "offer", a.bank_name, a.card_name))
     margin = float(config.settings()["reach"]["safety_margin"])
     return MatchResponse(items=items, questions=questions(p), assumptions=assumptions(margin))

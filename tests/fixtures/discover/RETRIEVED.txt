@@ -3,3 +3,4 @@
 # columns: file | url | http_status | content_type | bytes | retrieved_at_utc
 it-cash-back.html | https://www.discover.com/credit-cards/cash-back/it-card/ | 200 | text/html; charset=utf-8 | 826194 | 2026-11-09T23:40:36Z
 it-miles.html | https://www.discover.com/credit-cards/travel/ | 200 | text/html; charset=utf-8 | 797948 | 2026-11-09T23:40:39Z
+it-student-cash-back.html | https://www.discover.com/credit-cards/student-credit-card/it-card/ | 200 | text/html; charset=utf-8 | 827357 | 2026-11-10T22:09:33Z

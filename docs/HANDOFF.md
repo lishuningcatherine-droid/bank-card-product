@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-11-09 (offer tracker phases 1–3 done; DESIGN §27). Read this first in a new session, then
+Last updated: 2026-11-10 (offer tracker owner decisions of 2026-11-10; DESIGN §27.11). Read this first in a new session, then
 `CLAUDE.md` and the `docs/DESIGN.md` sections it points to.
 
 Requirements come from `~/Downloads/BUILD_PROMPT_v2.md` (the brief) and the owner's later messages. Where they
@@ -98,16 +98,17 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 
 ## 3. In progress / not finished
 
-- **Offer tracker (brief of 2026-11-09, DESIGN §27): phases 1–3 done.** 20 tracked cards / 7 issuers, 17 campaigns in
-  the local database (all official captures; none expired). Phase 3 = the personal offer check
-  (`POST /api/v1/campaigns/match`, `/offers/match`, `bankrec offers match FILE`). Persona outputs: see the phase-3 report.
-  - **4 manual entries pending review** (entered by `claude`, 2026-11-10): Capital One Savor, Capital One Venture,
-    Chase Sapphire Preferred, Chase Sapphire Reserve — adapters stopped reading those pages after layout changes.
-    A different person must approve (`bankrec offers pending|approve|reject`).
-  - Those four plus Freedom Unlimited and both Bank of America cards are `stale` / `pending_verification` until the
-    pages are read again or the entries are approved.
-  - Automatic updates do **not** run here: the worker container and the scheduled workflow are not enabled. The cron
-    and the workflow now include `bankrec offers sync` (`config/tracker/settings.yaml` `update.sync_schedule`).
+- **Offer tracker (brief of 2026-11-09, DESIGN §27): phases 1–3 done; owner decisions of 2026-11-10 applied (§27.11).**
+  25 tracked cards / 7 issuers (5 starter cards). Personal check: `POST /api/v1/campaigns/match`, `/offers/match`,
+  `bankrec offers match FILE`.
+  - **5 manual entries pending review** (entered by `claude`): 1 Capital One Savor, 2 Capital One Venture, 3 Chase
+    Sapphire Preferred, 4 Chase Sapphire Reserve (2026-11-10, adapters stopped reading those pages), 5 Amex Gold
+    ("as high as" offer). The owner reviews them (`bankrec offers pending|approve|reject`).
+  - Venture X: no readable public offer (manual entry from an official source needed). Discover it Student and it
+    Miles: first-year match states no amount, not recorded as a campaign.
+  - **Automatic updates are not running.** `scheduled-ingest.yml` runs once a day when the repository variable
+    `BANKREC_SCHEDULER=github` is set and the `DATABASE_URL` secret points to a database reachable from GitHub (the
+    real data is only in the local docker volume today). Owner to choose hosting; see the 2026-11-10 report.
   - Owner rule change: community-reported rules are allowed in the tracker, always labelled with their source (§27 intro).
 
 - **Phase 1 (public home page, offer types, multi-channel offers): done**, accepted by the owner 2026-10-20.
@@ -124,8 +125,9 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 
 ## 4. Waiting for the owner
 
-0. **Offer tracker:** review the 4 pending manual entries; decide whether to enable the worker cron or the GitHub
-   schedule for automatic updates.
+0. **Offer tracker:** review the 5 pending manual entries; choose a hosted database for the daily GitHub schedule,
+   then set `DATABASE_URL` (secret) and `BANKREC_SCHEDULER=github` (variable); choose the crawler contact address
+   (`BANKREC_CONTACT_EMAIL`).
 
 1. **Point values per program** (hotel, airline, bank points) with their basis; until then non-fixed points rank
    only among themselves.

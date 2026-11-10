@@ -50,6 +50,7 @@ class Finding:
     outcome: Outcome
     explanation: str
     needs: list[str] = field(default_factory=list)
+    boundary: bool = False  # unknown only because an answer falls in the window's boundary month
 
     @property
     def effect(self) -> str:
@@ -183,11 +184,56 @@ def _fmt(cards: list[HeldCard], facts: dict[str, CardFacts]) -> str:
 
 
 def _severity(rule: dict[str, Any]) -> Outcome:
+    """A met rule is a conflict when it is firm or names this very card — except a weakly corroborated community
+    rule, which is only ever a possible conflict (owner 2026-11-10)."""
+    if rule.get("source_type") == "community" and rule.get("confidence") != "strong":
+        return "possible_conflict"
     m = (rule.get("scope") or {}).get("match") or rule.get("match") or {}
     return "conflict" if rule.get("strength") == "firm" or m.get("same_card") else "possible_conflict"
 
 
+def _windows(rule: dict[str, Any]) -> list[int]:
+    pairs = rule.get("windows") or (rule.get("scope") or {}).get("windows")
+    if pairs:
+        return [int(w) for w, _ in pairs]
+    return [int(rule["window_months"])] if rule.get("window_months") else []
+
+
+def boundary_cards(
+    rule: dict[str, Any], card: CardFacts, facts: dict[str, CardFacts], p: MatchProfile, today: date
+) -> list[str]:
+    """Answers that fall in the window's boundary month: inside or outside depending on the day."""
+    out: list[str] = []
+    for w in _windows(rule):
+        for a in p.cards:
+            if account_matches(a, rule, card, facts) == "no":
+                continue
+            for label, month in (("opened", a.opened), ("bonus received", a.bonus_month),
+                                 ("bonus on the original card", a.original_bonus_month)):  # fmt: skip
+                if month and months_ago(month, today) == w:
+                    out.append(f"{_card_name(a, facts)} ({label} {month}, exactly {w} months ago)")
+    return list(dict.fromkeys(out))
+
+
 def evaluate(
+    rule: dict[str, Any], card: CardFacts, facts: dict[str, CardFacts], p: MatchProfile, today: date
+) -> Finding:
+    f = _evaluate(rule, card, facts, p, today)
+    if f.outcome == "unknown":
+        edge = boundary_cards(rule, card, facts, p, today)
+        if edge:
+            f.boundary = True
+            f.explanation += (
+                " Needs checking: "
+                + "; ".join(edge)
+                + " — whether that falls inside the rule's window depends on"
+                " the exact day, so it is not treated as clear."
+            )
+            f.needs.insert(0, "The exact date for " + "; ".join(edge))
+    return f
+
+
+def _evaluate(
     rule: dict[str, Any], card: CardFacts, facts: dict[str, CardFacts], p: MatchProfile, today: date
 ) -> Finding:
     test = rule["test"]

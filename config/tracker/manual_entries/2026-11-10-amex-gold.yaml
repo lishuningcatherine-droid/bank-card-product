@@ -1,0 +1,18 @@
+# Amex offers are entered by hand (owner 2026-11-10). The Gold Card page states the offer as "AS HIGH AS": the amount
+# varies by applicant, so it is entered as an up-to offer and never valued in dollars.
+# Excerpts from the official page captured in run 20261110T000117Z-aa64fa (robots.txt allowed).
+card_key: amex:gold
+channel: public
+offer_type: welcome_bonus
+amount_qualifier: up_to
+tiers:
+  - {amount: 100000, unit: points, unit_name: "Membership Rewards points", spend_cents: 800000, window_count: 6,
+     window_unit: months, window_start: card_membership,
+     text: "AS HIGH AS 100,000 Membership Rewards® points after you spend $8,000 in purchases on your new Card within the first 6 months of Card Membership."}
+annual_fee_cents: 32500
+first_year_fee_cents: 32500
+eligibility_text: "Welcome offers vary and you may not be eligible for an offer."
+source_kind: official
+source_url: https://www.americanexpress.com/us/credit-cards/card/gold-card/
+source_excerpt: "Apply and find out your welcome offer AS HIGH AS 100,000 Membership Rewards® points after you spend $8,000 in purchases on your new Card within the first 6 months of Card Membership. Welcome offers vary and you may not be eligible for an offer."
+observed_from: 2026-11-10

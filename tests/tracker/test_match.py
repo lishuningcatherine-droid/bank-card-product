@@ -47,6 +47,7 @@ def view(
     value_cents: int | None = None,
     assumption: str | None = None,
     status: str = "active",
+    starter: str | None = None,
 ) -> TV.CampaignView:
     f = FACTS[card_key]
     end = TV.moment({"date": None, "time": None, "time_known": False, "confirmed": False})
@@ -66,7 +67,8 @@ def view(
                             bank_name=f.bank_id, segment=f.segment, series=None, points_program=program,
                             points_program_name=None, official_url=None, annual_fee_cents=fee,
                             first_year_fee_cents=fee, reports_to_personal_credit=None,
-                            counts_toward_chase_524=None, demo=card_key.startswith("example_bank")),
+                            counts_toward_chase_524=None, starter=starter,
+                            demo=card_key.startswith("example_bank")),
         channel="public", channel_label="Public application", offer_type="welcome_bonus",
         offer_type_label="Welcome bonus", status=status, status_label=status, status_reason=None,
         source_kind="official", source_label="Official page", source_name=None, officially_verified=True,
@@ -116,7 +118,7 @@ def test_persona2_five_new_cards_conflicts_with_chase_524() -> None:
     assert c.basis == "community" and "Community-reported" in c.basis_label
     assert a.approval.status == "known_conflict"
     assert a.eligibility[0].rule_key == "chase_5_24"  # the conflict is listed first
-    assert any("5/24" in r and "community-reported" in r for r in a.action_reasons)
+    assert any("5/24" in r and "Community-reported rule, widely corroborated" in r for r in a.action_reasons)
 
 
 def test_persona3_amex_bonus_received_before_separates_approval_from_bonus() -> None:
@@ -231,7 +233,8 @@ def test_boa_234_and_capital_one_interval() -> None:
         HeldCard(bank_id="bank_of_america", opened="2026-10"),
         HeldCard(bank_id="bank_of_america", opened="2026-11"),
     ]
-    assert check("boa_2_3_4", "boa:customized-cash", cards=two) == "conflict"
+    # weakly corroborated community rules are only ever possible conflicts (owner 2026-11-10)
+    assert check("boa_2_3_4", "boa:customized-cash", cards=two) == "possible_conflict"
     # month precision: a card opened exactly at the window's edge cannot settle it
     edge = [two[0], HeldCard(bank_id="bank_of_america", opened="2026-09")]
     assert check("boa_2_3_4", "boa:customized-cash", cards=edge, cards_complete=True) == "unknown"
@@ -239,7 +242,7 @@ def test_boa_234_and_capital_one_interval() -> None:
     assert check("boa_2_3_4", "boa:customized-cash", new_accounts_24m=0) == "clear"
     assert check("boa_2_3_4", "boa:customized-cash", new_accounts_24m=3) == "unknown"
     c1 = [HeldCard(bank_id="capital_one", opened="2026-08")]
-    assert check("capital_one_1_per_6", "capital_one:savor", cards=c1) == "conflict"
+    assert check("capital_one_1_per_6", "capital_one:savor", cards=c1) == "possible_conflict"
 
 
 def test_citi_48_month_lookback_and_product_change() -> None:
@@ -274,3 +277,151 @@ def test_score_is_a_signal_never_a_cutoff(score: int, expected: str) -> None:
             MatchProfile(**{**FULL, "credit_score": score}))  # fmt: skip
     assert a.approval.status == expected
     assert any("not the only factor" in x or "does not decide approval" in x for x in a.approval.points)
+
+
+# ----------------------------------------------------------------------------------- owner decisions 2026-11-10
+
+
+def test_every_community_rule_has_a_confidence_and_official_rules_none() -> None:
+    for r in RULES:
+        if r["source_type"] == "community":
+            assert r.get("confidence") in ("strong", "weak"), r["rule_key"]
+        else:
+            assert "confidence" not in r, r["rule_key"]
+    assert rule("chase_5_24")["confidence"] == "strong"
+    assert {
+        rule(k)["confidence"] for k in ("boa_2_3_4", "capital_one_1_per_6", "capital_one_two_personal")
+    } == {"weak"}
+
+
+def test_weak_community_rule_met_means_confirm_first_and_is_labelled() -> None:
+    two = [
+        HeldCard(bank_id="bank_of_america", opened="2026-10"),
+        HeldCard(bank_id="bank_of_america", opened="2026-11"),
+    ]
+    a = run(view("boa:customized-cash"), MatchProfile(**{**FULL, "cards": two, "new_accounts_24m": 2}))
+    assert a.action == "verify_first"
+    assert not a.conflicts
+    [f] = [f for f in a.eligibility if f.rule_key == "boa_2_3_4"]
+    assert f.outcome == "possible_conflict" and f.confidence == "weak"
+    assert any("2/3/4" in r and "Community-reported rule, less established" in r for r in a.action_reasons)
+
+
+def test_amex_third_party_quote_is_marked_not_officially_verified() -> None:
+    held = HeldCard(card_key="amex:blue-cash-preferred", bank_id="american_express", opened="2021-03",
+                    open_now=False, bonus="yes", bonus_month="2021-06")  # fmt: skip
+    a = run(view("amex:blue-cash-preferred"), MatchProfile(**{**FULL, "cards": [held]}))
+    [c] = a.conflicts
+    assert c.officially_verified is False and "not officially verified" in c.basis_label
+    assert any("not officially verified" in r for r in a.action_reasons)
+    sapphire = finding_for("chase_sapphire_card", "chase:sapphire-preferred")
+    assert sapphire.officially_verified is True
+
+
+def finding_for(key: str, card: str) -> Any:
+    from bankrec.tracker.match import finding_view
+
+    return finding_view(evaluate(rule(key), FACTS[card], FACTS, MatchProfile(), TODAY))
+
+
+def test_boundary_month_needs_checking_never_clear() -> None:
+    # four cards clearly inside 24 months, one opened exactly 24 months ago (2024-11): inside or outside by the day
+    recent = [HeldCard(bank_id="other", opened=f"2026-0{m}") for m in range(1, 5)]
+    edge = HeldCard(bank_id="other", opened="2024-11")
+    p = MatchProfile(**{**FULL, "new_accounts_24m": None, "cards": [*recent, edge], "cards_complete": True})
+    f = evaluate(rule("chase_5_24"), FACTS["chase:freedom-unlimited"], FACTS, p, TODAY)
+    assert f.outcome == "unknown" and f.boundary and "exactly 24 months ago" in f.explanation
+    a = run(view("chase:freedom-unlimited"), p)
+    [fv] = [x for x in a.eligibility if x.rule_key == "chase_5_24"]
+    assert fv.outcome_label == "Needs checking (boundary month)"
+    assert a.action == "verify_first"
+    # the month after the boundary is clearly outside; the month before clearly inside
+    outside = p.model_copy(update={"cards": [*recent, HeldCard(bank_id="other", opened="2024-10")]})
+    assert (
+        evaluate(rule("chase_5_24"), FACTS["chase:freedom-unlimited"], FACTS, outside, TODAY).outcome
+        == "clear"
+    )
+    inside = p.model_copy(update={"cards": [*recent, HeldCard(bank_id="other", opened="2024-12")]})
+    assert (
+        evaluate(rule("chase_5_24"), FACTS["chase:freedom-unlimited"], FACTS, inside, TODAY).outcome
+        == "conflict"
+    )
+    # a bonus received exactly 48 months ago (Citi)
+    dc = HeldCard(
+        card_key="citi:double-cash", bank_id="citi", opened="2022-09", bonus="yes", bonus_month="2022-11"
+    )
+    g = evaluate(rule("citi_double_cash_48"), FACTS["citi:double-cash"], FACTS,
+                 MatchProfile(cards=[dc], cards_complete=True), TODAY)  # fmt: skip
+    assert g.outcome == "unknown" and g.boundary
+
+
+def test_income_range_is_optional_and_never_a_cutoff() -> None:
+    v = view("example_bank:everyday-cash", amount=20000, spend=50000, months=3)
+    none_given = run(v, MatchProfile(**FULL))
+    assert any("not given an income range" in u for u in none_given.uncertainty)
+    assert none_given.action == "consider_now"
+    given = run(v, MatchProfile(**{**FULL, "annual_income": "50k_100k"}))
+    assert given.action == "consider_now"
+    assert any("publish no minimum income" in x for x in given.approval.points)
+    no_income = run(v, MatchProfile(**{**FULL, "annual_income": "none", "student": True}))
+    assert no_income.action == "verify_first"
+    assert any("12 CFR 1026.51" in x for x in no_income.approval.points)
+    assert any("under 21" in x for x in no_income.approval.points)
+    over = run(v, MatchProfile(**{**FULL, "annual_income": "lt_25k", "monthly_spend": 3000}))
+    assert over.action == "verify_first"
+    assert any("above the income range" in r for r in over.action_reasons)
+
+
+def test_starter_cards_are_tracked_with_registered_sources() -> None:
+    from bankrec.registry.loader import load_registry
+
+    ids = {s.source_id for s in load_registry().sources}
+    starters = {c["card_key"]: c for c in config.cards() if c.get("starter")}
+    assert set(starters) == {"discover:it-student-cash-back", "capital_one:savor-student",
+                             "capital_one:quicksilver-student", "capital_one:platinum-secured",
+                             "capital_one:quicksilver-secured"}  # fmt: skip
+    for c in starters.values():
+        assert c["starter"] in ("student", "secured") and set(c["source_ids"]) <= ids
+    assert {"amex:gold", "capital_one:venture-x"} <= {c["card_key"] for c in config.cards()}
+
+
+THIN = {"credit_history": "lt_1y", "student": True, "monthly_spend": 600, "cards": [], "cards_complete": True,
+        "new_accounts_24m": 0, "negative_marks": False}  # fmt: skip
+
+
+def test_thin_file_is_pointed_to_starter_cards_without_calling_approval_easy() -> None:
+    p = MatchProfile(**THIN)
+    student = run(view("capital_one:savor-student", amount=5000, spend=10000, months=3, starter="student"), p)
+    assert student.action in ("consider_now", "verify_first")
+    assert student.action != "improve_credit" and student.starter == "student"
+    assert any("does not mean approval is easy" in x for x in student.approval.points)
+    regular = run(view("example_bank:everyday-cash", amount=20000, spend=50000, months=3), p)
+    assert regular.action == "improve_credit"
+    assert any("Starter cards" in r for r in regular.action_reasons)
+
+
+def test_card_without_offer_gets_approval_and_fit_only() -> None:
+    from bankrec.tracker.match import assess_card
+
+    cv = view("capital_one:platinum-secured", starter="secured").card
+    p = MatchProfile(**{**THIN, "negative_marks": True})
+    a = assess_card(cv, FACTS["capital_one:platinum-secured"], FACTS, RULES, p, TODAY, now=NOW)
+    assert a.kind == "card" and a.campaign_id is None
+    assert a.bonus.status == "no_offer" and a.reach.status == "not_required"
+    assert all(f.effect == "approval" for f in a.eligibility)
+    # negative marks are a caution on a secured card, never a promise
+    assert a.action != "improve_credit"
+    assert any("refundable deposit" in x for x in a.approval.points)
+
+
+def test_valuation_own_value_exact_offer_and_up_to_offer() -> None:
+    from bankrec.tracker.valuation import value
+
+    exact = {"unit": "points", "total_amount": 60000, "amount_qualifier": "exact"}
+    v = value(exact, "example_points", {"example_points": 1.5})
+    assert v["cents"] == 90000 and "your own value" in v["assumption"]
+    upto = {**exact, "amount_qualifier": "up_to"}
+    u = value(upto, "example_points", {"example_points": 1.5})
+    assert (
+        u["cents"] is None and "up to 60,000" in u["assumption"] and "varies by applicant" in u["assumption"]
+    )

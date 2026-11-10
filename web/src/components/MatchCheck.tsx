@@ -82,7 +82,7 @@ function Finding({ f }: { f: MatchFinding }) {
         <span className="font-medium text-ink-900">{f.outcome_label}</span>
         <KindBadge kind={findingKind(f)} />
         {f.outcome === "unknown" ? <KindBadge kind={f.basis === "official" ? "official" : "community"} /> : null}
-        {f.verification === "third_party_quote" ? <span className="text-xs text-ink-500">bank wording quoted by a third party</span> : null}
+        <span className="text-xs text-ink-700">{f.basis_label}</span>
         <span className="text-xs text-ink-500">affects {f.effect === "approval" ? "approval" : "the bonus"}</span>
       </div>
       <p className="mt-1 text-ink-900">{f.name}</p>
@@ -107,13 +107,20 @@ function JudgementBlock({ title, j, kind }: { title: string; j: Judgement; kind?
   );
 }
 
+const STARTER_LABEL = { student: "Starter card: student", secured: "Starter card: secured" } as const;
+
 export function AssessmentCard({ a }: { a: Assessment }) {
   const shown = a.eligibility.filter((f) => f.outcome !== "clear" && f.outcome !== "info");
   const clear = a.eligibility.filter((f) => f.outcome === "clear");
+  const hid = `a-${a.campaign_id ?? a.card_key.replace(":", "-")}`;
+  const href = a.campaign_id ? `/offers/${a.campaign_id}` : a.product_id ? `/products/${a.product_id}` : null;
   return (
-    <article className="rounded-lg border border-border bg-surface p-5 shadow-card" aria-labelledby={`a-${a.campaign_id}`}>
-      <p className="text-sm text-ink-500">{a.bank_name}</p>
-      <h3 id={`a-${a.campaign_id}`} className="text-lg"><Link href={`/offers/${a.campaign_id}`}>{a.card_name}</Link></h3>
+    <article className="rounded-lg border border-border bg-surface p-5 shadow-card" aria-labelledby={hid}>
+      <p className="flex flex-wrap items-center gap-2 text-sm text-ink-500">{a.bank_name}
+        {a.starter ? <span className="inline-flex rounded-sm bg-navy-50 px-2 py-0.5 text-xs font-medium text-navy-900">{STARTER_LABEL[a.starter]}</span> : null}
+        {a.kind === "card" ? <span className="inline-flex rounded-sm bg-surface-subtle px-2 py-0.5 text-xs font-medium text-ink-700">No current offer</span> : null}
+      </p>
+      <h3 id={hid} className="text-lg">{href ? <Link href={href}>{a.card_name}</Link> : a.card_name}</h3>
       <div className={`mt-2 rounded-md p-3 ${ACTION_STYLE[a.action]}`}>
         <p className="font-semibold">Suggested action: {a.action_label}</p>
         <ul className="mt-1 list-disc space-y-1 pl-5 text-sm">{a.action_reasons.map((r) => <li key={r}>{r}</li>)}</ul>
@@ -321,6 +328,10 @@ export function MatchCheck({ campaignId, cards, pointValues }: { campaignId?: st
               options={[["yes", "Yes"], ["no", "No"], ["unsure", "Not sure"]] as const}
               hint="For business cards. A sole proprietor can usually apply with their own SSN; we don't collect it." />
             <Sel label="Student?" value={yn(p.student)} options={YESNO} onChange={(v) => up({ student: toBool(v) })} />
+            <Sel label="Yearly income (optional)" value={p.annual_income} onChange={(v) => up({ annual_income: v })}
+              hint="A range only. Income you can access; issuers must consider your ability to pay."
+              options={[["none", "No income"], ["lt_25k", "Under $25,000"], ["25k_50k", "$25,000–$50,000"], ["50k_100k", "$50,000–$100,000"],
+                ["100k_150k", "$100,000–$150,000"], ["150k_plus", "Over $150,000"], ["prefer_not", "Prefer not to say"]] as const} />
           </div>
           <fieldset className="mt-4">
             <legend className="text-sm font-medium text-ink-900">Banks where you have a checking or savings account</legend>

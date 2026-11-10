@@ -28,6 +28,14 @@ def value(
     }
     if amount is None:
         return out
+    if terms.get("amount_qualifier") in ("up_to", "starting_at"):
+        # "as high as" / "up to": the amount varies by applicant; counting the top figure would overstate it
+        out["depends_on_points_value"] = unit in ("points", "miles")
+        out["assumption"] = (
+            f"No dollar value: the offer is stated as {'up to' if terms['amount_qualifier'] == 'up_to' else 'starting at'}"
+            f" {amount:,} and varies by applicant"
+        )
+        return out
     if unit in ("cash", "statement_credit"):
         out["cents"] = int(amount)
         return out

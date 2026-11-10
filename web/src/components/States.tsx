@@ -30,7 +30,7 @@ export function ErrorState({ title = "Something went wrong", children, retry }: 
 
 export function SkeletonCards({ count = 6 }: { count?: number }) {
   return (
-    <div aria-busy="true" aria-label="Loading" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+    <div role="status" aria-busy="true" aria-label="Loading" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: count }, (_, i) => (
         <div key={i} className="h-56 rounded-lg border border-border bg-surface-subtle motion-safe:animate-pulse" />
       ))}

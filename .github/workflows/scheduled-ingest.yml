@@ -1,15 +1,17 @@
 name: Scheduled ingestion (alternative to the worker cron)
 # Active only when the repository variable BANKREC_SCHEDULER is "github". Exactly one scheduler should be active;
-# a per-tier Postgres advisory lock also prevents overlapping runs. Schedules mirror config/freshness.yaml.
+# a per-tier Postgres advisory lock also prevents overlapping runs. The daily run updates the offer tracker's cards
+# (`bankrec offers update`: fetch under robots.txt and rate limits, then `offers sync`); a manual run can pick a tier.
 on:
   schedule:
-    - cron: "0 */12 * * *"   # apy
-    - cron: "15 6 * * *"     # offer
-    - cron: "30 7 * * 1"     # terms
-    - cron: "45 8 * * *"     # regulator_release
+    # once a day (owner decision 2026-11-10): 06:15 UTC = 01:15 ET in winter, 02:15 ET in summer
+    - cron: "15 6 * * *"
   workflow_dispatch:
     inputs:
-      tier: { description: "apy | offer | terms | regulator_release", required: true, default: offer }
+      tier:
+        description: "empty = the offer tracker's cards; or a tier: apy | offer | terms | regulator_release"
+        required: false
+        default: ""
 permissions:
   contents: read
 jobs:
@@ -17,7 +19,7 @@ jobs:
     if: vars.BANKREC_SCHEDULER == 'github'
     runs-on: ubuntu-latest
     concurrency:
-      group: ingest-${{ github.event.schedule || inputs.tier }}
+      group: ingest-${{ inputs.tier || 'tracker' }}
       cancel-in-progress: false
     env:
       BANKREC_ENV: prod
@@ -35,23 +37,18 @@ jobs:
         with: { version: "0.11.32" }
       - run: uv sync --frozen --no-dev
       - run: uv run playwright install --with-deps chromium
-      - name: Resolve tier
-        id: tier
-        run: |
-          case "${{ github.event.schedule }}" in
-            "0 */12 * * *") echo "tier=apy" >> "$GITHUB_OUTPUT" ;;
-            "15 6 * * *") echo "tier=offer" >> "$GITHUB_OUTPUT" ;;
-            "30 7 * * 1") echo "tier=terms" >> "$GITHUB_OUTPUT" ;;
-            "45 8 * * *") echo "tier=regulator_release" >> "$GITHUB_OUTPUT" ;;
-            *) echo "tier=${{ inputs.tier }}" >> "$GITHUB_OUTPUT" ;;
-          esac
-      - run: uv run bankrec ingest --tier ${{ steps.tier.outputs.tier }} --trigger github
+      - name: Offer tracker cards
+        if: ${{ !inputs.tier }}
+        run: uv run bankrec offers update --trigger github
+      - name: One tier
+        if: ${{ inputs.tier }}
+        run: uv run bankrec ingest --tier ${{ inputs.tier }} --trigger github
       # the offer tracker records every check, failed ones included (a failed fetch never ends a campaign)
       - run: uv run bankrec offers sync
-        if: always()
+        if: ${{ always() && inputs.tier }}
       - run: uv run bankrec report stale
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: reports-${{ steps.tier.outputs.tier }}-${{ github.run_id }}
+          name: reports-${{ inputs.tier || 'tracker' }}-${{ github.run_id }}
           path: reports/

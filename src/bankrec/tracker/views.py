@@ -114,6 +114,7 @@ class CardSummary(BaseModel):
     first_year_fee_cents: int | None
     reports_to_personal_credit: dict[str, Any] | None
     counts_toward_chase_524: dict[str, Any] | None
+    starter: Literal["student", "secured"] | None = None
     demo: bool
 
 
@@ -151,6 +152,7 @@ class RuleView(BaseModel):
     verification: str
     effect: Literal["approval", "bonus"]
     strength: str
+    confidence: Literal["strong", "weak"] | None = None
     window_months: int | None
     source_url: str
     source_title: str | None
@@ -302,6 +304,7 @@ class Builder:
             else None,
             reports_to_personal_credit=c.reports_to_personal_credit,
             counts_toward_chase_524=c.counts_toward_chase_524,
+            starter=c.starter,
             demo=c.demo,
         )
 
@@ -434,6 +437,7 @@ def rule_view(r: P.ApplicationRule) -> RuleView:
         verification=r.verification,
         effect=r.effect,
         strength=r.strength,
+        confidence=r.confidence,
         window_months=r.window_months,
         source_url=r.source_url,
         source_title=r.source_title,

@@ -418,6 +418,7 @@ class TrackedCard(ProdBase):
     reports_to_personal_credit: Mapped[dict[str, Any] | None] = mapped_column(J)
     counts_toward_chase_524: Mapped[dict[str, Any] | None] = mapped_column(J)
     demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    starter: Mapped[str | None] = mapped_column(String(10))  # student | secured
 
 
 class Campaign(ProdBase):
@@ -518,6 +519,8 @@ class ApplicationRule(ProdBase):
     verification: Mapped[str] = mapped_column(String(24))
     effect: Mapped[str] = mapped_column(String(10))  # approval | bonus
     strength: Mapped[str] = mapped_column(String(6))
+    # community rules only: strong (a met rule → "not a fit for now") | weak (→ "confirm first"); NULL for official
+    confidence: Mapped[str | None] = mapped_column(String(8))
     test: Mapped[str] = mapped_column(String(24))
     window_months: Mapped[int | None] = mapped_column(Integer)
     limit_count: Mapped[int | None] = mapped_column(Integer)

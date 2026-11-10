@@ -8,7 +8,7 @@ vi.mock("next/link", () => ({ default: ({ href, children, ...p }: { href: string
 function finding(over: Partial<MatchFinding> = {}): MatchFinding {
   return {
     rule_key: "example_once", name: "Example Bank: no bonus if you had this card", effect: "bonus", basis: "official",
-    basis_label: "Issuer's published rule", verification: "page_captured", outcome: "conflict", outcome_label: "Conflict",
+    basis_label: "Issuer's published rule", verification: "page_captured", officially_verified: true, confidence: null, boundary: false, outcome: "conflict", outcome_label: "Conflict",
     explanation: "Met: you received the bonus on Example Bank Everyday Cash Card in 2021-06.", needs: [],
     excerpt: "Not available if you have had this card.", source_url: "https://www.examplebank.example/cards/everyday",
     source_title: null, verified_at: "2026-11-09", ...over,
@@ -18,7 +18,7 @@ function finding(over: Partial<MatchFinding> = {}): MatchFinding {
 function assessment(over: Partial<Assessment> = {}): Assessment {
   const conflict = finding();
   return {
-    campaign_id: "00000000-0000-0000-0000-000000000001", card_key: "example_bank:everyday-cash", card_name: "Example Bank Everyday Cash Card",
+    kind: "offer", product_id: null, starter: null, campaign_id: "00000000-0000-0000-0000-000000000001", card_key: "example_bank:everyday-cash", card_name: "Example Bank Everyday Cash Card",
     bank_name: "Example Bank", action: "not_suitable", action_label: "Not a fit for now",
     action_reasons: ["Example Bank: no bonus if you had this card: Met: you received the bonus (issuer's published rule)"],
     conflicts: [conflict],
@@ -64,6 +64,19 @@ describe("personal offer check", () => {
       text: "First-year value: reward $600 − first-year fee $95 = $505. The reward part assumes: Counted at 1 point = $0.01 (cash redemption value stated by Example Bank)." } })} />);
     expect(screen.getByText(/1 point = \$0.01/)).toBeInTheDocument();
     expect(screen.getByText(/depends on the value of points/)).toBeInTheDocument();
+  });
+
+  it("labels a card without an offer and a starter card, linking to the card page", () => {
+    render(<AssessmentCard a={assessment({ kind: "card", campaign_id: null, product_id: "p9", starter: "secured", conflicts: [], eligibility: [] })} />);
+    expect(screen.getByText("Starter card: secured")).toBeInTheDocument();
+    expect(screen.getByText("No current offer")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Example Bank Everyday Cash Card" })).toHaveAttribute("href", "/products/p9");
+  });
+
+  it("shows that a third-party-quoted bank rule is not officially verified", () => {
+    const f = finding({ verification: "third_party_quote", officially_verified: false, basis_label: "Issuer's rule as quoted by a third party — not officially verified" });
+    render(<AssessmentCard a={assessment({ conflicts: [f], eligibility: [f] })} />);
+    expect(screen.getAllByText(/not officially verified/).length).toBeGreaterThan(0);
   });
 
   it("badge texts are fixed", () => {

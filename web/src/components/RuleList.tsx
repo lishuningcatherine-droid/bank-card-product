@@ -4,12 +4,13 @@ import { longDate } from "@/lib/format";
 import { SourceLink } from "./SourceLink";
 
 /** Official rules and community rules are always labelled differently (brief §4). */
-export function RuleKind({ r }: { r: Pick<ApplicationRule, "source_type" | "verification"> }) {
+export function RuleKind({ r }: { r: Pick<ApplicationRule, "source_type" | "verification"> & { confidence?: ApplicationRule["confidence"] } }) {
   if (r.source_type === "community") {
-    return <span className="inline-flex rounded-sm bg-unverified-bg px-2 py-0.5 text-xs font-medium text-unverified">Community-reported rule (not published by the bank)</span>;
+    const how = r.confidence === "strong" ? "widely corroborated" : "less established";
+    return <span className="inline-flex rounded-sm bg-unverified-bg px-2 py-0.5 text-xs font-medium text-unverified">Community-reported rule, {how} (not published by the bank)</span>;
   }
   if (r.verification === "third_party_quote") {
-    return <span className="inline-flex rounded-sm bg-info-bg px-2 py-0.5 text-xs font-medium text-info">Bank rule, quoted by a third party — not yet confirmed on the bank&apos;s page</span>;
+    return <span className="inline-flex rounded-sm bg-info-bg px-2 py-0.5 text-xs font-medium text-info">Bank rule quoted by a third party — not officially verified</span>;
   }
   return <span className="inline-flex rounded-sm bg-navy-50 px-2 py-0.5 text-xs font-medium text-navy-900">Official bank rule</span>;
 }

@@ -25,3 +25,15 @@ sources:
   expected_entity: Discover it Miles Credit Card
   has_offers: true
   notes: card page; registered 2026-11-09 for the offer tracker (config/tracker/cards.yaml)
+- bank_id: discover
+  slug: it-student-cash-back
+  product_type: credit_card
+  source_url: https://www.discover.com/credit-cards/student-credit-card/it-card/
+  source_kind: product_detail
+  parser_name: discover
+  requires_render: false
+  enabled: true
+  priority: 100
+  expected_entity: Discover it Student Cash Back Credit Card
+  has_offers: true
+  notes: student card page; registered 2026-11-10 for the offer tracker (starter cards). robots.txt checked 2026-11-10

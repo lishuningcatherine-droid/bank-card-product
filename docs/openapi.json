@@ -53,8 +53,15 @@
       "$ref": "#/components/schemas/Judgement"
      },
      "campaign_id": {
-      "title": "Campaign Id",
-      "type": "string"
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Campaign Id"
      },
      "card_key": {
       "title": "Card Key",
@@ -82,14 +89,50 @@
      "first_year": {
       "$ref": "#/components/schemas/FirstYear"
      },
+     "kind": {
+      "default": "offer",
+      "description": "card = a tracked card with no current offer: approval and fit only",
+      "enum": [
+       "offer",
+       "card"
+      ],
+      "title": "Kind",
+      "type": "string"
+     },
      "offer_appeal": {
       "$ref": "#/components/schemas/Judgement"
      },
      "personal_fit": {
       "$ref": "#/components/schemas/Judgement"
      },
+     "product_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
      "reach": {
       "$ref": "#/components/schemas/Reach"
+     },
+     "starter": {
+      "anyOf": [
+       {
+        "enum": [
+         "student",
+         "secured"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Starter"
      },
      "uncertainty": {
       "items": {
@@ -964,6 +1007,21 @@
        }
       ],
       "title": "Series"
+     },
+     "starter": {
+      "anyOf": [
+       {
+        "enum": [
+         "student",
+         "secured"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Starter"
      }
     },
     "required": [
@@ -1422,6 +1480,28 @@
       "title": "Basis Label",
       "type": "string"
      },
+     "boundary": {
+      "default": false,
+      "description": "unknown only because an answer falls in the window's boundary month",
+      "title": "Boundary",
+      "type": "boolean"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "enum": [
+         "strong",
+         "weak"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "community rules only",
+      "title": "Confidence"
+     },
      "effect": {
       "enum": [
        "approval",
@@ -1448,6 +1528,11 @@
       },
       "title": "Needs",
       "type": "array"
+     },
+     "officially_verified": {
+      "description": "official rule read by this site on the issuer's own page",
+      "title": "Officially Verified",
+      "type": "boolean"
      },
      "outcome": {
       "enum": [
@@ -1500,6 +1585,7 @@
      "basis",
      "basis_label",
      "verification",
+     "officially_verified",
      "outcome",
      "outcome_label",
      "explanation",
@@ -1874,6 +1960,27 @@
    "MatchProfile": {
     "additionalProperties": false,
     "properties": {
+     "annual_income": {
+      "anyOf": [
+       {
+        "enum": [
+         "none",
+         "lt_25k",
+         "25k_50k",
+         "50k_100k",
+         "100k_150k",
+         "150k_plus",
+         "prefer_not"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "optional: yearly income you can access, as a range (never an exact figure)",
+      "title": "Annual Income"
+     },
      "as_of": {
       "anyOf": [
        {
@@ -3594,6 +3701,21 @@
      "bank_id": {
       "title": "Bank Id",
       "type": "string"
+     },
+     "confidence": {
+      "anyOf": [
+       {
+        "enum": [
+         "strong",
+         "weak"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Confidence"
      },
      "effect": {
       "enum": [

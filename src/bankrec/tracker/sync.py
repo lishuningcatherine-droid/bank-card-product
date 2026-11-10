@@ -54,6 +54,7 @@ def sync_cards(session: Session, report: SyncReport) -> dict[str, P.TrackedCard]
         row.source_ids = list(spec.get("source_ids", []))
         row.reports_to_personal_credit = _jsonable(spec.get("reports_to_personal_credit"))
         row.counts_toward_chase_524 = _jsonable(spec.get("counts_toward_chase_524"))
+        row.starter = spec.get("starter")
         if product is not None and product.status == "published":
             row.product_id, row.official_name = product.id, product.official_name
             row.official_url = product.official_url
@@ -83,6 +84,7 @@ def sync_rules(session: Session, report: SyncReport) -> None:
         row.bank_id, row.name, row.rule_type = r["bank_id"], r["name"], r["rule_type"]
         row.source_type, row.verification = r["source_type"], r["verification"]
         row.effect, row.strength, row.test = r["effect"], r["strength"], r["test"]
+        row.confidence = r.get("confidence")
         row.window_months, row.limit_count, row.counts = (
             r.get("window_months"),
             r.get("limit"),
@@ -246,7 +248,12 @@ def sync_campaigns(session: Session, card: P.TrackedCard, now: datetime, report:
             existing[key] = c
             continue
         latest = _latest(c)
-        changed = terms.material_hash(t) != latest.material_hash
+        # compare with the stored terms, re-hashed: a stored hash from an older definition of the material fields
+        # must never make a version on its own (it is refreshed instead)
+        stored = terms.material_hash(latest.terms)
+        if latest.material_hash != stored:
+            latest.material_hash = stored
+        changed = terms.material_hash(t) != stored
         if changed:
             changes = terms.diff(latest.terms, t)
             add_version(session, c, t, now, url=url, excerpt=excerpt, changes=changes)

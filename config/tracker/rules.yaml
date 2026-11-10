@@ -8,6 +8,9 @@
 #               community_report   = a community write-up
 # effect:   approval (whether you can be approved) | bonus (whether you can earn the welcome offer)
 # strength: firm ("is not available", "not eligible") | soft ("may not be", "may also consider")
+# confidence (community rules only; owner 2026-11-10): strong = widely corroborated over years (a met rule →
+#   "not a fit for now"); weak = fewer or older reports, or known exceptions (a met rule → "confirm first").
+#   Either way the result says it is a community-reported rule.
 # test (how the rule is checked against a profile; see bankrec.tracker.rules):
 #   count_limit   — blocked when `limit` or more matching accounts were opened in the last `window_months`
 #   velocity      — blocked when any (window_months, limit) pair in `windows` is reached
@@ -26,6 +29,7 @@ rules:
     name: "Chase 5/24"
     rule_type: card_count_limit
     source_type: community
+    confidence: strong
     verification: community_report
     effect: approval
     strength: firm
@@ -328,6 +332,7 @@ rules:
     name: "Bank of America 2/3/4: at most 2 new BofA cards per 2 months, 3 per 12 months, 4 per 24 months"
     rule_type: application_frequency
     source_type: community
+    confidence: weak
     verification: community_report
     effect: approval
     strength: firm
@@ -350,6 +355,7 @@ rules:
     name: "Capital One: one new Capital One card per six months"
     rule_type: application_frequency
     source_type: community
+    confidence: weak
     verification: community_report
     effect: approval
     strength: firm
@@ -369,6 +375,7 @@ rules:
     name: "Capital One: at most two open Capital One-branded personal cards"
     rule_type: card_count_limit
     source_type: community
+    confidence: weak
     verification: community_report
     effect: approval
     strength: firm

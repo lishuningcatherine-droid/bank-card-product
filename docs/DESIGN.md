@@ -1603,3 +1603,32 @@ ranges, `credit_ranges`; a non-FICO score is never banded); *confirm first* — 
 missing history/negative-marks/spend answers, reach without the margin, a stale or unverified offer, a
 non-public channel, a business card without confirmed business income; *consider now* — none of the above. A score
 alone never decides; no card has a stated minimum score. The response also lists up to three next questions.
+
+### 27.11 Owner decisions of 2026-11-10
+- **Rule confidence** (`application_rules.confidence`, migration 0017): community rules are `strong` (widely
+  corroborated; Chase 5/24) or `weak` (Bank of America 2/3/4, Capital One one-per-six-months and two-personal-cards).
+  A met strong rule is a conflict → "not a fit for now"; a met weak rule is only a possible conflict → "confirm first".
+  Every label says "community-reported rule" and how established it is. Official rules have no confidence.
+- **Not officially verified:** an issuer rule this site could only read as quoted by a third party (Amex once per
+  lifetime) is labelled "Issuer's rule as quoted by a third party — not officially verified" (`officially_verified`
+  false). It still counts as the issuer's rule for the action.
+- **Boundary month:** an answer exactly N months before today for an N-month rule (month precision) is "Needs checking
+  (boundary month)", never clear; the explanation names the card and month.
+- **Income** (optional range, never an exact figure): removes the "income not given" note; "no income" and spending
+  above the stated range mean "confirm first" (issuers must consider ability to pay, 12 CFR 1026.51; under 21 needs
+  own income or a co-applicant, 1026.51(b)). No minimum income is ever stated for a card.
+- **Starter cards** (`tracked_cards.starter`: student | secured): Discover it Student Cash Back, Capital One Savor and
+  Quicksilver for Students, Platinum Secured, Quicksilver Secured. On them a short history (and, on secured cards,
+  negative marks or a FICO "Poor" score) is a caution, not "improve credit first"; the text says approval is still
+  the issuer's decision and never "easy". Tracked cards without a current offer are checked as `kind: card`
+  (approval rules, credit signals and fit; no bonus, no spending requirement).
+- **Amex offers by manual entry.** "As high as" / "starting at" offers (`amount_qualifier` up_to / starting_at) never
+  get a dollar value: the applicant's offer may be lower.
+- **Venture X:** the static page shows no new-cardmember offer and the script source is robots-disallowed; manual
+  entry only, from an official source.
+- **Daily GitHub schedule:** `scheduled-ingest.yml` runs `bankrec offers update` once a day (06:15 UTC) when the
+  repository variable `BANKREC_SCHEDULER` is `github`; it writes to the database in the `DATABASE_URL` secret.
+- **Version hashing fix:** sync compares new terms with the stored terms re-hashed, so a hash stored under an older
+  definition of the material fields never makes a version (nine such duplicate versions written on 2026-11-10 were
+  removed the same day).
+- **E2E:** `BANKREC_TRACKER_CARDS_FILE` points the tracker at fictional Example Bank cards; refused in production.

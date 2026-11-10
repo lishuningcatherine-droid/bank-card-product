@@ -37,3 +37,11 @@ def test_it_miles_has_no_fixed_offer() -> None:
     assert rates(c)["other"] == ("1.5x", None)
     # the first-year miles match states no amount: not a fixed-amount offer
     assert c.offers == []
+
+
+def test_it_student_cash_back_has_no_fixed_offer() -> None:
+    c = run_official("discover", "it-student-cash-back", "it-student-cash-back.html")
+    assert c.value("annual_fee_cents") == 0
+    assert rates(c)["rotating"] == ("5pct", None)
+    # the first-year Cashback Match states no amount: not a fixed-amount offer
+    assert c.offers == []

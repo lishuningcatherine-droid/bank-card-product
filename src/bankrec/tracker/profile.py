@@ -86,6 +86,9 @@ class MatchProfile(Strict):
     max_annual_fee: Annotated[int, Field(ge=0, le=1000)] | None = None
     reward_preference: Literal["cashback", "points", "any"] | None = None
     business_income: Literal["yes", "no", "unsure"] | None = None
+    annual_income: (
+        Literal["none", "lt_25k", "25k_50k", "50k_100k", "100k_150k", "150k_plus", "prefer_not"] | None
+    ) = Field(None, description="optional: yearly income you can access, as a range (never an exact figure)")
     as_of: date | None = Field(None, description="evaluate as of this date (tests); defaults to today")
 
     def natural_monthly_spend(self) -> int | None:

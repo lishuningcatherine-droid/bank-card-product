@@ -1,0 +1,11 @@
+# Fictional Example Bank cards for the E2E offer tracker (BANKREC_TRACKER_CARDS_FILE; refused in production).
+cards:
+  - {card_key: example_bank:everyday-cash, bank_id: example_bank,
+     canonical_key: "example_bank:credit_card:consumer:example bank everyday cash:-",
+     source_ids: [example_bank:everyday-cash], series: Everyday, points_program: null}
+  - {card_key: example_bank:voyager-rewards, bank_id: example_bank,
+     canonical_key: "example_bank:credit_card:consumer:example bank voyager rewards:-",
+     source_ids: [example_bank:voyager-rewards], series: Voyager, points_program: example_points}
+  - {card_key: example_bank:student-cash, bank_id: example_bank,
+     canonical_key: "example_bank:credit_card:consumer:example bank student cash:-",
+     source_ids: [example_bank:student-cash], series: Student, points_program: null, starter: student}

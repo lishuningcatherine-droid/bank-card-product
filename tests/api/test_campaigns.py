@@ -73,8 +73,9 @@ async def test_points_and_cash_values_state_their_basis(client: httpx.AsyncClien
     # the visitor's own value updates the comparison and says so
     mine = (await client.get("/api/v1/campaigns", params={"pv": "example_points:1.5"})).json()["items"]
     pts2 = next(i for i in mine if i["card"]["card_key"] == "example_bank:voyager-rewards")
-    assert pts2["value"]["cents"] == round(pts["terms"]["total_amount"] * 1.5)
-    assert "your own value" in pts2["value"]["assumption"]
+    # an "up to" offer is never valued, even at the visitor's own point value: their offer may be lower
+    assert pts["terms"]["amount_qualifier"] == "up_to"
+    assert pts2["value"]["cents"] is None and "up to 80,000" in pts2["value"]["assumption"]
 
 
 async def test_filters_and_detail(client: httpx.AsyncClient) -> None:
