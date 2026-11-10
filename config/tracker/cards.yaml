@@ -1,0 +1,87 @@
+# The cards the offer tracker follows (DESIGN §27.1): 20 cards, 7 issuers, personal and business. Long-term facts
+# (fees, earn rates, benefits) come from the published product (prod.products) the card links to; this file adds only
+# what the pipeline does not read: the card's series, its points program, and business-card reporting facts with a
+# source. Unknown facts stay null ("unknown"), never guessed.
+#
+# reports_to_personal_credit / counts_toward_chase_524: {value: true|false|null, source_type: official|community,
+#   source_url, excerpt, verified_at}. null value = not established.
+cards:
+  - {card_key: chase:sapphire-preferred, bank_id: chase, canonical_key: "chase:credit_card:consumer:chase sapphire preferred:-",
+     source_ids: [chase:chase-sapphire-preferred], series: Sapphire, points_program: chase_ur}
+  - {card_key: chase:sapphire-reserve, bank_id: chase, canonical_key: "chase:credit_card:consumer:chase sapphire reserve:-",
+     source_ids: [chase:chase-sapphire-reserve], series: Sapphire, points_program: chase_ur}
+  - {card_key: chase:freedom-unlimited, bank_id: chase, canonical_key: "chase:credit_card:consumer:chase freedom unlimited:-",
+     source_ids: [chase:chase-freedom-unlimited], series: Freedom, points_program: chase_ur}
+  - card_key: chase:ink-business-preferred
+    bank_id: chase
+    canonical_key: "chase:credit_card:business:ink business preferred:-"
+    source_ids: [chase:ink-business-preferred]
+    series: Ink
+    points_program: chase_ur
+    counts_toward_chase_524: &chase_biz_524
+      value: false
+      source_type: community
+      source_url: https://www.doctorofcredit.com/chase-524-rule-explained-detail-need-know/
+      excerpt: "Keep in mind that even though Chase business cards do not normally report, they will still be counted as Chase has this information internally. Update: It seems like Chase business cards aren’t counted."
+      verified_at: 2026-11-09
+    reports_to_personal_credit: &chase_biz_report
+      value: false
+      source_type: community
+      source_url: https://www.doctorofcredit.com/chase-524-rule-explained-detail-need-know/
+      excerpt: "Keep in mind that even though Chase business cards do not normally report, they will still be counted as Chase has this information internally."
+      verified_at: 2026-11-09
+  - card_key: chase:ink-business-cash
+    bank_id: chase
+    canonical_key: "chase:credit_card:business:ink business cash:-"
+    source_ids: [chase:ink-business-cash]
+    series: Ink
+    points_program: chase_ur
+    counts_toward_chase_524: *chase_biz_524
+    reports_to_personal_credit: *chase_biz_report
+  - {card_key: amex:gold, bank_id: american_express, canonical_key: "american_express:credit_card:consumer:american express gold:-",
+     source_ids: [american_express:gold-card], series: Gold, points_program: amex_mr}
+  - {card_key: amex:blue-cash-preferred, bank_id: american_express, canonical_key: "american_express:credit_card:consumer:blue cash preferred:-",
+     source_ids: [american_express:blue-cash-preferred], series: Blue Cash, points_program: null}
+  - {card_key: citi:strata-premier, bank_id: citi, canonical_key: "citi:credit_card:consumer:citi strata premier:-",
+     source_ids: [citi:strata-premier], series: Strata, points_program: citi_typ}
+  - {card_key: citi:double-cash, bank_id: citi, canonical_key: "citi:credit_card:consumer:citi double cash:-",
+     source_ids: [citi:double-cash], series: Double Cash, points_program: citi_typ_double_cash}
+  - {card_key: citi:aadvantage-business, bank_id: citi, canonical_key: "citi:credit_card:business:citi aadvantage businesstm world elite mastercard:-",
+     source_ids: [citi:aadvantage-business], series: AAdvantage, points_program: aa_aadvantage}
+  - {card_key: capital_one:venture-x, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:venture x:-",
+     source_ids: [capital_one:venture-x], series: Venture, points_program: c1_miles}
+  - {card_key: capital_one:venture, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:venture rewards:-",
+     source_ids: [capital_one:venture], series: Venture, points_program: c1_miles}
+  - {card_key: capital_one:savor, bank_id: capital_one, canonical_key: "capital_one:credit_card:consumer:savor rewards:-",
+     source_ids: [capital_one:savor], series: Savor, points_program: null}
+  - card_key: capital_one:spark-cash-plus
+    bank_id: capital_one
+    canonical_key: "capital_one:credit_card:business:spark cash plus:-"
+    source_ids: [capital_one:spark-cash-plus]
+    series: Spark
+    points_program: null
+    reports_to_personal_credit:
+      value: false
+      source_type: community
+      source_url: https://www.doctorofcredit.com/things-everybody-should-know-about-capital-one-credit-cards/
+      excerpt: "Some Capital One business credit cards DO get reported to the personal credit bureaus. Keep this is mind as these cards will show up on your credit report. An exception is the Spark Cash Plus and the Venture X Business cards which are not reported."
+      verified_at: 2026-11-10
+  - {card_key: boa:customized-cash, bank_id: bank_of_america, canonical_key: "bank_of_america:credit_card:consumer:bank of america customized cash rewards:-",
+     source_ids: [bank_of_america:cash-back-credit-card], series: Cash Rewards, points_program: null}
+  - {card_key: boa:premium-rewards, bank_id: bank_of_america, canonical_key: "bank_of_america:credit_card:consumer:bank of america premium rewards:-",
+     source_ids: [bank_of_america:premium-rewards-credit-card, bank_of_america:premium-rewards-credit-card-terms], series: Premium Rewards, points_program: boa_points}
+  - {card_key: discover:it-cash-back, bank_id: discover, canonical_key: "discover:credit_card:consumer:discover it cash back:-",
+     source_ids: [discover:it-cash-back], series: Discover it, points_program: null}
+  - {card_key: discover:it-miles, bank_id: discover, canonical_key: "discover:credit_card:consumer:discover it miles:-",
+     source_ids: [discover:it-miles], series: Discover it, points_program: discover_miles}
+  - {card_key: wells_fargo:active-cash, bank_id: wells_fargo, canonical_key: "wells_fargo:credit_card:consumer:wells fargo active cash:-",
+     source_ids: [wells_fargo:active-cash], series: Active Cash, points_program: null}
+  - {card_key: wells_fargo:autograph, bank_id: wells_fargo, canonical_key: "wells_fargo:credit_card:consumer:wells fargo autograph:-",
+     source_ids: [wells_fargo:autograph], series: Autograph, points_program: wf_rewards}
+# Pages that cannot be read automatically; their offers are entered by hand (bankrec offers add) and reviewed.
+manual_only:
+  - {bank_id: wells_fargo, url: "https://www.wellsfargo.com/biz/business-credit/credit-cards/", why: "robots.txt disallows /biz/business-credit/credit-cards/"}
+  - {bank_id: american_express, url: "https://www.americanexpress.com/us/credit-cards/card-application/apply/", why: "offer terms under /apply/ are robots-disallowed; once-per-lifetime wording cannot be captured automatically"}
+  - {bank_id: chase, url: "https://sites.chase.com/", why: "Pricing & Terms pages: robots.txt disallows all crawlers"}
+  - {bank_id: capital_one, url: "https://card-apis.capitalone.com/", why: "card data API answers robots.txt with 403; pages are read as static HTML only"}
+  - {bank_id: citi, url: "https://www.citi.com/credit-cards/citi-custom-cash-credit-card", why: "no longer accepting applications as of May 28, 2026 (page text); not tracked"}

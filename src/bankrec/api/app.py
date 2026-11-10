@@ -473,6 +473,115 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             ],
         )
 
+    # ------------------------------------------------------------------ offer tracker (DESIGN §27.9)
+    from bankrec.tracker import views as TV
+
+    PvQ = Annotated[
+        str | None,
+        Query(
+            max_length=300,
+            pattern=r"^[a-z0-9_]+:\d{1,2}(\.\d{1,3})?(,[a-z0-9_]+:\d{1,2}(\.\d{1,3})?)*$",
+            description="your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+        ),
+    ]
+
+    def _pv(pv: str | None) -> dict[str, float]:
+        return {k: float(v) for k, v in (x.split(":") for x in pv.split(","))} if pv else {}
+
+    def _builder(s: Session, pv: str | None = None) -> TV.Builder:
+        return TV.Builder(s, allow_demo=st.allow_test_only, overrides=_pv(pv))
+
+    @app.get(prefix + "/campaigns", response_model=TV.CampaignPage, tags=["campaigns"])
+    def campaigns(
+        s: Annotated[Session, Depends(session)],
+        bank: BankQ = None,
+        card: Annotated[str | None, Query(max_length=80, pattern=r"^[a-z0-9_]+:[a-z0-9-]+$")] = None,
+        segment: SegQ = None,
+        offer_type: Annotated[
+            str | None,
+            Query(pattern="^(welcome_bonus|spend_multiplier|first_year_fee|first_year_match|other)$"),
+        ] = None,
+        channel: Annotated[str | None, Query(pattern="^(public|targeted|referral|branch)$")] = None,
+        annual_fee_max: FeeQ = None,
+        min_spend_max: Annotated[int | None, Query(ge=0, le=100_000, description="dollars")] = None,
+        deadline: Annotated[
+            str | None, Query(pattern="^(known|unknown|within_30)$", description="deadline filter")
+        ] = None,
+        include_past: Annotated[bool, Query(description="include expired and withdrawn campaigns")] = False,
+        sort: Annotated[str, Query(pattern="^(recent|deadline|value|spend)$")] = "recent",
+        pv: PvQ = None,
+    ) -> TV.CampaignPage:
+        """Current offer campaigns of the tracked cards, no personal data needed (DESIGN §27.9)."""
+        b, t = _builder(s, pv), now()
+        items = [b.view(c, t) for c in b.campaigns()]
+        keep = []
+        for v in items:
+            if not include_past and v.status not in TV.CURRENT:
+                continue
+            if (bank and v.card.bank_id != bank) or (card and v.card.card_key != card):
+                continue
+            if (segment and v.card.segment != segment) or (offer_type and v.offer_type != offer_type):
+                continue
+            if channel and v.channel != channel:
+                continue
+            if annual_fee_max is not None and (
+                v.card.annual_fee_cents is None or v.card.annual_fee_cents > annual_fee_max * 100
+            ):
+                continue
+            if min_spend_max is not None and (v.terms.min_spend_cents or 0) > min_spend_max * 100:
+                continue
+            if (deadline == "known" and not v.terms.end.date) or (deadline == "unknown" and v.terms.end.date):
+                continue
+            if deadline == "within_30" and not (
+                v.terms.end.date
+                and v.terms.end.confirmed
+                and (datetime.fromisoformat(v.terms.end.date).date() - t.date()).days <= 30
+            ):
+                continue
+            keep.append(v)
+        key = {
+            "recent": lambda v: -(v.last_verified_at or v.first_seen_at).timestamp(),
+            "deadline": lambda v: (v.terms.end.date is None, v.terms.end.date or ""),
+            "value": lambda v: (v.value.cents is None, -(v.value.cents or 0)),
+            "spend": lambda v: (v.terms.min_spend_cents is None, v.terms.min_spend_cents or 0),
+        }[sort]
+        keep.sort(key=key)
+        return TV.CampaignPage(items=keep, total=len(keep), assumptions=TV.assumptions())
+
+    @app.get(prefix + "/campaigns/{campaign_id}", response_model=TV.CampaignDetail, tags=["campaigns"])
+    def campaign(
+        campaign_id: str, s: Annotated[Session, Depends(session)], pv: PvQ = None
+    ) -> TV.CampaignDetail:
+        try:
+            c = s.get(P.Campaign, campaign_id)
+        except Exception as e:  # malformed UUID
+            raise HTTPException(404, "Campaign not found") from e
+        if c is None or (c.demo and not st.allow_test_only):
+            raise HTTPException(404, "Campaign not found")
+        return _builder(s, pv).detail(c, now())
+
+    @app.get(
+        prefix + "/products/{product_id}/campaigns", response_model=list[TV.CampaignView], tags=["campaigns"]
+    )
+    def product_campaigns(
+        product_id: str, s: Annotated[Session, Depends(session)], pv: PvQ = None
+    ) -> list[TV.CampaignView]:
+        """Every campaign of a tracked card, current and past (newest first)."""
+        b, t = _builder(s, pv), now()
+        out = [b.view(c, t) for c in b.campaigns() if b.card(c.card_key).product_id == product_id]
+        return sorted(out, key=lambda v: v.first_seen_at, reverse=True)
+
+    @app.get(prefix + "/rules", response_model=list[TV.RuleView], tags=["campaigns"])
+    def rules(s: Annotated[Session, Depends(session)], bank: BankQ = None) -> list[TV.RuleView]:
+        q = select(P.ApplicationRule).order_by(P.ApplicationRule.bank_id, P.ApplicationRule.rule_key)
+        if bank:
+            q = q.where(P.ApplicationRule.bank_id == bank)
+        return [TV.rule_view(r) for r in s.scalars(q)]
+
+    @app.get(prefix + "/point-values", response_model=list[TV.PointValue], tags=["campaigns"])
+    def point_value_floors() -> list[TV.PointValue]:
+        return TV.point_values()
+
     return app
 
 

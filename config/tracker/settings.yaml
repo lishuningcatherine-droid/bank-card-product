@@ -1,0 +1,13 @@
+# Offer tracker settings (DESIGN §27). All thresholds are configurable here.
+timezone: America/New_York          # every campaign deadline is stored and shown in ET
+ending_soon_days: 14                # "ending soon" only for campaigns with a confirmed end date
+stale:
+  consecutive_failures: 3           # this many failed checks in a row → "stale" (never "ended")
+  days_without_success: 7           # or no successful check for this many days
+history:
+  window_months: 24                 # "usual level" = median of recorded public offers in this window
+  min_records: 3                    # comparative labels need at least this many records ...
+  min_coverage_months: 12           # ... spanning at least this many months
+  recent_months: 6                  # "recently high" compares with this many months
+reach:
+  safety_margin: 0.20               # natural spend × window must exceed the requirement by at least 20%

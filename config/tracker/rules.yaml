@@ -1,0 +1,383 @@
+# Application and bonus-eligibility rules (DESIGN §27.4). Each rule keeps its source and the words it rests on.
+#
+# source_type: official  = the issuer's own wording
+#              community = a rule reported by a reliable community source; the issuer does not publish it
+# verification: page_captured      = the excerpt is in a page this site captured (source_id names it)
+#               third_party_quote  = the issuer's wording as quoted by a third party; this site could not capture
+#                                    the issuer page (robots.txt) — shown as "not yet confirmed on the issuer page"
+#               community_report   = a community write-up
+# effect:   approval (whether you can be approved) | bonus (whether you can earn the welcome offer)
+# strength: firm ("is not available", "not eligible") | soft ("may not be", "may also consider")
+# test (how the rule is checked against a profile; see bankrec.tracker.rules):
+#   count_limit   — blocked when `limit` or more matching accounts were opened in the last `window_months`
+#   velocity      — blocked when any (window_months, limit) pair in `windows` is reached
+#   interval      — blocked when a matching account was opened (or applied for) in the last `window_months`
+#   holding       — conflict when the visitor currently holds a matching card
+#   held_ever     — conflict when the visitor holds or ever held a matching card
+#   bonus_lookback— conflict when the visitor received a matching card's bonus in the last `window_months`
+#                   (null = ever)
+#   notice        — information only (how the issuer tells you about eligibility)
+# match: which accounts count — cards (card keys), series, issuer (bank id or "any"), segment (personal|business|any),
+#   include_authorized_users, business_counts (true | false | "per_card": use the card's reporting fact)
+rules:
+  # ------------------------------------------------------------------ Chase
+  - rule_key: chase_5_24
+    bank_id: chase
+    name: "Chase 5/24"
+    rule_type: card_count_limit
+    source_type: community
+    verification: community_report
+    effect: approval
+    strength: firm
+    test: count_limit
+    window_months: 24
+    limit: 5
+    counts: accounts_opened
+    match: {issuer: any, segment: personal, include_authorized_users: true, business_counts: per_card}
+    applies_to: {bank_id: chase}
+    source_url: https://www.doctorofcredit.com/chase-524-rule-explained-detail-need-know/
+    source_title: "Doctor of Credit — Chase 5/24 Rule Explained In Detail (updated for 2020)"
+    excerpt: "Chase has an unpublished rule that applies to most of the credit cards they offer. ... When it was officially added it stated: You will not be approved for this card if you have opened 5 or more bank cards in the past 24 months."
+    notes:
+      - "Authorized-user cards: “Because authorized user accounts usually show on your credit report, these will also be counted as a new account and count towards the 5/24 rule. Although it’s possible to get some representatives to not count them when calling reconsideration.”"
+      - "Business cards: “Not all business cards show up on your personal credit report.” … “Update: It seems like Chase business cards aren’t counted.” Business cards that report to personal credit count; whether a card reports is a per-card fact."
+      - "The source page is dated 2019 (updated for 2020); the rule is unpublished and Chase may apply it differently today."
+    verified_at: 2026-11-09
+  - rule_key: chase_sapphire_card
+    bank_id: chase
+    name: "Sapphire: not if you have this card; bonus may be refused if you held it or earned its bonus"
+    rule_type: family_restriction
+    source_type: official
+    verification: page_captured
+    source_id: chase:chase-sapphire-preferred
+    effect: approval
+    strength: firm
+    test: holding
+    match: {cards: [chase:sapphire-preferred, chase:sapphire-reserve], same_card: true}
+    applies_to: {cards: [chase:sapphire-preferred, chase:sapphire-reserve]}
+    source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
+    excerpt: "This credit card is unavailable to you if you currently have this card open."
+    verified_at: 2026-10-14
+  - rule_key: chase_sapphire_bonus
+    bank_id: chase
+    name: "Sapphire new cardmember bonus: may not be available if you held the card or earned its bonus"
+    rule_type: bonus_once_per_lifetime
+    source_type: official
+    verification: page_captured
+    source_id: chase:chase-sapphire-preferred
+    effect: bonus
+    strength: soft
+    test: held_ever
+    also_bonus_received: true
+    match: {cards: [chase:sapphire-preferred, chase:sapphire-reserve], same_card: true}
+    applies_to: {cards: [chase:sapphire-preferred, chase:sapphire-reserve]}
+    source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
+    excerpt: "The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility."
+    verified_at: 2026-10-14
+  - rule_key: chase_sapphire_family_wording
+    bank_id: chase
+    name: "Sapphire: a second wording on the same page says “if you currently have one open”"
+    rule_type: family_restriction
+    source_type: official
+    verification: page_captured
+    source_id: chase:chase-sapphire-preferred
+    effect: approval
+    strength: soft
+    test: holding
+    match: {cards: [chase:sapphire-preferred, chase:sapphire-reserve], same_card: false}
+    applies_to: {cards: [chase:sapphire-preferred, chase:sapphire-reserve]}
+    source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
+    excerpt: "This credit card is unavailable to you if you currently have one open."
+    notes:
+      - "The page does not say whether “one” means this card or any Sapphire card. Holding another Sapphire card is shown as a possible conflict to confirm with Chase, not as a certain one."
+    verified_at: 2026-10-14
+  - rule_key: chase_freedom_unlimited_24
+    bank_id: chase
+    name: "Freedom Unlimited: not for current cardmembers, nor previous cardmembers who earned its bonus in 24 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: chase:chase-freedom-unlimited
+    effect: bonus
+    strength: firm
+    test: bonus_lookback
+    window_months: 24
+    also_current_holder: true
+    match: {cards: [chase:freedom-unlimited], same_card: true}
+    applies_to: {cards: [chase:freedom-unlimited]}
+    source_url: https://creditcards.chase.com/cash-back-credit-cards/freedom/unlimited
+    excerpt: "This product is not available to either (i) current cardmembers of this credit card, or (ii) previous cardmembers of this credit card who received a new cardmember bonus for this credit card within the last 24 months."
+    verified_at: 2026-10-14
+  - rule_key: chase_ink_preferred_ever
+    bank_id: chase
+    name: "Ink Business Preferred: bonus may not be available if you ever had this card"
+    rule_type: bonus_once_per_lifetime
+    source_type: official
+    verification: page_captured
+    source_id: chase:ink-business-preferred
+    effect: bonus
+    strength: soft
+    test: held_ever
+    match: {cards: [chase:ink-business-preferred], same_card: true}
+    applies_to: {cards: [chase:ink-business-preferred]}
+    source_url: https://creditcards.chase.com/business-credit-cards/ink/business-preferred
+    excerpt: "The new cardmember bonus may not be available to you if you have ever had this card. We may also consider factors pertinent to your business in determining your bonus eligibility."
+    verified_at: 2026-10-14
+  - rule_key: chase_ink_cash_family
+    bank_id: chase
+    name: "Ink Business Cash: bonus may not be available if you ever had it or another no-annual-fee Chase business card"
+    rule_type: family_restriction
+    source_type: official
+    verification: page_captured
+    source_id: chase:ink-business-cash
+    effect: bonus
+    strength: soft
+    test: held_ever
+    match: {cards: [chase:ink-business-cash], series_no_annual_fee_business: chase, same_card: false}
+    applies_to: {cards: [chase:ink-business-cash]}
+    source_url: https://creditcards.chase.com/business-credit-cards/ink/cash
+    excerpt: "The new cardmember bonus may not be available to you if you have ever had this card or any other Chase for Business card without an annual fee. We may also consider factors pertinent to your business in determining your bonus eligibility."
+    verified_at: 2026-10-14
+  # ------------------------------------------------------------------ American Express
+  - rule_key: amex_once_per_lifetime
+    bank_id: american_express
+    name: "Amex welcome offer: not if you have or have had the card (once per lifetime)"
+    rule_type: bonus_once_per_lifetime
+    source_type: official
+    verification: third_party_quote
+    effect: bonus
+    strength: soft
+    test: held_ever
+    also_bonus_received: true
+    match: {issuer: american_express, same_card: true}
+    applies_to: {bank_id: american_express}
+    source_url: https://thepointsguy.com/credit-cards/american-express/american-express-bonus-lifetime-restrictions/
+    source_title: "The Points Guy — A complete guide to Amex’s 1-bonus-per-lifetime restrictions (quoting Amex rates and fees terms)"
+    excerpt: "“You may not be eligible to receive a welcome offer if you have or have had this Card, the Platinum Card® from American Express Exclusively for Charles Schwab, the Platinum Card® from American Express Exclusively for Morgan Stanley or previous versions of these Cards. You also may not be eligible to receive a welcome offer based on various factors, such as your history with credit card balance transfers, your history as an American Express Card Member, ...”"
+    notes:
+      - "Quoted from Amex's Platinum Card terms by a third party. Amex's own offer terms are under robots-disallowed application paths, so this site has not captured them; each card's terms name its own family of cards."
+    verified_at: 2026-11-09
+  - rule_key: amex_eligibility_notice
+    bank_id: american_express
+    name: "Amex tells you during the application whether you can get the welcome offer"
+    rule_type: eligibility_notice
+    source_type: official
+    verification: page_captured
+    source_id: american_express:gold-card
+    effect: bonus
+    strength: soft
+    test: notice
+    applies_to: {bank_id: american_express}
+    source_url: https://www.americanexpress.com/us/credit-cards/card/gold-card/
+    excerpt: "Apply and find out your welcome offer ... Welcome offers vary and you may not be eligible for an offer."
+    notes:
+      - "As described by a third party: “You may also receive a pop-up warning during the application process if Amex determines that you're ineligible for a welcome offer. This gives you the option to withdraw your application or proceed without earning a welcome offer.” (The Points Guy, same page as above)"
+    verified_at: 2026-10-18
+  # ------------------------------------------------------------------ Citi
+  - rule_key: citi_double_cash_48
+    bank_id: citi
+    name: "Citi Double Cash: no bonus if you earned a Double Cash bonus (or converted into it after a bonus) in 48 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: citi:double-cash
+    effect: bonus
+    strength: firm
+    test: bonus_lookback
+    window_months: 48
+    match: {cards: [citi:double-cash], same_card: true}
+    applies_to: {cards: [citi:double-cash]}
+    source_url: https://www.citi.com/credit-cards/citi-double-cash-credit-card
+    excerpt: "Bonus ThankYou® Points are not available if you have received a new account bonus for a Citi Double Cash account in the past 48 months or if you converted another Citi credit card account on which you earned a new account bonus in the last 48 months into a Citi Double Cash account."
+    verified_at: 2026-11-09
+  - rule_key: citi_aadvantage_business_48
+    bank_id: citi
+    name: "Citi AAdvantage Business: no bonus if you earned its bonus (or converted into it after a bonus) in 48 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: citi:aadvantage-business
+    effect: bonus
+    strength: firm
+    test: bonus_lookback
+    window_months: 48
+    match: {cards: [citi:aadvantage-business], same_card: true}
+    applies_to: {cards: [citi:aadvantage-business]}
+    source_url: https://www.citi.com/credit-cards/citi-aadvantage-business-credit-card
+    excerpt: "American Airlines AAdvantage® new cardmember bonus offer not available if you have received a new account bonus for a Citi® / AAdvantage® Business account in the past 48 months or if you converted another Citi credit card account on which you earned a new account bonus in the last 48 months into a Citi® / AAdvantage® Business account."
+    verified_at: 2026-11-09
+  - rule_key: citi_strata_premier_ever
+    bank_id: citi
+    name: "Citi Strata Premier: no bonus if you have or ever had Strata Premier or Premier"
+    rule_type: bonus_once_per_lifetime
+    source_type: official
+    verification: page_captured
+    source_id: citi:strata-premier
+    effect: bonus
+    strength: firm
+    test: held_ever
+    match: {cards: [citi:strata-premier], same_card: true}
+    applies_to: {cards: [citi:strata-premier]}
+    source_url: https://www.citi.com/credit-cards/citi-strata-premier-credit-card
+    excerpt: "New account bonus offer is not available if you currently have or previously had a Citi Strata Premier® or a Citi Premier® account. You also may not be eligible for the new account bonus offer based on a number of factors, such as your history of opening, closing and using credit cards."
+    notes:
+      - "The rule also covers the older Citi Premier® card, which this site does not track; tell us if you held it."
+    verified_at: 2026-11-09
+  # ------------------------------------------------------------------ Capital One
+  - rule_key: capital_one_venture_48
+    bank_id: capital_one
+    name: "Capital One Venture / Venture X: no bonus if you earned a Venture or Venture X bonus in 48 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: capital_one:venture
+    effect: bonus
+    strength: firm
+    test: bonus_lookback
+    window_months: 48
+    match: {cards: [capital_one:venture, capital_one:venture-x], same_card: false}
+    applies_to: {cards: [capital_one:venture]}
+    source_url: https://www.capitalone.com/credit-cards/venture/
+    excerpt: "You are not eligible for this bonus if you have received a new cardmember bonus for the Capital One Venture card or the Capital One Venture X card in the past 48 months."
+    verified_at: 2026-10-14
+  - rule_key: capital_one_savor_48
+    bank_id: capital_one
+    name: "Capital One Savor: no bonus if you earned its bonus in 48 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: capital_one:savor
+    effect: bonus
+    strength: firm
+    test: bonus_lookback
+    window_months: 48
+    match: {cards: [capital_one:savor], same_card: true}
+    applies_to: {cards: [capital_one:savor]}
+    source_url: https://www.capitalone.com/credit-cards/savor/
+    excerpt: "Existing or previous cardmembers are not eligible for this bonus if they have received a new cardmember bonus for this product in the past 48 months."
+    verified_at: 2026-10-14
+  - rule_key: capital_one_spark_existing
+    bank_id: capital_one
+    name: "Spark Cash Plus: bonuses may not be available to existing or previous Capital One business cardholders"
+    rule_type: family_restriction
+    source_type: official
+    verification: page_captured
+    source_id: capital_one:spark-cash-plus
+    effect: bonus
+    strength: soft
+    test: held_ever
+    match: {issuer: capital_one, segment: business, same_card: false}
+    applies_to: {cards: [capital_one:spark-cash-plus]}
+    source_url: https://www.capitalone.com/small-business/credit-cards/spark-cash-plus/
+    excerpt: "The bonuses may not be available for existing or previous Capital One Business card holders."
+    verified_at: 2026-10-14
+  # ------------------------------------------------------------------ Discover
+  - rule_key: discover_48
+    bank_id: discover
+    name: "Discover it Cash Back: bonus may not be available if you earned it in 48 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: discover:it-cash-back
+    effect: bonus
+    strength: soft
+    test: bonus_lookback
+    window_months: 48
+    match: {cards: [discover:it-cash-back], same_card: true}
+    applies_to: {cards: [discover:it-cash-back]}
+    source_url: https://www.discover.com/credit-cards/cash-back/it-card/
+    excerpt: "Existing or previous cardmembers may not be eligible for this bonus if they have received a new cardmember bonus for this product in the past 48 months."
+    verified_at: 2026-11-09
+  # ------------------------------------------------------------------ Wells Fargo
+  - rule_key: wells_fargo_4_months
+    bank_id: wells_fargo
+    name: "Wells Fargo: may not approve another consumer card within 4 months of opening one"
+    rule_type: application_frequency
+    source_type: official
+    verification: page_captured
+    source_id: wells_fargo:active-cash
+    effect: approval
+    strength: soft
+    test: interval
+    window_months: 4
+    counts: accounts_opened
+    match: {issuer: wells_fargo, segment: personal, include_authorized_users: false}
+    applies_to: {bank_id: wells_fargo, segment: consumer}
+    source_url: https://creditcards.wellsfargo.com/active-cash-credit-card/
+    excerpt: "You may not qualify for an additional Wells Fargo-branded consumer credit card if you have opened a Wells Fargo-branded consumer credit card in the last 4 months."
+    verified_at: 2026-11-09
+  - rule_key: wells_fargo_48
+    bank_id: wells_fargo
+    name: "Wells Fargo: bonus may not be available if you have the card or opened one in 48 months"
+    rule_type: bonus_lookback
+    source_type: official
+    verification: page_captured
+    source_id: wells_fargo:active-cash
+    effect: bonus
+    strength: soft
+    test: holding_or_opened
+    window_months: 48
+    match: {issuer: wells_fargo, same_card: true}
+    applies_to: {bank_id: wells_fargo}
+    source_url: https://creditcards.wellsfargo.com/active-cash-credit-card/
+    excerpt: "You may not be eligible for introductory annual percentage rates, fees and/or rewards bonus offers if you have the card product you are applying for or opened one within the last 48 months from the date of the application – even if that account is closed and has a $0 balance."
+    verified_at: 2026-11-09
+  # ------------------------------------------------------------------ Bank of America
+  - rule_key: boa_2_3_4
+    bank_id: bank_of_america
+    name: "Bank of America 2/3/4: at most 2 new BofA cards per 2 months, 3 per 12 months, 4 per 24 months"
+    rule_type: application_frequency
+    source_type: community
+    verification: community_report
+    effect: approval
+    strength: firm
+    test: velocity
+    windows: [[2, 2], [12, 3], [24, 4]]
+    counts: accounts_opened
+    match: {issuer: bank_of_america, segment: personal, include_authorized_users: false}
+    applies_to: {bank_id: bank_of_america, segment: consumer}
+    source_url: https://www.doctorofcredit.com/new-bank-of-america-234-rule-for-credit-card-approvals/
+    source_title: "Doctor of Credit — New Bank of America ‘2/3/4 Rule’ for Credit Card Approvals [Confirmed] (2017)"
+    excerpt: "There is a new rule from Bank of America whereby they’ll only approve you for at most two cards per rolling 2 months, three cards per rolling 12 months, and four cards per rolling 24 months."
+    notes:
+      - "Scope: “BofA merely limits us as to how many new BofA cards we can get per 2/12/24 month timeframe.”"
+      - "Business cards: “We haven’t yet gotten confirmation whether business cards count in these numbers. The data points we’ve seen indicate that business cards do not count.”"
+      - "The source is from 2017; Bank of America does not publish this rule."
+    verified_at: 2026-11-10
+  # ------------------------------------------------------------------ Capital One (community)
+  - rule_key: capital_one_1_per_6
+    bank_id: capital_one
+    name: "Capital One: one new Capital One card per six months"
+    rule_type: application_frequency
+    source_type: community
+    verification: community_report
+    effect: approval
+    strength: firm
+    test: interval
+    window_months: 6
+    counts: accounts_opened
+    match: {issuer: capital_one, segment: any, include_authorized_users: false}
+    applies_to: {bank_id: capital_one}
+    source_url: https://www.doctorofcredit.com/things-everybody-should-know-about-capital-one-credit-cards/
+    source_title: "Doctor of Credit — Things Everybody Should Know About Capital One Credit Cards (updated 2026-01-15)"
+    excerpt: "You’re limited to one Capital One card per six months."
+    notes:
+      - "Capital One does not publish this limit; recent community reports describe exceptions."
+    verified_at: 2026-11-10
+  - rule_key: capital_one_two_personal
+    bank_id: capital_one
+    name: "Capital One: at most two open Capital One-branded personal cards"
+    rule_type: card_count_limit
+    source_type: community
+    verification: community_report
+    effect: approval
+    strength: firm
+    test: holding_count
+    limit: 2
+    counts: currently_holding
+    match: {issuer: capital_one, segment: personal, include_authorized_users: false}
+    applies_to: {bank_id: capital_one, segment: consumer}
+    source_url: https://www.doctorofcredit.com/things-everybody-should-know-about-capital-one-credit-cards/
+    source_title: "Doctor of Credit — Things Everybody Should Know About Capital One Credit Cards (updated 2026-01-15)"
+    excerpt: "Capital One has limits when it comes to how many cards you can have with them. Maximum of two personal cards, but only Capital One branded cards (e.g not co-branded cards like the Sony card) count."
+    verified_at: 2026-11-10

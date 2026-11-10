@@ -1,0 +1,15 @@
+# The page no longer states "Venture Rewards from Capital One"; it is classified as a non-product page (2026-11-10).
+# Excerpt from the official page captured in run 20261110T000117Z-aa64fa.
+card_key: capital_one:venture
+channel: public
+offer_type: welcome_bonus
+tiers:
+  - {amount: 75000, unit: miles, unit_name: "Capital One miles", spend_cents: 400000, window_count: 3,
+     window_unit: months, window_start: account_opening,
+     text: "earn 75,000 bonus miles once you spend $4,000 on purchases within the first 3 months from account opening"}
+annual_fee_cents: 9500
+first_year_fee_cents: 9500
+source_kind: official
+source_url: https://www.capitalone.com/credit-cards/venture/
+source_excerpt: "Enjoy $300 to use on hotel and vacation rental bookings through Capital One Travel in your first cardholder year, plus earn 75,000 bonus miles once you spend $4,000 on purchases within the first 3 months from account opening"
+observed_from: 2026-11-10

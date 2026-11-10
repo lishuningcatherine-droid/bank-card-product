@@ -181,6 +181,395 @@
     "title": "BenefitView",
     "type": "object"
    },
+   "CampaignDetail": {
+    "properties": {
+     "campaign_key": {
+      "title": "Campaign Key",
+      "type": "string"
+     },
+     "card": {
+      "$ref": "#/components/schemas/CardSummary"
+     },
+     "channel": {
+      "title": "Channel",
+      "type": "string"
+     },
+     "channel_label": {
+      "title": "Channel Label",
+      "type": "string"
+     },
+     "checks": {
+      "items": {
+       "$ref": "#/components/schemas/CheckEntry"
+      },
+      "title": "Checks",
+      "type": "array"
+     },
+     "countdown_to": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "set only when the issuer stated both the date and the time (with its zone)",
+      "title": "Countdown To"
+     },
+     "deadline_label": {
+      "title": "Deadline Label",
+      "type": "string"
+     },
+     "demo": {
+      "title": "Demo",
+      "type": "boolean"
+     },
+     "first_seen_at": {
+      "format": "date-time",
+      "title": "First Seen At",
+      "type": "string"
+     },
+     "history": {
+      "$ref": "#/components/schemas/HistoryLabel"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "last_checked_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Checked At"
+     },
+     "last_verified_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Verified At"
+     },
+     "offer_type": {
+      "title": "Offer Type",
+      "type": "string"
+     },
+     "offer_type_label": {
+      "title": "Offer Type Label",
+      "type": "string"
+     },
+     "officially_verified": {
+      "title": "Officially Verified",
+      "type": "boolean"
+     },
+     "rules": {
+      "items": {
+       "$ref": "#/components/schemas/RuleView"
+      },
+      "title": "Rules",
+      "type": "array"
+     },
+     "source_kind": {
+      "title": "Source Kind",
+      "type": "string"
+     },
+     "source_label": {
+      "title": "Source Label",
+      "type": "string"
+     },
+     "source_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Name"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "status_label": {
+      "title": "Status Label",
+      "type": "string"
+     },
+     "status_log": {
+      "items": {
+       "$ref": "#/components/schemas/StatusEntry"
+      },
+      "title": "Status Log",
+      "type": "array"
+     },
+     "status_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status Reason"
+     },
+     "terms": {
+      "$ref": "#/components/schemas/Terms"
+     },
+     "value": {
+      "$ref": "#/components/schemas/Value"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     },
+     "versions": {
+      "items": {
+       "$ref": "#/components/schemas/VersionView"
+      },
+      "title": "Versions",
+      "type": "array"
+     }
+    },
+    "required": [
+     "id",
+     "campaign_key",
+     "card",
+     "channel",
+     "channel_label",
+     "offer_type",
+     "offer_type_label",
+     "status",
+     "status_label",
+     "status_reason",
+     "source_kind",
+     "source_label",
+     "source_name",
+     "officially_verified",
+     "first_seen_at",
+     "last_checked_at",
+     "last_verified_at",
+     "version",
+     "terms",
+     "deadline_label",
+     "countdown_to",
+     "value",
+     "history",
+     "demo",
+     "versions",
+     "status_log",
+     "checks",
+     "rules"
+    ],
+    "title": "CampaignDetail",
+    "type": "object"
+   },
+   "CampaignPage": {
+    "properties": {
+     "assumptions": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/CampaignView"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "total": {
+      "title": "Total",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "items",
+     "total",
+     "assumptions"
+    ],
+    "title": "CampaignPage",
+    "type": "object"
+   },
+   "CampaignView": {
+    "properties": {
+     "campaign_key": {
+      "title": "Campaign Key",
+      "type": "string"
+     },
+     "card": {
+      "$ref": "#/components/schemas/CardSummary"
+     },
+     "channel": {
+      "title": "Channel",
+      "type": "string"
+     },
+     "channel_label": {
+      "title": "Channel Label",
+      "type": "string"
+     },
+     "countdown_to": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "set only when the issuer stated both the date and the time (with its zone)",
+      "title": "Countdown To"
+     },
+     "deadline_label": {
+      "title": "Deadline Label",
+      "type": "string"
+     },
+     "demo": {
+      "title": "Demo",
+      "type": "boolean"
+     },
+     "first_seen_at": {
+      "format": "date-time",
+      "title": "First Seen At",
+      "type": "string"
+     },
+     "history": {
+      "$ref": "#/components/schemas/HistoryLabel"
+     },
+     "id": {
+      "title": "Id",
+      "type": "string"
+     },
+     "last_checked_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Checked At"
+     },
+     "last_verified_at": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Last Verified At"
+     },
+     "offer_type": {
+      "title": "Offer Type",
+      "type": "string"
+     },
+     "offer_type_label": {
+      "title": "Offer Type Label",
+      "type": "string"
+     },
+     "officially_verified": {
+      "title": "Officially Verified",
+      "type": "boolean"
+     },
+     "source_kind": {
+      "title": "Source Kind",
+      "type": "string"
+     },
+     "source_label": {
+      "title": "Source Label",
+      "type": "string"
+     },
+     "source_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Name"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     },
+     "status_label": {
+      "title": "Status Label",
+      "type": "string"
+     },
+     "status_reason": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status Reason"
+     },
+     "terms": {
+      "$ref": "#/components/schemas/Terms"
+     },
+     "value": {
+      "$ref": "#/components/schemas/Value"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "id",
+     "campaign_key",
+     "card",
+     "channel",
+     "channel_label",
+     "offer_type",
+     "offer_type_label",
+     "status",
+     "status_label",
+     "status_reason",
+     "source_kind",
+     "source_label",
+     "source_name",
+     "officially_verified",
+     "first_seen_at",
+     "last_checked_at",
+     "last_verified_at",
+     "version",
+     "terms",
+     "deadline_label",
+     "countdown_to",
+     "value",
+     "history",
+     "demo"
+    ],
+    "title": "CampaignView",
+    "type": "object"
+   },
    "CardRequest": {
     "additionalProperties": false,
     "properties": {
@@ -346,6 +735,185 @@
      "goal"
     ],
     "title": "CardRequest",
+    "type": "object"
+   },
+   "CardSummary": {
+    "properties": {
+     "annual_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Annual Fee Cents"
+     },
+     "bank_id": {
+      "title": "Bank Id",
+      "type": "string"
+     },
+     "bank_name": {
+      "title": "Bank Name",
+      "type": "string"
+     },
+     "card_key": {
+      "title": "Card Key",
+      "type": "string"
+     },
+     "counts_toward_chase_524": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Counts Toward Chase 524"
+     },
+     "demo": {
+      "title": "Demo",
+      "type": "boolean"
+     },
+     "first_year_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Year Fee Cents"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "official_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Official Url"
+     },
+     "points_program": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Points Program"
+     },
+     "points_program_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Points Program Name"
+     },
+     "product_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product Id"
+     },
+     "reports_to_personal_credit": {
+      "anyOf": [
+       {
+        "additionalProperties": true,
+        "type": "object"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reports To Personal Credit"
+     },
+     "segment": {
+      "title": "Segment",
+      "type": "string"
+     },
+     "series": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Series"
+     }
+    },
+    "required": [
+     "card_key",
+     "product_id",
+     "name",
+     "bank_id",
+     "bank_name",
+     "segment",
+     "series",
+     "points_program",
+     "points_program_name",
+     "official_url",
+     "annual_fee_cents",
+     "first_year_fee_cents",
+     "reports_to_personal_credit",
+     "counts_toward_chase_524",
+     "demo"
+    ],
+    "title": "CardSummary",
+    "type": "object"
+   },
+   "CheckEntry": {
+    "properties": {
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "detail": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Detail"
+     },
+     "outcome": {
+      "title": "Outcome",
+      "type": "string"
+     }
+    },
+    "required": [
+     "at",
+     "outcome",
+     "detail"
+    ],
+    "title": "CheckEntry",
     "type": "object"
    },
    "CheckingRequest": {
@@ -817,6 +1385,128 @@
      "changes"
     ],
     "title": "HistoryEntry",
+    "type": "object"
+   },
+   "HistoryLabel": {
+    "properties": {
+     "code": {
+      "enum": [
+       "insufficient_history",
+       "all_time_high",
+       "above_usual",
+       "recent_high",
+       "usual",
+       "below_usual"
+      ],
+      "title": "Code",
+      "type": "string"
+     },
+     "coverage_months": {
+      "title": "Coverage Months",
+      "type": "number"
+     },
+     "median": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Median"
+     },
+     "official_only": {
+      "title": "Official Only",
+      "type": "boolean"
+     },
+     "records": {
+      "title": "Records",
+      "type": "integer"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "text",
+     "records",
+     "coverage_months",
+     "median",
+     "official_only"
+    ],
+    "title": "HistoryLabel",
+    "type": "object"
+   },
+   "Moment": {
+    "properties": {
+     "confirmed": {
+      "default": false,
+      "title": "Confirmed",
+      "type": "boolean"
+     },
+     "date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "stated_tz": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stated Tz"
+     },
+     "text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text"
+     },
+     "time": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Time"
+     },
+     "time_known": {
+      "title": "Time Known",
+      "type": "boolean"
+     }
+    },
+    "required": [
+     "date",
+     "time",
+     "time_known",
+     "label"
+    ],
+    "title": "Moment",
     "type": "object"
    },
    "MonthlySpend": {
@@ -1324,6 +2014,80 @@
      "page_size"
     ],
     "title": "Page",
+    "type": "object"
+   },
+   "PointValue": {
+    "properties": {
+     "basis": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Basis"
+     },
+     "excerpt": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Excerpt"
+     },
+     "floor_cents": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Floor Cents"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Note"
+     },
+     "program": {
+      "title": "Program",
+      "type": "string"
+     },
+     "source_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Url"
+     }
+    },
+    "required": [
+     "program",
+     "name",
+     "floor_cents"
+    ],
+    "title": "PointValue",
     "type": "object"
    },
    "ProductBrief": {
@@ -1988,6 +2752,110 @@
     "title": "Result",
     "type": "object"
    },
+   "RuleView": {
+    "properties": {
+     "bank_id": {
+      "title": "Bank Id",
+      "type": "string"
+     },
+     "effect": {
+      "enum": [
+       "approval",
+       "bonus"
+      ],
+      "title": "Effect",
+      "type": "string"
+     },
+     "excerpt": {
+      "title": "Excerpt",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "notes": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Notes",
+      "type": "array"
+     },
+     "rule_key": {
+      "title": "Rule Key",
+      "type": "string"
+     },
+     "rule_type": {
+      "title": "Rule Type",
+      "type": "string"
+     },
+     "source_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Title"
+     },
+     "source_type": {
+      "enum": [
+       "official",
+       "community"
+      ],
+      "title": "Source Type",
+      "type": "string"
+     },
+     "source_url": {
+      "title": "Source Url",
+      "type": "string"
+     },
+     "strength": {
+      "title": "Strength",
+      "type": "string"
+     },
+     "verification": {
+      "title": "Verification",
+      "type": "string"
+     },
+     "verified_at": {
+      "format": "date",
+      "title": "Verified At",
+      "type": "string"
+     },
+     "window_months": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Window Months"
+     }
+    },
+    "required": [
+     "rule_key",
+     "bank_id",
+     "name",
+     "rule_type",
+     "source_type",
+     "verification",
+     "effect",
+     "strength",
+     "window_months",
+     "source_url",
+     "source_title",
+     "excerpt",
+     "notes",
+     "verified_at"
+    ],
+    "title": "RuleView",
+    "type": "object"
+   },
    "SavingsRequest": {
     "additionalProperties": false,
     "properties": {
@@ -2185,6 +3053,359 @@
     "title": "SourcesResponse",
     "type": "object"
    },
+   "StatusEntry": {
+    "properties": {
+     "actor": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Actor"
+     },
+     "at": {
+      "format": "date-time",
+      "title": "At",
+      "type": "string"
+     },
+     "from_status": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "From Status"
+     },
+     "reason": {
+      "title": "Reason",
+      "type": "string"
+     },
+     "to_status": {
+      "title": "To Status",
+      "type": "string"
+     },
+     "trigger": {
+      "title": "Trigger",
+      "type": "string"
+     }
+    },
+    "required": [
+     "at",
+     "from_status",
+     "to_status",
+     "reason",
+     "trigger",
+     "actor"
+    ],
+    "title": "StatusEntry",
+    "type": "object"
+   },
+   "Terms": {
+    "properties": {
+     "amount_qualifier": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount Qualifier"
+     },
+     "annual_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Annual Fee Cents"
+     },
+     "cap_text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cap Text"
+     },
+     "categories": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Categories",
+      "type": "array"
+     },
+     "channel": {
+      "title": "Channel",
+      "type": "string"
+     },
+     "eligibility_text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Eligibility Text"
+     },
+     "end": {
+      "$ref": "#/components/schemas/Moment"
+     },
+     "first_year_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Year Fee Cents"
+     },
+     "min_spend_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Min Spend Cents"
+     },
+     "offer_type": {
+      "title": "Offer Type",
+      "type": "string"
+     },
+     "offer_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Offer Url"
+     },
+     "start": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Moment"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "stated_cash_value_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stated Cash Value Cents"
+     },
+     "tiers": {
+      "items": {
+       "$ref": "#/components/schemas/Tier"
+      },
+      "title": "Tiers",
+      "type": "array"
+     },
+     "total_amount": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Total Amount"
+     },
+     "unit": {
+      "title": "Unit",
+      "type": "string"
+     },
+     "unit_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unit Name"
+     },
+     "verbatim": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Verbatim"
+     },
+     "window_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Window Count"
+     },
+     "window_start": {
+      "title": "Window Start",
+      "type": "string"
+     },
+     "window_unit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Window Unit"
+     }
+    },
+    "required": [
+     "offer_type",
+     "channel",
+     "tiers",
+     "total_amount",
+     "unit",
+     "min_spend_cents",
+     "window_count",
+     "window_unit",
+     "window_start",
+     "annual_fee_cents",
+     "first_year_fee_cents",
+     "start",
+     "end",
+     "eligibility_text",
+     "verbatim",
+     "offer_url"
+    ],
+    "title": "Terms",
+    "type": "object"
+   },
+   "Tier": {
+    "properties": {
+     "amount": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Amount"
+     },
+     "incremental": {
+      "default": false,
+      "title": "Incremental",
+      "type": "boolean"
+     },
+     "spend_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Spend Cents"
+     },
+     "text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text"
+     },
+     "unit": {
+      "title": "Unit",
+      "type": "string"
+     },
+     "unit_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unit Name"
+     },
+     "window_count": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Window Count"
+     },
+     "window_start": {
+      "default": "not_stated",
+      "title": "Window Start",
+      "type": "string"
+     },
+     "window_unit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Window Unit"
+     }
+    },
+    "required": [
+     "amount",
+     "unit"
+    ],
+    "title": "Tier",
+    "type": "object"
+   },
    "UnrankedOffer": {
     "properties": {
      "offer": {
@@ -2244,6 +3465,79 @@
      "type"
     ],
     "title": "ValidationError",
+    "type": "object"
+   },
+   "Value": {
+    "properties": {
+     "assumption": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Assumption"
+     },
+     "cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cents"
+     },
+     "cents_per_point": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Cents Per Point"
+     },
+     "depends_on_points_value": {
+      "title": "Depends On Points Value",
+      "type": "boolean"
+     },
+     "first_year_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Year Fee Cents"
+     },
+     "first_year_net_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Year Net Cents"
+     }
+    },
+    "required": [
+     "cents",
+     "depends_on_points_value",
+     "assumption",
+     "cents_per_point",
+     "first_year_net_cents",
+     "first_year_fee_cents"
+    ],
+    "title": "Value",
     "type": "object"
    },
    "Values": {
@@ -2327,6 +3621,75 @@
     ],
     "title": "Values",
     "type": "object"
+   },
+   "VersionView": {
+    "properties": {
+     "change_summary": {
+      "items": {
+       "additionalProperties": true,
+       "type": "object"
+      },
+      "title": "Change Summary",
+      "type": "array"
+     },
+     "source_excerpt": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Excerpt"
+     },
+     "source_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Url"
+     },
+     "terms": {
+      "$ref": "#/components/schemas/Terms"
+     },
+     "valid_from": {
+      "format": "date-time",
+      "title": "Valid From",
+      "type": "string"
+     },
+     "valid_to": {
+      "anyOf": [
+       {
+        "format": "date-time",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Valid To"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "version",
+     "valid_from",
+     "valid_to",
+     "terms",
+     "change_summary",
+     "source_url",
+     "source_excerpt"
+    ],
+    "title": "VersionView",
+    "type": "object"
    }
   }
  },
@@ -2337,6 +3700,291 @@
  },
  "openapi": "3.1.0",
  "paths": {
+  "/api/v1/campaigns": {
+   "get": {
+    "description": "Current offer campaigns of the tracked cards, no personal data needed (DESIGN \u00a727.9).",
+    "operationId": "campaigns_api_v1_campaigns_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "bank",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 64,
+         "pattern": "^[a-z0-9_]+$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Bank"
+      }
+     },
+     {
+      "in": "query",
+      "name": "card",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 80,
+         "pattern": "^[a-z0-9_]+:[a-z0-9-]+$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Card"
+      }
+     },
+     {
+      "in": "query",
+      "name": "segment",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "pattern": "^(consumer|business)$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Segment"
+      }
+     },
+     {
+      "in": "query",
+      "name": "offer_type",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "pattern": "^(welcome_bonus|spend_multiplier|first_year_fee|first_year_match|other)$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Offer Type"
+      }
+     },
+     {
+      "in": "query",
+      "name": "channel",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "pattern": "^(public|targeted|referral|branch)$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Channel"
+      }
+     },
+     {
+      "description": "maximum annual fee in dollars",
+      "in": "query",
+      "name": "annual_fee_max",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 1000,
+         "minimum": 0,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "maximum annual fee in dollars",
+       "title": "Annual Fee Max"
+      }
+     },
+     {
+      "description": "dollars",
+      "in": "query",
+      "name": "min_spend_max",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maximum": 100000,
+         "minimum": 0,
+         "type": "integer"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "dollars",
+       "title": "Min Spend Max"
+      }
+     },
+     {
+      "description": "deadline filter",
+      "in": "query",
+      "name": "deadline",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "pattern": "^(known|unknown|within_30)$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "deadline filter",
+       "title": "Deadline"
+      }
+     },
+     {
+      "description": "include expired and withdrawn campaigns",
+      "in": "query",
+      "name": "include_past",
+      "required": false,
+      "schema": {
+       "default": false,
+       "description": "include expired and withdrawn campaigns",
+       "title": "Include Past",
+       "type": "boolean"
+      }
+     },
+     {
+      "in": "query",
+      "name": "sort",
+      "required": false,
+      "schema": {
+       "default": "recent",
+       "pattern": "^(recent|deadline|value|spend)$",
+       "title": "Sort",
+       "type": "string"
+      }
+     },
+     {
+      "description": "your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+      "in": "query",
+      "name": "pv",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 300,
+         "pattern": "^[a-z0-9_]+:\\d{1,2}(\\.\\d{1,3})?(,[a-z0-9_]+:\\d{1,2}(\\.\\d{1,3})?)*$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+       "title": "Pv"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CampaignPage"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Campaigns",
+    "tags": [
+     "campaigns"
+    ]
+   }
+  },
+  "/api/v1/campaigns/{campaign_id}": {
+   "get": {
+    "operationId": "campaign_api_v1_campaigns__campaign_id__get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "campaign_id",
+      "required": true,
+      "schema": {
+       "title": "Campaign Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+      "in": "query",
+      "name": "pv",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 300,
+         "pattern": "^[a-z0-9_]+:\\d{1,2}(\\.\\d{1,3})?(,[a-z0-9_]+:\\d{1,2}(\\.\\d{1,3})?)*$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+       "title": "Pv"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CampaignDetail"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Campaign",
+    "tags": [
+     "campaigns"
+    ]
+   }
+  },
   "/api/v1/checking-accounts": {
    "get": {
     "operationId": "checking_accounts_api_v1_checking_accounts_get",
@@ -3148,6 +4796,31 @@
     ]
    }
   },
+  "/api/v1/point-values": {
+   "get": {
+    "operationId": "point_value_floors_api_v1_point_values_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/PointValue"
+         },
+         "title": "Response Point Value Floors Api V1 Point Values Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Point Value Floors",
+    "tags": [
+     "campaigns"
+    ]
+   }
+  },
   "/api/v1/products": {
    "get": {
     "operationId": "products_api_v1_products_get",
@@ -3427,6 +5100,73 @@
     ]
    }
   },
+  "/api/v1/products/{product_id}/campaigns": {
+   "get": {
+    "description": "Every campaign of a tracked card, current and past (newest first).",
+    "operationId": "product_campaigns_api_v1_products__product_id__campaigns_get",
+    "parameters": [
+     {
+      "in": "path",
+      "name": "product_id",
+      "required": true,
+      "schema": {
+       "title": "Product Id",
+       "type": "string"
+      }
+     },
+     {
+      "description": "your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+      "in": "query",
+      "name": "pv",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 300,
+         "pattern": "^[a-z0-9_]+:\\d{1,2}(\\.\\d{1,3})?(,[a-z0-9_]+:\\d{1,2}(\\.\\d{1,3})?)*$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "description": "your own cents per point, per program: chase_ur:1.25,amex_mr:1.0",
+       "title": "Pv"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CampaignView"
+         },
+         "title": "Response Product Campaigns Api V1 Products  Product Id  Campaigns Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Product Campaigns",
+    "tags": [
+     "campaigns"
+    ]
+   }
+  },
   "/api/v1/products/{product_id}/history": {
    "get": {
     "operationId": "history_api_v1_products__product_id__history_get",
@@ -3555,6 +5295,61 @@
     "summary": "Recommend",
     "tags": [
      "recommend"
+    ]
+   }
+  },
+  "/api/v1/rules": {
+   "get": {
+    "operationId": "rules_api_v1_rules_get",
+    "parameters": [
+     {
+      "in": "query",
+      "name": "bank",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "maxLength": 64,
+         "pattern": "^[a-z0-9_]+$",
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Bank"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/RuleView"
+         },
+         "title": "Response Rules Api V1 Rules Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Rules",
+    "tags": [
+     "campaigns"
     ]
    }
   },

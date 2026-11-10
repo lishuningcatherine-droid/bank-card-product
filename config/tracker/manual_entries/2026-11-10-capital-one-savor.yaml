@@ -1,0 +1,15 @@
+# The page no longer states "Savor Rewards from Capital One"; it is classified as a non-product page (2026-11-10).
+# Excerpt from the official page captured in run 20261110T000117Z-aa64fa.
+card_key: capital_one:savor
+channel: public
+offer_type: welcome_bonus
+tiers:
+  - {amount: 20000, unit: cash, spend_cents: 50000, window_count: 3, window_unit: months,
+     window_start: account_opening,
+     text: "Earn a one-time $200 cash bonus once you spend $500 on purchases within the first 3 months from account opening."}
+annual_fee_cents: 0
+first_year_fee_cents: 0
+source_kind: official
+source_url: https://www.capitalone.com/credit-cards/savor/
+source_excerpt: "Earn a one-time $200 cash bonus once you spend $500 on purchases within the first 3 months from account opening."
+observed_from: 2026-11-10

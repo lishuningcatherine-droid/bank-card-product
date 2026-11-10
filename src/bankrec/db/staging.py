@@ -322,3 +322,27 @@ class Alert(StagingBase):
     payload: Mapped[dict[str, Any]] = mapped_column(J, default=dict)
     webhook_open_sent: Mapped[bool] = mapped_column(Boolean, default=False)
     webhook_resolved_sent: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class ManualCampaignEntry(StagingBase):
+    """A hand-entered campaign (targeted, branch, referral or third-party history). Pending until reviewed; only an
+    approved entry reaches prod.campaigns (DESIGN §27.8)."""
+
+    __tablename__ = "manual_campaign_entries"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    entered_by: Mapped[str] = mapped_column(Text)
+    entered_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    card_key: Mapped[str] = mapped_column(String(80))
+    channel: Mapped[str] = mapped_column(String(12))
+    source_kind: Mapped[str] = mapped_column(String(12))  # official | third_party
+    source_name: Mapped[str | None] = mapped_column(Text)
+    source_url: Mapped[str] = mapped_column(Text)
+    source_excerpt: Mapped[str] = mapped_column(Text)
+    payload: Mapped[dict[str, Any]] = mapped_column(J)
+    state: Mapped[str] = mapped_column(
+        String(16), default="pending_review"
+    )  # pending_review | approved | rejected
+    reviewed_by: Mapped[str | None] = mapped_column(Text)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    review_note: Mapped[str | None] = mapped_column(Text)
+    campaign_id: Mapped[str | None] = mapped_column(Text)

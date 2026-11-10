@@ -31,6 +31,9 @@ crosscheck_app = typer.Typer(no_args_is_help=True, help="Regulator cross-checks 
 api_app = typer.Typer(no_args_is_help=True, help="API utilities.")
 ml_app = typer.Typer(no_args_is_help=True, help="Ranking-model training interface (DESIGN §26.8).")
 events_app = typer.Typer(no_args_is_help=True, help="Consented anonymous ranking events (DESIGN §26.7).")
+offers_app = typer.Typer(
+    no_args_is_help=True, help="Offer tracker: campaigns, history, manual entries (DESIGN §27)."
+)
 for name, sub in [
     ("review", review_app),
     ("report", report_app),
@@ -42,6 +45,7 @@ for name, sub in [
     ("api", api_app),
     ("events", events_app),
     ("ml", ml_app),
+    ("offers", offers_app),
 ]:
     app.add_typer(sub, name=name)
 
@@ -649,3 +653,119 @@ def ml_approve(artifact: Path, by: Annotated[str, typer.Option(help="the owner's
     art["approved_at"] = _now().isoformat()
     artifact.write_text(json.dumps(art, indent=1) + "\n", encoding="utf-8")
     typer.echo(f"approved by {by}; activate it by setting `active: {artifact}` in config/ranking.yaml")
+
+
+# ---------------------------------------------------------------------------------------------- offer tracker (§27)
+
+
+@offers_app.command("sync")
+def offers_sync() -> None:
+    """Update campaigns, versions, checks and statuses from the published offers (no fetching)."""
+    from bankrec.tracker.sync import sync
+
+    with _session() as s:
+        rep = sync(s, _now())
+        s.commit()
+    typer.echo(json.dumps(rep.as_dict(), indent=1, default=str))
+
+
+@offers_app.command("update")
+def offers_update(
+    render: Annotated[bool, typer.Option(help="use Playwright for requires_render sources")] = True,
+    trigger: Annotated[str, typer.Option(help="manual | cron | github")] = "manual",
+) -> None:
+    """Fetch the tracked cards' official pages (robots.txt and rate limits apply), then sync campaigns."""
+    from bankrec.tracker import config as tcfg
+
+    ids = sorted({sid for c in tcfg.cards() for sid in c.get("source_ids", [])})
+    with contextlib.suppress(typer.Exit):
+        ingest(source=ids, render=render, trigger=trigger)
+    offers_sync()
+
+
+@offers_app.command("add")
+def offers_add(
+    path: Annotated[
+        Path, typer.Argument(help="YAML or JSON file with one entry (see docs/MANUAL_OFFERS.md)")
+    ],
+    by: Annotated[str, typer.Option(help="who is entering it")],
+) -> None:
+    """Enter a campaign by hand. It stays pending review until someone else approves it."""
+    import yaml
+
+    from bankrec.tracker.manual import ManualCampaignIn, add
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    entry = ManualCampaignIn.model_validate(data)
+    with _session() as s:
+        row = add(s, entry, by=by, now=_now())
+        s.commit()
+        typer.echo(f"entry {row.id}: pending review")
+
+
+@offers_app.command("pending")
+def offers_pending() -> None:
+    """List hand-entered campaigns waiting for review."""
+    from bankrec.tracker.manual import pending
+
+    with _session() as s:
+        for r in pending(s):
+            typer.echo(
+                f"{r.id}\t{r.card_key}\t{r.channel}\t{r.source_kind}\tby {r.entered_by} {r.entered_at:%Y-%m-%d}"
+                f"\t{r.source_url}"
+            )
+
+
+@offers_app.command("approve")
+def offers_approve(entry_id: int, reviewer: Annotated[str | None, typer.Option()] = None) -> None:
+    """Approve a pending entry: it becomes a campaign (with its status logged)."""
+    from bankrec.tracker.manual import approve
+
+    with _session() as s:
+        c = approve(s, entry_id, reviewer=_reviewer(reviewer), now=_now())
+        s.commit()
+        typer.echo(f"campaign {c.id} ({c.status})")
+
+
+@offers_app.command("reject")
+def offers_reject(
+    entry_id: int,
+    note: Annotated[str, typer.Option()],
+    reviewer: Annotated[str | None, typer.Option()] = None,
+) -> None:
+    from bankrec.tracker.manual import reject
+
+    with _session() as s:
+        reject(s, entry_id, reviewer=_reviewer(reviewer), note=note, now=_now())
+        s.commit()
+
+
+@offers_app.command("set-status")
+def offers_set_status(
+    campaign_id: str,
+    status: Annotated[
+        str, typer.Argument(help="active | ending_soon | expired | withdrawn | pending_verification | stale")
+    ],
+    reason: Annotated[str, typer.Option(help="why (logged with your name)")],
+    reviewer: Annotated[str | None, typer.Option()] = None,
+) -> None:
+    """A reviewer's status decision, e.g. withdrawn after the bank confirmed it ended."""
+    from bankrec.tracker.manual import set_status
+
+    with _session() as s:
+        set_status(s, campaign_id, status, reviewer=_reviewer(reviewer), reason=reason, now=_now())
+        s.commit()
+
+
+@offers_app.command("verify-rules")
+def offers_verify_rules() -> None:
+    """Check that every page-captured rule and valuation excerpt is still in its page's latest capture."""
+    from bankrec.tracker.verify import verify_excerpts
+
+    with _session() as s:
+        problems = verify_excerpts(s)
+    for p in problems:
+        typer.echo(p)
+    typer.echo(f"{len(problems)} problem(s)")
+    if problems:
+        raise typer.Exit(1)

@@ -1,0 +1,16 @@
+# The page changed layout on 2026-11-10; the Chase adapter no longer reads the offer (review item 412).
+# Excerpt from the official page captured in run 20261110T000117Z-aa64fa.
+card_key: chase:sapphire-preferred
+channel: public
+offer_type: welcome_bonus
+tiers:
+  - {amount: 75000, unit: points, unit_name: "Chase Ultimate Rewards points", spend_cents: 500000, window_count: 3,
+     window_unit: months, window_start: account_opening,
+     text: "New Cardmember Bonus – 75,000 Points: To qualify, you must make $5,000 in purchases during the first 3 months from account opening."}
+annual_fee_cents: 9500
+first_year_fee_cents: 9500
+eligibility_text: "This credit card is unavailable to you if you currently have this card open. The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility."
+source_kind: official
+source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
+source_excerpt: "New Cardmember Bonus – 75,000 Points: To qualify, you must make $5,000 in purchases during the first 3 months from account opening."
+observed_from: 2026-11-10

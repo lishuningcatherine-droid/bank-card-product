@@ -395,3 +395,136 @@ class SourceSummary(ProdBase):
     sources_enabled: Mapped[int] = mapped_column(Integer, default=0)
     requires_render: Mapped[int] = mapped_column(Integer, default=0)
     status_counts: Mapped[dict[str, Any]] = mapped_column(J, default=dict)
+
+
+# ---------------------------------------------------------------------------------------------- offer tracker (§27)
+
+
+class TrackedCard(ProdBase):
+    """A card the offer tracker follows (config/tracker/cards.yaml). Long-term facts come from ``product``."""
+
+    __tablename__ = "tracked_cards"
+    card_key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    bank_id: Mapped[str] = mapped_column(String(64), index=True)
+    canonical_key: Mapped[str] = mapped_column(Text)
+    product_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("products.id", ondelete="SET NULL"))
+    official_name: Mapped[str] = mapped_column(Text)
+    segment: Mapped[str] = mapped_column(String(10))  # consumer | business
+    series: Mapped[str | None] = mapped_column(Text)
+    points_program: Mapped[str | None] = mapped_column(String(40))
+    official_url: Mapped[str | None] = mapped_column(Text)
+    source_ids: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    # {value: bool|null, source_type, source_url, excerpt, verified_at}; null value = not established
+    reports_to_personal_credit: Mapped[dict[str, Any] | None] = mapped_column(J)
+    counts_toward_chase_524: Mapped[dict[str, Any] | None] = mapped_column(J)
+    demo: Mapped[bool] = mapped_column(Boolean, default=False)
+
+
+class Campaign(ProdBase):
+    """One offer campaign: card + channel + offer type + reward structure. Terms live in versions; a material change
+    adds a version, never overwrites one."""
+
+    __tablename__ = "campaigns"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('active','ending_soon','expired','withdrawn','pending_verification','stale')",
+            name="campaign_status",
+        ),
+        CheckConstraint("channel IN ('public','targeted','referral','branch')", name="campaign_channel"),
+        CheckConstraint("source_kind IN ('official','third_party','manual')", name="campaign_source_kind"),
+    )
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    campaign_key: Mapped[str] = mapped_column(Text, unique=True)
+    card_key: Mapped[str] = mapped_column(ForeignKey("tracked_cards.card_key"), index=True)
+    channel: Mapped[str] = mapped_column(String(12))
+    offer_type: Mapped[str] = mapped_column(String(24))
+    structure: Mapped[str] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(24))
+    status_reason: Mapped[str | None] = mapped_column(Text)
+    current_version: Mapped[int] = mapped_column(Integer, default=1)
+    source_kind: Mapped[str] = mapped_column(String(12))
+    officially_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    source_name: Mapped[str | None] = mapped_column(Text)  # third-party publisher, when not official
+    first_seen_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    last_verified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True)
+    )  # last successful check
+    consecutive_failures: Mapped[int] = mapped_column(Integer, default=0)
+    prod_offer_ids: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    demo: Mapped[bool] = mapped_column(Boolean, default=False)
+    versions: Mapped[list[CampaignVersion]] = relationship(
+        back_populates="campaign", cascade="all, delete-orphan", order_by="CampaignVersion.version"
+    )
+
+
+class CampaignVersion(ProdBase):
+    __tablename__ = "campaign_versions"
+    __table_args__ = (UniqueConstraint("campaign_id", "version", name="campaign_version"),)
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"), index=True)
+    campaign: Mapped[Campaign] = relationship(back_populates="versions")
+    version: Mapped[int] = mapped_column(Integer)
+    material_hash: Mapped[str] = mapped_column(String(40))
+    # every material term (tiers, units, spend, window and its start point, fees, dates with their wording,
+    # eligibility, channels); see bankrec.tracker.terms
+    terms: Mapped[dict[str, Any]] = mapped_column(J)
+    # filter columns copied from terms
+    reward_amount: Mapped[int | None] = mapped_column(BigInteger)
+    reward_unit: Mapped[str | None] = mapped_column(String(20))
+    min_spend_cents: Mapped[int | None] = mapped_column(BigInteger)
+    end_date: Mapped[date | None] = mapped_column(Date)  # ET calendar date
+    change_summary: Mapped[list[dict[str, Any]]] = mapped_column(J, default=list)
+    source_url: Mapped[str | None] = mapped_column(Text)
+    source_excerpt: Mapped[str | None] = mapped_column(Text)
+    valid_from: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    valid_to: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class CampaignStatusLog(ProdBase):
+    __tablename__ = "campaign_status_log"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    from_status: Mapped[str | None] = mapped_column(String(24))
+    to_status: Mapped[str] = mapped_column(String(24))
+    reason: Mapped[str] = mapped_column(Text)
+    trigger: Mapped[str] = mapped_column(String(8))  # auto | manual
+    actor: Mapped[str | None] = mapped_column(Text)
+
+
+class CampaignCheck(ProdBase):
+    """Every verification attempt: seen (unchanged / changed), not seen on a good capture, or a failed check."""
+
+    __tablename__ = "campaign_checks"
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=_uuid)
+    campaign_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("campaigns.id", ondelete="CASCADE"), index=True)
+    at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    run_id: Mapped[str | None] = mapped_column(Text)
+    source_id: Mapped[str | None] = mapped_column(Text)
+    outcome: Mapped[str] = mapped_column(String(20))  # seen | changed | not_seen | failed | manual
+    detail: Mapped[str | None] = mapped_column(Text)
+
+
+class ApplicationRule(ProdBase):
+    """An application or bonus-eligibility rule with its source (config/tracker/rules.yaml)."""
+
+    __tablename__ = "application_rules"
+    rule_key: Mapped[str] = mapped_column(String(80), primary_key=True)
+    bank_id: Mapped[str] = mapped_column(String(64), index=True)
+    name: Mapped[str] = mapped_column(Text)
+    rule_type: Mapped[str] = mapped_column(String(32))
+    source_type: Mapped[str] = mapped_column(String(12))  # official | community
+    verification: Mapped[str] = mapped_column(String(24))
+    effect: Mapped[str] = mapped_column(String(10))  # approval | bonus
+    strength: Mapped[str] = mapped_column(String(6))
+    test: Mapped[str] = mapped_column(String(24))
+    window_months: Mapped[int | None] = mapped_column(Integer)
+    limit_count: Mapped[int | None] = mapped_column(Integer)
+    counts: Mapped[str | None] = mapped_column(String(24))
+    scope: Mapped[dict[str, Any]] = mapped_column(J, default=dict)  # match + applies_to
+    source_url: Mapped[str] = mapped_column(Text)
+    source_title: Mapped[str | None] = mapped_column(Text)
+    excerpt: Mapped[str] = mapped_column(Text)
+    notes: Mapped[list[str]] = mapped_column(ARRAY(Text), default=list)
+    verified_at: Mapped[date] = mapped_column(Date)

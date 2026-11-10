@@ -1,0 +1,43 @@
+# Conservative floor values for points and miles (DESIGN §27.6): the value one point is stated to have when redeemed
+# for cash or a statement credit, quoted from an official page. A program with no such statement has no floor: its
+# offers show the number of points only, never a dollar figure, unless the visitor enters their own value.
+# Transfer-partner or travel-portal values are never used.
+programs:
+  wf_rewards:
+    source_id: wells_fargo:autograph
+    name: Wells Fargo Rewards points
+    floor_cents: 1.0
+    basis: "cash redemption value stated by Wells Fargo"
+    source_url: https://creditcards.wellsfargo.com/autograph-visa-credit-card/
+    excerpt: "Earn 20,000 bonus points when you spend $1,000 in purchases in the first 3 months1 – that’s a $200 cash redemption value"
+    verified_at: 2026-11-09
+  discover_miles:
+    source_id: discover:it-miles
+    name: Discover it Miles
+    floor_cents: 1.0
+    basis: "cash redemption value stated by Discover"
+    source_url: https://www.discover.com/credit-cards/travel/
+    excerpt: "With the Discover it Miles Credit Card, when you’re ready to redeem your miles, 100 miles = $1 to redeem for cash or travel credit."
+    verified_at: 2026-11-09
+  citi_typ_double_cash:
+    source_id: citi:double-cash
+    name: ThankYou Points earned with Citi Double Cash
+    floor_cents: 1.0
+    basis: "statement-credit value stated by Citi for Double Cash points"
+    source_url: https://www.citi.com/credit-cards/citi-double-cash-credit-card
+    excerpt: "For example, you can redeem 10,000 ThankYou® Points for a $100 statement credit, a $100 Check by Mail, or as a $100 direct deposit to your bank account."
+    verified_at: 2026-11-09
+  boa_points:
+    name: Bank of America Premium Rewards points
+    floor_cents: 1.0
+    basis: "per-point redemption value in Bank of America's rewards terms"
+    source_url: "https://www.bankofamerica.com/credit-cards/terms-and-conditions/?campaignid=4079485&productoffercode=UN&locale=en_US"
+    excerpt: "Each point redeemed is worth $0.01 (2,500 points = $25)"
+    verified_at: 2026-10-14
+    source_id: bank_of_america:premium-rewards-credit-card-terms
+  # No official cash-redemption value captured: points only.
+  chase_ur: {name: Chase Ultimate Rewards points, floor_cents: null, note: "the card pages state 'Redeem for cash back' without a per-point value; $0.01 is stated only for redemptions through Chase Travel"}
+  amex_mr: {name: American Express Membership Rewards points, floor_cents: null, note: "no per-point cash value stated on the card pages"}
+  citi_typ: {name: Citi ThankYou Points (Strata Premier), floor_cents: null, note: "no per-point cash value stated on the Strata Premier page"}
+  c1_miles: {name: Capital One miles, floor_cents: null, note: "'Cash in your miles for a statement credit or a check' without a per-mile value"}
+  aa_aadvantage: {name: American Airlines AAdvantage miles, floor_cents: null, note: "airline miles have no cash redemption value"}

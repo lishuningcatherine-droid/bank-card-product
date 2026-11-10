@@ -4,6 +4,43 @@
  */
 
 export interface paths {
+    "/api/v1/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Campaigns
+         * @description Current offer campaigns of the tracked cards, no personal data needed (DESIGN §27.9).
+         */
+        get: operations["campaigns_api_v1_campaigns_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/campaigns/{campaign_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Campaign */
+        get: operations["campaign_api_v1_campaigns__campaign_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/checking-accounts": {
         parameters: {
             query?: never;
@@ -180,6 +217,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/point-values": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Point Value Floors */
+        get: operations["point_value_floors_api_v1_point_values_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/products": {
         parameters: {
             query?: never;
@@ -206,6 +260,26 @@ export interface paths {
         };
         /** Product */
         get: operations["product_api_v1_products__product_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/products/{product_id}/campaigns": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Product Campaigns
+         * @description Every campaign of a tracked card, current and past (newest first).
+         */
+        get: operations["product_campaigns_api_v1_products__product_id__campaigns_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -259,6 +333,23 @@ export interface paths {
         put?: never;
         /** Recommend */
         post: operations["recommend_api_v1_recommend_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/rules": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Rules */
+        get: operations["rules_api_v1_rules_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -365,6 +456,129 @@ export interface components {
             /** Period Years */
             period_years?: number | null;
         };
+        /** CampaignDetail */
+        CampaignDetail: {
+            /** Campaign Key */
+            campaign_key: string;
+            card: components["schemas"]["CardSummary"];
+            /** Channel */
+            channel: string;
+            /** Channel Label */
+            channel_label: string;
+            /** Checks */
+            checks: components["schemas"]["CheckEntry"][];
+            /**
+             * Countdown To
+             * @description set only when the issuer stated both the date and the time (with its zone)
+             */
+            countdown_to: string | null;
+            /** Deadline Label */
+            deadline_label: string;
+            /** Demo */
+            demo: boolean;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            history: components["schemas"]["HistoryLabel"];
+            /** Id */
+            id: string;
+            /** Last Checked At */
+            last_checked_at: string | null;
+            /** Last Verified At */
+            last_verified_at: string | null;
+            /** Offer Type */
+            offer_type: string;
+            /** Offer Type Label */
+            offer_type_label: string;
+            /** Officially Verified */
+            officially_verified: boolean;
+            /** Rules */
+            rules: components["schemas"]["RuleView"][];
+            /** Source Kind */
+            source_kind: string;
+            /** Source Label */
+            source_label: string;
+            /** Source Name */
+            source_name: string | null;
+            /** Status */
+            status: string;
+            /** Status Label */
+            status_label: string;
+            /** Status Log */
+            status_log: components["schemas"]["StatusEntry"][];
+            /** Status Reason */
+            status_reason: string | null;
+            terms: components["schemas"]["Terms"];
+            value: components["schemas"]["Value"];
+            /** Version */
+            version: number;
+            /** Versions */
+            versions: components["schemas"]["VersionView"][];
+        };
+        /** CampaignPage */
+        CampaignPage: {
+            /** Assumptions */
+            assumptions: string[];
+            /** Items */
+            items: components["schemas"]["CampaignView"][];
+            /** Total */
+            total: number;
+        };
+        /** CampaignView */
+        CampaignView: {
+            /** Campaign Key */
+            campaign_key: string;
+            card: components["schemas"]["CardSummary"];
+            /** Channel */
+            channel: string;
+            /** Channel Label */
+            channel_label: string;
+            /**
+             * Countdown To
+             * @description set only when the issuer stated both the date and the time (with its zone)
+             */
+            countdown_to: string | null;
+            /** Deadline Label */
+            deadline_label: string;
+            /** Demo */
+            demo: boolean;
+            /**
+             * First Seen At
+             * Format: date-time
+             */
+            first_seen_at: string;
+            history: components["schemas"]["HistoryLabel"];
+            /** Id */
+            id: string;
+            /** Last Checked At */
+            last_checked_at: string | null;
+            /** Last Verified At */
+            last_verified_at: string | null;
+            /** Offer Type */
+            offer_type: string;
+            /** Offer Type Label */
+            offer_type_label: string;
+            /** Officially Verified */
+            officially_verified: boolean;
+            /** Source Kind */
+            source_kind: string;
+            /** Source Label */
+            source_label: string;
+            /** Source Name */
+            source_name: string | null;
+            /** Status */
+            status: string;
+            /** Status Label */
+            status_label: string;
+            /** Status Reason */
+            status_reason: string | null;
+            terms: components["schemas"]["Terms"];
+            value: components["schemas"]["Value"];
+            /** Version */
+            version: number;
+        };
         /** CardRequest */
         CardRequest: {
             /**
@@ -455,6 +669,55 @@ export interface components {
              * @enum {string}
              */
             travel_frequency: "none" | "occasional" | "frequent";
+        };
+        /** CardSummary */
+        CardSummary: {
+            /** Annual Fee Cents */
+            annual_fee_cents: number | null;
+            /** Bank Id */
+            bank_id: string;
+            /** Bank Name */
+            bank_name: string;
+            /** Card Key */
+            card_key: string;
+            /** Counts Toward Chase 524 */
+            counts_toward_chase_524: {
+                [key: string]: unknown;
+            } | null;
+            /** Demo */
+            demo: boolean;
+            /** First Year Fee Cents */
+            first_year_fee_cents: number | null;
+            /** Name */
+            name: string;
+            /** Official Url */
+            official_url: string | null;
+            /** Points Program */
+            points_program: string | null;
+            /** Points Program Name */
+            points_program_name: string | null;
+            /** Product Id */
+            product_id: string | null;
+            /** Reports To Personal Credit */
+            reports_to_personal_credit: {
+                [key: string]: unknown;
+            } | null;
+            /** Segment */
+            segment: string;
+            /** Series */
+            series: string | null;
+        };
+        /** CheckEntry */
+        CheckEntry: {
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Detail */
+            detail: string | null;
+            /** Outcome */
+            outcome: string;
         };
         /** CheckingRequest */
         CheckingRequest: {
@@ -635,6 +898,44 @@ export interface components {
             /** Version */
             version: number;
         };
+        /** HistoryLabel */
+        HistoryLabel: {
+            /**
+             * Code
+             * @enum {string}
+             */
+            code: "insufficient_history" | "all_time_high" | "above_usual" | "recent_high" | "usual" | "below_usual";
+            /** Coverage Months */
+            coverage_months: number;
+            /** Median */
+            median: number | null;
+            /** Official Only */
+            official_only: boolean;
+            /** Records */
+            records: number;
+            /** Text */
+            text: string;
+        };
+        /** Moment */
+        Moment: {
+            /**
+             * Confirmed
+             * @default false
+             */
+            confirmed: boolean;
+            /** Date */
+            date: string | null;
+            /** Label */
+            label: string;
+            /** Stated Tz */
+            stated_tz?: string | null;
+            /** Text */
+            text?: string | null;
+            /** Time */
+            time: string | null;
+            /** Time Known */
+            time_known: boolean;
+        };
         /** MonthlySpend */
         MonthlySpend: {
             /**
@@ -806,6 +1107,23 @@ export interface components {
             page_size: number;
             /** Total */
             total: number;
+        };
+        /** PointValue */
+        PointValue: {
+            /** Basis */
+            basis?: string | null;
+            /** Excerpt */
+            excerpt?: string | null;
+            /** Floor Cents */
+            floor_cents: number | null;
+            /** Name */
+            name: string;
+            /** Note */
+            note?: string | null;
+            /** Program */
+            program: string;
+            /** Source Url */
+            source_url?: string | null;
         };
         /** ProductBrief */
         ProductBrief: {
@@ -1061,6 +1379,46 @@ export interface components {
             /** Why */
             why?: components["schemas"]["Reason"][];
         };
+        /** RuleView */
+        RuleView: {
+            /** Bank Id */
+            bank_id: string;
+            /**
+             * Effect
+             * @enum {string}
+             */
+            effect: "approval" | "bonus";
+            /** Excerpt */
+            excerpt: string;
+            /** Name */
+            name: string;
+            /** Notes */
+            notes: string[];
+            /** Rule Key */
+            rule_key: string;
+            /** Rule Type */
+            rule_type: string;
+            /** Source Title */
+            source_title: string | null;
+            /**
+             * Source Type
+             * @enum {string}
+             */
+            source_type: "official" | "community";
+            /** Source Url */
+            source_url: string;
+            /** Strength */
+            strength: string;
+            /** Verification */
+            verification: string;
+            /**
+             * Verified At
+             * Format: date
+             */
+            verified_at: string;
+            /** Window Months */
+            window_months: number | null;
+        };
         /** SavingsRequest */
         SavingsRequest: {
             /**
@@ -1121,6 +1479,94 @@ export interface components {
             /** Notes */
             notes: string[];
         };
+        /** StatusEntry */
+        StatusEntry: {
+            /** Actor */
+            actor: string | null;
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** From Status */
+            from_status: string | null;
+            /** Reason */
+            reason: string;
+            /** To Status */
+            to_status: string;
+            /** Trigger */
+            trigger: string;
+        };
+        /** Terms */
+        Terms: {
+            /** Amount Qualifier */
+            amount_qualifier?: string | null;
+            /** Annual Fee Cents */
+            annual_fee_cents: number | null;
+            /** Cap Text */
+            cap_text?: string | null;
+            /** Categories */
+            categories?: string[];
+            /** Channel */
+            channel: string;
+            /** Eligibility Text */
+            eligibility_text: string | null;
+            end: components["schemas"]["Moment"];
+            /** First Year Fee Cents */
+            first_year_fee_cents: number | null;
+            /** Min Spend Cents */
+            min_spend_cents: number | null;
+            /** Offer Type */
+            offer_type: string;
+            /** Offer Url */
+            offer_url: string | null;
+            start: components["schemas"]["Moment"] | null;
+            /** Stated Cash Value Cents */
+            stated_cash_value_cents?: number | null;
+            /** Tiers */
+            tiers: components["schemas"]["Tier"][];
+            /** Total Amount */
+            total_amount: number | null;
+            /** Unit */
+            unit: string;
+            /** Unit Name */
+            unit_name?: string | null;
+            /** Verbatim */
+            verbatim: string | null;
+            /** Window Count */
+            window_count: number | null;
+            /** Window Start */
+            window_start: string;
+            /** Window Unit */
+            window_unit: string | null;
+        };
+        /** Tier */
+        Tier: {
+            /** Amount */
+            amount: number | null;
+            /**
+             * Incremental
+             * @default false
+             */
+            incremental: boolean;
+            /** Spend Cents */
+            spend_cents?: number | null;
+            /** Text */
+            text?: string | null;
+            /** Unit */
+            unit: string;
+            /** Unit Name */
+            unit_name?: string | null;
+            /** Window Count */
+            window_count?: number | null;
+            /**
+             * Window Start
+             * @default not_stated
+             */
+            window_start: string;
+            /** Window Unit */
+            window_unit?: string | null;
+        };
         /** UnrankedOffer */
         UnrankedOffer: {
             offer: components["schemas"]["OfferView"];
@@ -1140,6 +1586,21 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /** Value */
+        Value: {
+            /** Assumption */
+            assumption: string | null;
+            /** Cents */
+            cents: number | null;
+            /** Cents Per Point */
+            cents_per_point: number | null;
+            /** Depends On Points Value */
+            depends_on_points_value: boolean;
+            /** First Year Fee Cents */
+            first_year_fee_cents: number | null;
+            /** First Year Net Cents */
+            first_year_net_cents: number | null;
         };
         /** Values */
         Values: {
@@ -1164,6 +1625,27 @@ export interface components {
             /** Year3 Cents */
             year3_cents?: number | null;
         };
+        /** VersionView */
+        VersionView: {
+            /** Change Summary */
+            change_summary: {
+                [key: string]: unknown;
+            }[];
+            /** Source Excerpt */
+            source_excerpt: string | null;
+            /** Source Url */
+            source_url: string | null;
+            terms: components["schemas"]["Terms"];
+            /**
+             * Valid From
+             * Format: date-time
+             */
+            valid_from: string;
+            /** Valid To */
+            valid_to: string | null;
+            /** Version */
+            version: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1173,6 +1655,86 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    campaigns_api_v1_campaigns_get: {
+        parameters: {
+            query?: {
+                bank?: string | null;
+                card?: string | null;
+                segment?: string | null;
+                offer_type?: string | null;
+                channel?: string | null;
+                /** @description maximum annual fee in dollars */
+                annual_fee_max?: number | null;
+                /** @description dollars */
+                min_spend_max?: number | null;
+                /** @description deadline filter */
+                deadline?: string | null;
+                /** @description include expired and withdrawn campaigns */
+                include_past?: boolean;
+                sort?: string;
+                /** @description your own cents per point, per program: chase_ur:1.25,amex_mr:1.0 */
+                pv?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    campaign_api_v1_campaigns__campaign_id__get: {
+        parameters: {
+            query?: {
+                /** @description your own cents per point, per program: chase_ur:1.25,amex_mr:1.0 */
+                pv?: string | null;
+            };
+            header?: never;
+            path: {
+                campaign_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignDetail"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     checking_accounts_api_v1_checking_accounts_get: {
         parameters: {
             query?: {
@@ -1494,6 +2056,26 @@ export interface operations {
             };
         };
     };
+    point_value_floors_api_v1_point_values_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PointValue"][];
+                };
+            };
+        };
+    };
     products_api_v1_products_get: {
         parameters: {
             query?: {
@@ -1556,6 +2138,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProductView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    product_campaigns_api_v1_products__product_id__campaigns_get: {
+        parameters: {
+            query?: {
+                /** @description your own cents per point, per program: chase_ur:1.25,amex_mr:1.0 */
+                pv?: string | null;
+            };
+            header?: never;
+            path: {
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CampaignView"][];
                 };
             };
             /** @description Validation Error */
@@ -1642,6 +2258,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RecommendResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rules_api_v1_rules_get: {
+        parameters: {
+            query?: {
+                bank?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RuleView"][];
                 };
             };
             /** @description Validation Error */
