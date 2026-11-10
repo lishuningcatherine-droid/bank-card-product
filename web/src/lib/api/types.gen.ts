@@ -24,6 +24,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/campaigns/match": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Campaigns Match
+         * @description Personal check of current offers (DESIGN §27.10). Stateless: the profile is used for this response only
+         *     — never stored or logged.
+         */
+        post: operations["campaigns_match_api_v1_campaigns_match_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/campaigns/{campaign_id}": {
         parameters: {
             query?: never;
@@ -390,6 +411,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/tracked-cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Tracked Cards
+         * @description The cards the offer tracker follows (for choosing cards you hold in the personal check).
+         */
+        get: operations["tracked_cards_api_v1_tracked_cards_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -400,6 +441,41 @@ export interface components {
             achievable: boolean;
             /** Explanation */
             explanation: string;
+        };
+        /** Assessment */
+        Assessment: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "consider_now" | "verify_first" | "improve_credit" | "not_suitable";
+            /** Action Label */
+            action_label: string;
+            /** Action Reasons */
+            action_reasons: string[];
+            approval: components["schemas"]["Judgement"];
+            /** Bank Name */
+            bank_name: string;
+            bonus: components["schemas"]["Judgement"];
+            /** Campaign Id */
+            campaign_id: string;
+            /** Card Key */
+            card_key: string;
+            /** Card Name */
+            card_name: string;
+            /**
+             * Conflicts
+             * @description known conflicts, listed before anything else
+             */
+            conflicts: components["schemas"]["FindingView"][];
+            /** Eligibility */
+            eligibility: components["schemas"]["FindingView"][];
+            first_year: components["schemas"]["FirstYear"];
+            offer_appeal: components["schemas"]["Judgement"];
+            personal_fit: components["schemas"]["Judgement"];
+            reach: components["schemas"]["Reach"];
+            /** Uncertainty */
+            uncertainty: string[];
         };
         /** BankSource */
         BankSource: {
@@ -862,6 +938,62 @@ export interface components {
             /** Reason */
             reason: string;
         };
+        /** FindingView */
+        FindingView: {
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "official" | "community";
+            /** Basis Label */
+            basis_label: string;
+            /**
+             * Effect
+             * @enum {string}
+             */
+            effect: "approval" | "bonus";
+            /** Excerpt */
+            excerpt: string;
+            /** Explanation */
+            explanation: string;
+            /** Name */
+            name: string;
+            /** Needs */
+            needs: string[];
+            /**
+             * Outcome
+             * @enum {string}
+             */
+            outcome: "conflict" | "possible_conflict" | "unknown" | "clear" | "info";
+            /** Outcome Label */
+            outcome_label: string;
+            /** Rule Key */
+            rule_key: string;
+            /** Source Title */
+            source_title: string | null;
+            /** Source Url */
+            source_url: string;
+            /** Verification */
+            verification: string;
+            /**
+             * Verified At
+             * Format: date
+             */
+            verified_at: string;
+        };
+        /** FirstYear */
+        FirstYear: {
+            /** Depends On Points Value */
+            depends_on_points_value: boolean;
+            /** First Year Fee Cents */
+            first_year_fee_cents: number | null;
+            /** Net Cents */
+            net_cents: number | null;
+            /** Reward Cents */
+            reward_cents: number | null;
+            /** Text */
+            text: string;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -874,6 +1006,75 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /**
+         * HeldCard
+         * @description A credit card the visitor has or had (their own account, or an authorized-user card on someone else's).
+         */
+        HeldCard: {
+            /**
+             * Authorized User
+             * @default false
+             */
+            authorized_user: boolean;
+            /**
+             * Bank Id
+             * @enum {string}
+             */
+            bank_id: "chase" | "american_express" | "citi" | "capital_one" | "bank_of_america" | "discover" | "wells_fargo" | "other";
+            /**
+             * Bonus
+             * @default unknown
+             * @enum {string}
+             */
+            bonus: "yes" | "no" | "unknown";
+            /**
+             * Bonus Month
+             * @description month the welcome bonus was received
+             */
+            bonus_month?: string | null;
+            /**
+             * Card Key
+             * @description a tracked card; empty for any other card
+             */
+            card_key?: string | null;
+            /**
+             * No Annual Fee
+             * @description for a card this site does not track
+             */
+            no_annual_fee?: boolean | null;
+            /**
+             * Open Now
+             * @description still open; empty = not said
+             */
+            open_now?: boolean | null;
+            /**
+             * Opened
+             * @description month the account was opened (or the card was added)
+             */
+            opened?: string | null;
+            /**
+             * Original Bonus Month
+             * @description with a product change: month a bonus was received on the original card
+             */
+            original_bonus_month?: string | null;
+            /**
+             * Product Change
+             * @description this card came from a product change (no new account was opened)
+             * @default false
+             */
+            product_change: boolean;
+            /**
+             * Reports To Personal
+             * @description for a business card this site does not track: shows on personal credit reports
+             */
+            reports_to_personal?: boolean | null;
+            /**
+             * Segment
+             * @default personal
+             * @enum {string}
+             */
+            segment: "personal" | "business";
         };
         /** HistoryEntry */
         HistoryEntry: {
@@ -915,6 +1116,98 @@ export interface components {
             records: number;
             /** Text */
             text: string;
+        };
+        /** Judgement */
+        Judgement: {
+            /** Label */
+            label: string;
+            /** Points */
+            points?: string[];
+            /** Status */
+            status: string;
+        };
+        /** MatchProfile */
+        MatchProfile: {
+            /**
+             * As Of
+             * @description evaluate as of this date (tests); defaults to today
+             */
+            as_of?: string | null;
+            /**
+             * Bank Relationships
+             * @description banks where the visitor has a checking or savings account
+             */
+            bank_relationships?: ("chase" | "american_express" | "citi" | "capital_one" | "bank_of_america" | "discover" | "wells_fargo" | "other")[];
+            /** Business Income */
+            business_income?: ("yes" | "no" | "unsure") | null;
+            /** Cards */
+            cards?: components["schemas"]["HeldCard"][];
+            /**
+             * Cards Complete
+             * @description the list holds every credit card the visitor has had, open or closed, including authorized-user cards (so a card not listed was never held)
+             * @default false
+             */
+            cards_complete: boolean;
+            /** Credit History */
+            credit_history?: ("none" | "lt_1y" | "1_2y" | "2_5y" | "5y_plus") | null;
+            /** Credit Score */
+            credit_score?: number | null;
+            /** Max Annual Fee */
+            max_annual_fee?: number | null;
+            /**
+             * Monthly Spend
+             * @description normal monthly card spending in dollars, without any extra spending
+             */
+            monthly_spend?: number | null;
+            /**
+             * Negative Marks
+             * @description late payments of 30+ days, collections or bankruptcy on the credit report
+             */
+            negative_marks?: boolean | null;
+            /**
+             * New Accounts 24M
+             * @description personal credit cards opened in the last 24 months with any bank, authorized-user cards included
+             */
+            new_accounts_24m?: number | null;
+            /** Reward Preference */
+            reward_preference?: ("cashback" | "points" | "any") | null;
+            /** Score Model */
+            score_model?: ("fico" | "vantage" | "other" | "unknown") | null;
+            /** Score Source */
+            score_source?: string | null;
+            spend_categories?: components["schemas"]["MonthlySpend"] | null;
+            /** Student */
+            student?: boolean | null;
+        };
+        /** MatchRequest */
+        MatchRequest: {
+            /**
+             * Campaign Ids
+             * @description campaigns to check; empty = every current campaign
+             */
+            campaign_ids?: string[] | null;
+            /**
+             * Point Values
+             * @description your own cents per point, per program
+             */
+            point_values?: {
+                [key: string]: number;
+            };
+            profile: components["schemas"]["MatchProfile"];
+        };
+        /** MatchResponse */
+        MatchResponse: {
+            /** Assumptions */
+            assumptions: string[];
+            /**
+             * Disclaimer
+             * @default Information only, not financial advice. The issuer's own terms and decision always prevail; this site cannot predict approval.
+             */
+            disclaimer: string;
+            /** Items */
+            items: components["schemas"]["Assessment"][];
+            /** Questions */
+            questions: components["schemas"]["Question"][];
         };
         /** Moment */
         Moment: {
@@ -1248,6 +1541,15 @@ export interface components {
             /** Unranked */
             unranked: components["schemas"]["UnrankedOffer"][];
         };
+        /** Question */
+        Question: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
+            /** Why */
+            why: string;
+        };
         /** RankedOffer */
         RankedOffer: {
             estimate: components["schemas"]["OfferEstimate"];
@@ -1317,6 +1619,28 @@ export interface components {
              * @default
              */
             text: string;
+        };
+        /** Reach */
+        Reach: {
+            /** Label */
+            label: string;
+            /** Needed With Margin Cents */
+            needed_with_margin_cents: number | null;
+            /** Projected Cents */
+            projected_cents: number | null;
+            /** Required Cents */
+            required_cents: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "sufficient" | "tight" | "insufficient" | "unknown" | "not_required";
+            /** Text */
+            text: string;
+            /** Tiers */
+            tiers?: components["schemas"]["TierReach"][];
+            /** Window */
+            window: string | null;
         };
         /** Reason */
         Reason: {
@@ -1567,6 +1891,18 @@ export interface components {
             /** Window Unit */
             window_unit?: string | null;
         };
+        /** TierReach */
+        TierReach: {
+            /** Reward */
+            reward: string;
+            /** Spend Cents */
+            spend_cents: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "sufficient" | "tight" | "insufficient" | "unknown";
+        };
         /** UnrankedOffer */
         UnrankedOffer: {
             offer: components["schemas"]["OfferView"];
@@ -1688,6 +2024,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CampaignPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    campaigns_match_api_v1_campaigns_match_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MatchRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchResponse"];
                 };
             };
             /** @description Validation Error */
@@ -2361,6 +2730,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SourcesResponse"];
+                };
+            };
+        };
+    };
+    tracked_cards_api_v1_tracked_cards_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CardSummary"][];
                 };
             };
         };

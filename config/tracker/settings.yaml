@@ -11,3 +11,17 @@ history:
   recent_months: 6                  # "recently high" compares with this many months
 reach:
   safety_margin: 0.20               # natural spend × window must exceed the requirement by at least 20%
+# FICO's published score ranges, used by the personal offer check only as one risk signal next to credit history and
+# negative marks — never as a cut-off for any card, and only when the visitor says the score is a FICO score.
+# Source: https://www.myfico.com/credit-education/what-is-a-fico-score (read 2026-11-09):
+#   "Below 580" Poor · "580 to 669" Fair · "670 to 739" Good · "740 to 799" Very Good · "800 and above" Exceptional
+credit_ranges:
+  - {name: Poor, min: 300, max: 579, risk: high}
+  - {name: Fair, min: 580, max: 669, risk: medium}
+  - {name: Good, min: 670, max: 739, risk: low}
+  - {name: Very Good, min: 740, max: 799, risk: low}
+  - {name: Exceptional, min: 800, max: 850, risk: low}
+update:
+  # When the worker cron runs `bankrec offers sync` (UTC), after the daily offer-tier ingestion at 06:15 UTC
+  # (config/freshness.yaml). The GitHub workflow runs it after every scheduled ingestion instead.
+  sync_schedule: "45 6 * * *"

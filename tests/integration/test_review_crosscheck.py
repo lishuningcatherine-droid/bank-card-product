@@ -315,6 +315,7 @@ def test_schedule_lock_and_crontab(engine) -> None:  # type: ignore[no-untyped-d
     tab = crontab()
     assert "0 */12 * * * bankrec ingest --tier apy" in tab and "--tier offer" in tab and "--tier terms" in tab
     assert "--tier regulator_release" in tab
+    assert "45 6 * * * bankrec offers sync" in tab  # the offer tracker follows the daily offer ingestion
     c1, c2 = engine.connect(), engine.connect()
     try:
         assert try_lock(c1, "apy") and not try_lock(c2, "apy") and try_lock(c2, "offer")

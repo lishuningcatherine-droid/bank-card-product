@@ -5,6 +5,7 @@ import type {
   Campaign,
   CampaignDetail,
   CampaignPage,
+  CardSummary,
   CompareResponse,
   HistoryEntry,
   OfferGroup,
@@ -88,6 +89,10 @@ export function getProductCampaigns(productId: string): Promise<Campaign[]> {
 
 export function getRules(bank?: string): Promise<ApplicationRule[]> {
   return get<ApplicationRule[]>(`/rules${bank ? `?bank=${encodeURIComponent(bank)}` : ""}`, ["rules"]);
+}
+
+export function getTrackedCards(): Promise<CardSummary[]> {
+  return get<CardSummary[]>("/tracked-cards", ["campaigns"]);
 }
 
 export function getPointValues(): Promise<PointValue[]> {

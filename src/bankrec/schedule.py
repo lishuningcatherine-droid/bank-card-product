@@ -14,6 +14,12 @@ def crontab(binary: str = "bankrec") -> str:
     lines = ["# Generated from config/freshness.yaml by `bankrec schedule crontab`. Times are UTC."]
     for tier, spec in config()["tiers"].items():
         lines.append(f"{spec['schedule']} {binary} ingest --tier {tier} --trigger cron")
+    from bankrec.tracker import config as tracker
+
+    # the offer tracker reads what the ingestion published: campaigns, versions, checks and statuses (DESIGN §27.7)
+    sync_at = (tracker.settings().get("update") or {}).get("sync_schedule")
+    if sync_at:
+        lines.append(f"{sync_at} {binary} offers sync")
     lines.append("*/5 * * * * " + binary + " revalidate dispatch")
     lines.append("17 3 * * * " + binary + " events purge")  # consented ranking events past their retention
     return "\n".join(lines) + "\n"

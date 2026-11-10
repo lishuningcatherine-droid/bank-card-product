@@ -19,6 +19,107 @@
     "title": "Achievability",
     "type": "object"
    },
+   "Assessment": {
+    "properties": {
+     "action": {
+      "enum": [
+       "consider_now",
+       "verify_first",
+       "improve_credit",
+       "not_suitable"
+      ],
+      "title": "Action",
+      "type": "string"
+     },
+     "action_label": {
+      "title": "Action Label",
+      "type": "string"
+     },
+     "action_reasons": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Action Reasons",
+      "type": "array"
+     },
+     "approval": {
+      "$ref": "#/components/schemas/Judgement"
+     },
+     "bank_name": {
+      "title": "Bank Name",
+      "type": "string"
+     },
+     "bonus": {
+      "$ref": "#/components/schemas/Judgement"
+     },
+     "campaign_id": {
+      "title": "Campaign Id",
+      "type": "string"
+     },
+     "card_key": {
+      "title": "Card Key",
+      "type": "string"
+     },
+     "card_name": {
+      "title": "Card Name",
+      "type": "string"
+     },
+     "conflicts": {
+      "description": "known conflicts, listed before anything else",
+      "items": {
+       "$ref": "#/components/schemas/FindingView"
+      },
+      "title": "Conflicts",
+      "type": "array"
+     },
+     "eligibility": {
+      "items": {
+       "$ref": "#/components/schemas/FindingView"
+      },
+      "title": "Eligibility",
+      "type": "array"
+     },
+     "first_year": {
+      "$ref": "#/components/schemas/FirstYear"
+     },
+     "offer_appeal": {
+      "$ref": "#/components/schemas/Judgement"
+     },
+     "personal_fit": {
+      "$ref": "#/components/schemas/Judgement"
+     },
+     "reach": {
+      "$ref": "#/components/schemas/Reach"
+     },
+     "uncertainty": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Uncertainty",
+      "type": "array"
+     }
+    },
+    "required": [
+     "campaign_id",
+     "card_key",
+     "card_name",
+     "bank_name",
+     "action",
+     "action_label",
+     "action_reasons",
+     "conflicts",
+     "approval",
+     "bonus",
+     "offer_appeal",
+     "personal_fit",
+     "reach",
+     "eligibility",
+     "uncertainty",
+     "first_year"
+    ],
+    "title": "Assessment",
+    "type": "object"
+   },
    "BankSource": {
     "properties": {
      "bank_id": {
@@ -1307,6 +1408,164 @@
     "title": "Excluded",
     "type": "object"
    },
+   "FindingView": {
+    "properties": {
+     "basis": {
+      "enum": [
+       "official",
+       "community"
+      ],
+      "title": "Basis",
+      "type": "string"
+     },
+     "basis_label": {
+      "title": "Basis Label",
+      "type": "string"
+     },
+     "effect": {
+      "enum": [
+       "approval",
+       "bonus"
+      ],
+      "title": "Effect",
+      "type": "string"
+     },
+     "excerpt": {
+      "title": "Excerpt",
+      "type": "string"
+     },
+     "explanation": {
+      "title": "Explanation",
+      "type": "string"
+     },
+     "name": {
+      "title": "Name",
+      "type": "string"
+     },
+     "needs": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Needs",
+      "type": "array"
+     },
+     "outcome": {
+      "enum": [
+       "conflict",
+       "possible_conflict",
+       "unknown",
+       "clear",
+       "info"
+      ],
+      "title": "Outcome",
+      "type": "string"
+     },
+     "outcome_label": {
+      "title": "Outcome Label",
+      "type": "string"
+     },
+     "rule_key": {
+      "title": "Rule Key",
+      "type": "string"
+     },
+     "source_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Title"
+     },
+     "source_url": {
+      "title": "Source Url",
+      "type": "string"
+     },
+     "verification": {
+      "title": "Verification",
+      "type": "string"
+     },
+     "verified_at": {
+      "format": "date",
+      "title": "Verified At",
+      "type": "string"
+     }
+    },
+    "required": [
+     "rule_key",
+     "name",
+     "effect",
+     "basis",
+     "basis_label",
+     "verification",
+     "outcome",
+     "outcome_label",
+     "explanation",
+     "needs",
+     "excerpt",
+     "source_url",
+     "source_title",
+     "verified_at"
+    ],
+    "title": "FindingView",
+    "type": "object"
+   },
+   "FirstYear": {
+    "properties": {
+     "depends_on_points_value": {
+      "title": "Depends On Points Value",
+      "type": "boolean"
+     },
+     "first_year_fee_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "First Year Fee Cents"
+     },
+     "net_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Net Cents"
+     },
+     "reward_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reward Cents"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "reward_cents",
+     "first_year_fee_cents",
+     "net_cents",
+     "depends_on_points_value",
+     "text"
+    ],
+    "title": "FirstYear",
+    "type": "object"
+   },
    "HTTPValidationError": {
     "properties": {
      "detail": {
@@ -1332,6 +1591,153 @@
      "status"
     ],
     "title": "Health",
+    "type": "object"
+   },
+   "HeldCard": {
+    "additionalProperties": false,
+    "description": "A credit card the visitor has or had (their own account, or an authorized-user card on someone else's).",
+    "properties": {
+     "authorized_user": {
+      "default": false,
+      "title": "Authorized User",
+      "type": "boolean"
+     },
+     "bank_id": {
+      "enum": [
+       "chase",
+       "american_express",
+       "citi",
+       "capital_one",
+       "bank_of_america",
+       "discover",
+       "wells_fargo",
+       "other"
+      ],
+      "title": "Bank Id",
+      "type": "string"
+     },
+     "bonus": {
+      "default": "unknown",
+      "enum": [
+       "yes",
+       "no",
+       "unknown"
+      ],
+      "title": "Bonus",
+      "type": "string"
+     },
+     "bonus_month": {
+      "anyOf": [
+       {
+        "description": "YYYY-MM",
+        "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "month the welcome bonus was received",
+      "title": "Bonus Month"
+     },
+     "card_key": {
+      "anyOf": [
+       {
+        "maxLength": 80,
+        "pattern": "^[a-z0-9_]+:[a-z0-9-]+$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "a tracked card; empty for any other card",
+      "title": "Card Key"
+     },
+     "no_annual_fee": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "for a card this site does not track",
+      "title": "No Annual Fee"
+     },
+     "open_now": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "still open; empty = not said",
+      "title": "Open Now"
+     },
+     "opened": {
+      "anyOf": [
+       {
+        "description": "YYYY-MM",
+        "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "month the account was opened (or the card was added)",
+      "title": "Opened"
+     },
+     "original_bonus_month": {
+      "anyOf": [
+       {
+        "description": "YYYY-MM",
+        "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "with a product change: month a bonus was received on the original card",
+      "title": "Original Bonus Month"
+     },
+     "product_change": {
+      "default": false,
+      "description": "this card came from a product change (no new account was opened)",
+      "title": "Product Change",
+      "type": "boolean"
+     },
+     "reports_to_personal": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "for a business card this site does not track: shows on personal credit reports",
+      "title": "Reports To Personal"
+     },
+     "segment": {
+      "default": "personal",
+      "enum": [
+       "personal",
+       "business"
+      ],
+      "title": "Segment",
+      "type": "string"
+     }
+    },
+    "required": [
+     "bank_id"
+    ],
+    "title": "HeldCard",
     "type": "object"
    },
    "HistoryEntry": {
@@ -1438,6 +1844,329 @@
      "official_only"
     ],
     "title": "HistoryLabel",
+    "type": "object"
+   },
+   "Judgement": {
+    "properties": {
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "points": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Points",
+      "type": "array"
+     },
+     "status": {
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "status",
+     "label"
+    ],
+    "title": "Judgement",
+    "type": "object"
+   },
+   "MatchProfile": {
+    "additionalProperties": false,
+    "properties": {
+     "as_of": {
+      "anyOf": [
+       {
+        "format": "date",
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "evaluate as of this date (tests); defaults to today",
+      "title": "As Of"
+     },
+     "bank_relationships": {
+      "description": "banks where the visitor has a checking or savings account",
+      "items": {
+       "enum": [
+        "chase",
+        "american_express",
+        "citi",
+        "capital_one",
+        "bank_of_america",
+        "discover",
+        "wells_fargo",
+        "other"
+       ],
+       "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Bank Relationships",
+      "type": "array"
+     },
+     "business_income": {
+      "anyOf": [
+       {
+        "enum": [
+         "yes",
+         "no",
+         "unsure"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Business Income"
+     },
+     "cards": {
+      "items": {
+       "$ref": "#/components/schemas/HeldCard"
+      },
+      "maxItems": 60,
+      "title": "Cards",
+      "type": "array"
+     },
+     "cards_complete": {
+      "default": false,
+      "description": "the list holds every credit card the visitor has had, open or closed, including authorized-user cards (so a card not listed was never held)",
+      "title": "Cards Complete",
+      "type": "boolean"
+     },
+     "credit_history": {
+      "anyOf": [
+       {
+        "enum": [
+         "none",
+         "lt_1y",
+         "1_2y",
+         "2_5y",
+         "5y_plus"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Credit History"
+     },
+     "credit_score": {
+      "anyOf": [
+       {
+        "maximum": 850.0,
+        "minimum": 300.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Credit Score"
+     },
+     "max_annual_fee": {
+      "anyOf": [
+       {
+        "maximum": 1000.0,
+        "minimum": 0.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Max Annual Fee"
+     },
+     "monthly_spend": {
+      "anyOf": [
+       {
+        "maximum": 100000.0,
+        "minimum": 0.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "normal monthly card spending in dollars, without any extra spending",
+      "title": "Monthly Spend"
+     },
+     "negative_marks": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "late payments of 30+ days, collections or bankruptcy on the credit report",
+      "title": "Negative Marks"
+     },
+     "new_accounts_24m": {
+      "anyOf": [
+       {
+        "maximum": 60.0,
+        "minimum": 0.0,
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "personal credit cards opened in the last 24 months with any bank, authorized-user cards included",
+      "title": "New Accounts 24M"
+     },
+     "reward_preference": {
+      "anyOf": [
+       {
+        "enum": [
+         "cashback",
+         "points",
+         "any"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Reward Preference"
+     },
+     "score_model": {
+      "anyOf": [
+       {
+        "enum": [
+         "fico",
+         "vantage",
+         "other",
+         "unknown"
+        ],
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Score Model"
+     },
+     "score_source": {
+      "anyOf": [
+       {
+        "maxLength": 60,
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Score Source"
+     },
+     "spend_categories": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/MonthlySpend"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "student": {
+      "anyOf": [
+       {
+        "type": "boolean"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Student"
+     }
+    },
+    "title": "MatchProfile",
+    "type": "object"
+   },
+   "MatchRequest": {
+    "additionalProperties": false,
+    "properties": {
+     "campaign_ids": {
+      "anyOf": [
+       {
+        "items": {
+         "type": "string"
+        },
+        "maxItems": 100,
+        "type": "array"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "description": "campaigns to check; empty = every current campaign",
+      "title": "Campaign Ids"
+     },
+     "point_values": {
+      "additionalProperties": {
+       "maximum": 5.0,
+       "minimum": 0.0,
+       "type": "number"
+      },
+      "description": "your own cents per point, per program",
+      "propertyNames": {
+       "maxLength": 40
+      },
+      "title": "Point Values",
+      "type": "object"
+     },
+     "profile": {
+      "$ref": "#/components/schemas/MatchProfile"
+     }
+    },
+    "required": [
+     "profile"
+    ],
+    "title": "MatchRequest",
+    "type": "object"
+   },
+   "MatchResponse": {
+    "properties": {
+     "assumptions": {
+      "items": {
+       "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+     },
+     "disclaimer": {
+      "default": "Information only, not financial advice. The issuer's own terms and decision always prevail; this site cannot predict approval.",
+      "title": "Disclaimer",
+      "type": "string"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/Assessment"
+      },
+      "title": "Items",
+      "type": "array"
+     },
+     "questions": {
+      "items": {
+       "$ref": "#/components/schemas/Question"
+      },
+      "title": "Questions",
+      "type": "array"
+     }
+    },
+    "required": [
+     "items",
+     "questions",
+     "assumptions"
+    ],
+    "title": "MatchResponse",
     "type": "object"
    },
    "Moment": {
@@ -2375,6 +3104,29 @@
     "title": "PublicOffersResponse",
     "type": "object"
    },
+   "Question": {
+    "properties": {
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     },
+     "why": {
+      "title": "Why",
+      "type": "string"
+     }
+    },
+    "required": [
+     "key",
+     "text",
+     "why"
+    ],
+    "title": "Question",
+    "type": "object"
+   },
    "RankedOffer": {
     "properties": {
      "estimate": {
@@ -2550,6 +3302,91 @@
      "rate_unit"
     ],
     "title": "RateView",
+    "type": "object"
+   },
+   "Reach": {
+    "properties": {
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "needed_with_margin_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Needed With Margin Cents"
+     },
+     "projected_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Projected Cents"
+     },
+     "required_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Required Cents"
+     },
+     "status": {
+      "enum": [
+       "sufficient",
+       "tight",
+       "insufficient",
+       "unknown",
+       "not_required"
+      ],
+      "title": "Status",
+      "type": "string"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     },
+     "tiers": {
+      "items": {
+       "$ref": "#/components/schemas/TierReach"
+      },
+      "title": "Tiers",
+      "type": "array"
+     },
+     "window": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Window"
+     }
+    },
+    "required": [
+     "status",
+     "label",
+     "required_cents",
+     "needed_with_margin_cents",
+     "window",
+     "projected_cents",
+     "text"
+    ],
+    "title": "Reach",
     "type": "object"
    },
    "Reason": {
@@ -3406,6 +4243,42 @@
     "title": "Tier",
     "type": "object"
    },
+   "TierReach": {
+    "properties": {
+     "reward": {
+      "title": "Reward",
+      "type": "string"
+     },
+     "spend_cents": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Spend Cents"
+     },
+     "status": {
+      "enum": [
+       "sufficient",
+       "tight",
+       "insufficient",
+       "unknown"
+      ],
+      "title": "Status",
+      "type": "string"
+     }
+    },
+    "required": [
+     "spend_cents",
+     "reward",
+     "status"
+    ],
+    "title": "TierReach",
+    "type": "object"
+   },
    "UnrankedOffer": {
     "properties": {
      "offer": {
@@ -3918,6 +4791,48 @@
      }
     },
     "summary": "Campaigns",
+    "tags": [
+     "campaigns"
+    ]
+   }
+  },
+  "/api/v1/campaigns/match": {
+   "post": {
+    "description": "Personal check of current offers (DESIGN \u00a727.10). Stateless: the profile is used for this response only\n\u2014 never stored or logged.",
+    "operationId": "campaigns_match_api_v1_campaigns_match_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/MatchRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/MatchResponse"
+        }
+       }
+      },
+      "description": "Successful Response"
+     },
+     "422": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      },
+      "description": "Validation Error"
+     }
+    },
+    "summary": "Campaigns Match",
     "tags": [
      "campaigns"
     ]
@@ -5591,6 +6506,32 @@
     "summary": "Sources",
     "tags": [
      "sources"
+    ]
+   }
+  },
+  "/api/v1/tracked-cards": {
+   "get": {
+    "description": "The cards the offer tracker follows (for choosing cards you hold in the personal check).",
+    "operationId": "tracked_cards_api_v1_tracked_cards_get",
+    "responses": {
+     "200": {
+      "content": {
+       "application/json": {
+        "schema": {
+         "items": {
+          "$ref": "#/components/schemas/CardSummary"
+         },
+         "title": "Response Tracked Cards Api V1 Tracked Cards Get",
+         "type": "array"
+        }
+       }
+      },
+      "description": "Successful Response"
+     }
+    },
+    "summary": "Tracked Cards",
+    "tags": [
+     "campaigns"
     ]
    }
   }

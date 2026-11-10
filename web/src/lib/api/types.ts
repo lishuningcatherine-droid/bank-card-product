@@ -27,3 +27,12 @@ export type CampaignTerms = S["Terms"];
 export type CampaignMoment = S["Moment"];
 export type ApplicationRule = S["RuleView"];
 export type PointValue = S["PointValue"];
+/** Every profile answer is optional (server defaults apply). */
+export type HeldCard = Omit<S["HeldCard"], "authorized_user" | "product_change"> & Partial<Pick<S["HeldCard"], "authorized_user" | "product_change">>;
+export type MatchProfile = Partial<Omit<S["MatchProfile"], "cards">> & { cards?: HeldCard[] };
+export type MatchRequest = S["MatchRequest"];
+export type MatchResponse = S["MatchResponse"];
+export type Assessment = S["Assessment"];
+export type MatchFinding = S["FindingView"];
+export type Judgement = S["Judgement"];
+export type CardSummary = S["CardSummary"];

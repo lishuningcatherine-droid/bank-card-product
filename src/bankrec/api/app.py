@@ -474,6 +474,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
 
     # ------------------------------------------------------------------ offer tracker (DESIGN §27.9)
+    from bankrec.tracker import match as TM
+    from bankrec.tracker import profile as TP
     from bankrec.tracker import views as TV
 
     PvQ = Annotated[
@@ -570,6 +572,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         b, t = _builder(s, pv), now()
         out = [b.view(c, t) for c in b.campaigns() if b.card(c.card_key).product_id == product_id]
         return sorted(out, key=lambda v: v.first_seen_at, reverse=True)
+
+    @app.get(prefix + "/tracked-cards", response_model=list[TV.CardSummary], tags=["campaigns"])
+    def tracked_cards(s: Annotated[Session, Depends(session)]) -> list[TV.CardSummary]:
+        """The cards the offer tracker follows (for choosing cards you hold in the personal check)."""
+        b = _builder(s)
+        out = [b.card(k) for k, c in b._cards.items() if st.allow_test_only or not c.demo]
+        return sorted(out, key=lambda c: (c.bank_name, c.name))
+
+    @app.post(prefix + "/campaigns/match", response_model=TM.MatchResponse, tags=["campaigns"])
+    def campaigns_match(body: TP.MatchRequest, r: Repo) -> TM.MatchResponse:
+        """Personal check of current offers (DESIGN §27.10). Stateless: the profile is used for this response only
+        — never stored or logged."""
+        t = now()
+        products = {str(p.id): p for p in r.all_of_type("credit_card", t)}
+        return TM.run(r.s, body, t, allow_demo=st.allow_test_only, products=products)
 
     @app.get(prefix + "/rules", response_model=list[TV.RuleView], tags=["campaigns"])
     def rules(s: Annotated[Session, Depends(session)], bank: BankQ = None) -> list[TV.RuleView]:

@@ -101,3 +101,27 @@ async def test_rules_and_point_values_are_public_with_sources(client: httpx.Asyn
     assert by["chase_sapphire_card"]["source_type"] == "official" and by["chase_sapphire_card"]["excerpt"]
     pv = {p["program"]: p for p in (await client.get("/api/v1/point-values")).json()}
     assert pv["chase_ur"]["floor_cents"] is None and pv["wf_rewards"]["floor_cents"] == 1.0
+
+
+async def test_match_is_stateless_and_separates_judgements(client: httpx.AsyncClient) -> None:
+    body = {"profile": {"credit_score": 700}}
+    r = await client.post("/api/v1/campaigns/match", json=body)
+    assert r.status_code == 200
+    res = r.json()
+    assert res["items"] and res["questions"] and "not financial advice" in res["disclaimer"]
+    for a in res["items"]:
+        # only a score: never a firm answer
+        assert a["action"] == "verify_first"
+        assert a["approval"]["status"] == "needs_info"
+        for k in ("offer_appeal", "personal_fit", "reach", "bonus", "first_year", "uncertainty"):
+            assert k in a
+    full = {"profile": {"credit_history": "5y_plus", "negative_marks": False, "cards_complete": True,
+                        "new_accounts_24m": 0, "monthly_spend": 3000, "max_annual_fee": 0,
+                        "spend_categories": {"groceries": 800, "dining": 400, "other": 1800}},
+            "campaign_ids": [res["items"][0]["campaign_id"]]}  # fmt: skip
+    [a] = (await client.post("/api/v1/campaigns/match", json=full)).json()["items"]
+    assert a["reach"]["status"] in ("sufficient", "not_required")
+    assert any("a year" in x for x in a["personal_fit"]["points"])  # everyday earning from the recommender
+    # identifiers are refused, unknown fields are rejected
+    bad = {"profile": {"ssn": "000-00-0000"}}
+    assert (await client.post("/api/v1/campaigns/match", json=bad)).status_code == 422

@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-10-21 (after phase 2, commit b9cd691). Read this first in a new session, then
+Last updated: 2026-11-09 (offer tracker phases 1–3 done; DESIGN §27). Read this first in a new session, then
 `CLAUDE.md` and the `docs/DESIGN.md` sections it points to.
 
 Requirements come from `~/Downloads/BUILD_PROMPT_v2.md` (the brief) and the owner's later messages. Where they
@@ -98,6 +98,18 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 
 ## 3. In progress / not finished
 
+- **Offer tracker (brief of 2026-11-09, DESIGN §27): phases 1–3 done.** 20 tracked cards / 7 issuers, 17 campaigns in
+  the local database (all official captures; none expired). Phase 3 = the personal offer check
+  (`POST /api/v1/campaigns/match`, `/offers/match`, `bankrec offers match FILE`). Persona outputs: see the phase-3 report.
+  - **4 manual entries pending review** (entered by `claude`, 2026-11-10): Capital One Savor, Capital One Venture,
+    Chase Sapphire Preferred, Chase Sapphire Reserve — adapters stopped reading those pages after layout changes.
+    A different person must approve (`bankrec offers pending|approve|reject`).
+  - Those four plus Freedom Unlimited and both Bank of America cards are `stale` / `pending_verification` until the
+    pages are read again or the entries are approved.
+  - Automatic updates do **not** run here: the worker container and the scheduled workflow are not enabled. The cron
+    and the workflow now include `bankrec offers sync` (`config/tracker/settings.yaml` `update.sync_schedule`).
+  - Owner rule change: community-reported rules are allowed in the tracker, always labelled with their source (§27 intro).
+
 - **Phase 1 (public home page, offer types, multi-channel offers): done**, accepted by the owner 2026-10-20.
 - **Phase 2: done** (2026-10-21, commits 8e9e9bf, 9a22dca, 470c498, b9cd691): no scores/weights anywhere public;
   consented anonymous events (off by default); gated ranking layer with `bankrec ml train|check|approve`; cash and
@@ -111,6 +123,9 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 ---
 
 ## 4. Waiting for the owner
+
+0. **Offer tracker:** review the 4 pending manual entries; decide whether to enable the worker cron or the GitHub
+   schedule for automatic updates.
 
 1. **Point values per program** (hotel, airline, bank points) with their basis; until then non-fixed points rank
    only among themselves.

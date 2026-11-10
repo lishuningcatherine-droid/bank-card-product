@@ -46,6 +46,9 @@ jobs:
             *) echo "tier=${{ inputs.tier }}" >> "$GITHUB_OUTPUT" ;;
           esac
       - run: uv run bankrec ingest --tier ${{ steps.tier.outputs.tier }} --trigger github
+      # the offer tracker records every check, failed ones included (a failed fetch never ends a campaign)
+      - run: uv run bankrec offers sync
+        if: always()
       - run: uv run bankrec report stale
       - uses: actions/upload-artifact@v4
         if: always()

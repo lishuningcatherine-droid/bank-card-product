@@ -683,6 +683,40 @@ def offers_update(
     offers_sync()
 
 
+@offers_app.command("match")
+def offers_match(
+    path: Annotated[Path, typer.Argument(help="JSON file: {profile: {...}, campaign_ids?: [...]}")],
+    brief: Annotated[bool, typer.Option(help="one block per offer instead of the full JSON")] = True,
+) -> None:
+    """Run the personal offer check (the same as POST /api/v1/campaigns/match) for a saved profile."""
+    from bankrec.api.repository import Repository
+    from bankrec.tracker import match
+    from bankrec.tracker.profile import MatchRequest
+
+    req = MatchRequest.model_validate_json(path.read_text(encoding="utf-8"))
+    t = _now()
+    with _session() as s:
+        repo = Repository(s, allow_test_only=get_settings().allow_test_only)
+        products = {str(p.id): p for p in repo.all_of_type("credit_card", t)}
+        res = match.run(s, req, t, allow_demo=get_settings().allow_test_only, products=products)
+    if not brief:
+        typer.echo(res.model_dump_json(indent=1))
+        return
+    for a in res.items:
+        typer.echo(f"\n== {a.bank_name} {a.card_name}: {a.action_label}")
+        for r in a.action_reasons:
+            typer.echo(f"   - {r}")
+        for c in a.conflicts:
+            typer.echo(f"   ! conflict [{c.basis}] {c.name}")
+        typer.echo(f"   approval: {a.approval.label} | bonus: {a.bonus.label}")
+        typer.echo(
+            f"   reach: {a.reach.label} | appeal: {a.offer_appeal.label} | fit: {a.personal_fit.label}"
+        )
+        typer.echo(f"   first year: {a.first_year.text}")
+    if res.questions:
+        typer.echo("\nnext questions: " + " | ".join(q.text for q in res.questions))
+
+
 @offers_app.command("add")
 def offers_add(
     path: Annotated[

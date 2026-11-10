@@ -146,6 +146,13 @@ export function Results() {
             onChange={(ids) => update({ selected_credit_ids: ids })} />
         </div>
       ) : null}
+      {card ? (
+        <div className="rounded-md bg-info-bg p-4 text-sm text-info">
+          <p className="font-medium">Thinking of applying for a current offer?</p>
+          <p className="mt-1">These results rank cards by everyday value. To check a specific welcome offer against your credit history, recent applications and the bank&apos;s bonus rules, use the offer check — your spending answers carry over.</p>
+          <Link href={`/offers/match#${encodeRequest(card)}`} className="mt-2 inline-flex min-h-11 items-center font-medium">Check current offers for me →</Link>
+        </div>
+      ) : null}
       {data.results.length === 0 ? (
         <EmptyState title="No verified products match your answers" href="/recommend" cta="Change your answers">
           Only Verified products are recommended. {data.excluded?.length ? `${data.excluded.length} product(s) were excluded — see below.` : ""}

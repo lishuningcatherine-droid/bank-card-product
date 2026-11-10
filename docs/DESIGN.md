@@ -1493,3 +1493,113 @@ The owner's point-value rule (§26.4) applies to personal recommendations too: e
 (other points and miles). Cash cards are ranked first and points cards on their own, ranks restarting in each group;
 a ranking model re-orders only within a group. Points results say "Estimated: assumes X¢ per point (basis)". Reasons
 are in dollars ("$650 of your $1,750 monthly spending earns a bonus rate"), not percentages.
+
+---
+
+## 27. Offer tracker: current offers, offer history and the personal offer check (owner brief 2026-11-09)
+
+The product answers: *what card offers are worth a look now, and — given my situation — is this one worth applying
+for, and what must I confirm first?* It adds to the existing recommender: the tracker models **cards** (long-term
+facts) apart from **campaigns** (an offer during a period), keeps every version, and checks a visitor's situation
+against a specific campaign. The earlier rule "eligibility only in the bank's own words" (§24.22) is superseded for
+the tracker by the 2026-11-09 brief: community-reported rules are allowed **only labelled as community rules, with
+their source**, and never presented as the bank's.
+
+### 27.1 Tracked cards (`config/tracker/cards.yaml`, `prod.tracked_cards`)
+20 cards, 7 issuers (Chase, American Express, Citi, Capital One, Bank of America, Discover, Wells Fargo), personal
+and business. Fees, earn rates, benefits and the official URL come from the published product (`prod.products`); the
+tracker adds the series (same-family rules), the points program, and for business cards whether they report to
+personal credit and count toward Chase 5/24 — `{value, source_type, source_url, excerpt, verified_at}`, `null` when
+not established. Pages that cannot be read automatically are listed under `manual_only` with the reason.
+
+### 27.2 Campaign identity, versions and material changes (`tracker/terms.py`)
+Identity (dedup key) = card + channel (public / targeted / referral / branch) + offer type + reward structure (unit,
+number of tiers, requirement type). Material fields: offer type, channel, tiers, amount and unit, minimum spend,
+window (count, unit, start point), annual and first-year fee, start and end, eligibility text. Only a change in them
+adds a `campaign_versions` row (with a field-by-field `change_summary`); the old row gets `valid_to` and is kept.
+Anything else (layout, "last updated" stamps, other text, which official pages showed it) only refreshes
+`last_verified_at`. Tiers are stored one by one ("spend $X get A, then $Y more for B"); units are never merged.
+The **application deadline** (campaign `end`) and the **spending window after opening/approval** (tier window with its
+start point) are separate fields.
+
+### 27.3 Deadlines and the status machine (`tracker/deadline.py`, `tracker/status.py`)
+Moments keep the date, the time only when stated (never filled in as 23:59), the stated zone and the verbatim
+sentence; they are shown in ET ("Ends 2026-12-05 23:59 ET", or "Ends 2026-12-05 (time not stated)", or "Deadline
+unknown"). A countdown exists only when date, time and zone are all stated. `first_seen_at` is never shown as a start
+date. Statuses: active, ending_soon (confirmed deadline ≤ 14 days), expired, withdrawn, pending_verification, stale.
+Expired/withdrawn only from a passed confirmed deadline or a reviewer. One failed check changes nothing but the
+failure count; 3 failures in a row or 7 days without a successful check → stale (never ended). A good capture that no
+longer shows the offer → pending_verification. Every change goes to `campaign_status_log` (time, from, to, reason,
+trigger auto/manual, actor). Thresholds: `config/tracker/settings.yaml`.
+
+### 27.4 Application and bonus rules (`config/tracker/rules.yaml`, `prod.application_rules`)
+Each rule: name, bank, type (application_frequency, card_count_limit, bonus_once_per_lifetime, family_restriction,
+bonus_lookback, eligibility_notice), window, scope (`applies_to`: card / bank / segment) and what it counts (`match`:
+cards, series, issuer, segment, authorized users, business cards per card), effect (approval or bonus), strength
+(firm "is not available" / soft "may not be"), source type (official / community), verification (page_captured,
+third_party_quote, community_report), source URL, verbatim excerpt, notes and verified date. `bankrec offers
+verify-rules` re-checks that every page-captured excerpt is still on the latest capture. Acceptance rules: Chase 5/24
+(community; authorized-user and business-card notes), Sapphire (official), Amex once per lifetime (official, quoted by
+a third party because the terms are robots-disallowed) and the application pop-up notice, Citi 48 months (official),
+Bank of America 2/3/4 (community), Capital One one card per six months and two personal cards (community).
+
+### 27.5 History labels (`tracker/history.py`)
+"Usual level" = median of the public offers this site recorded for the card, same channel and unit, in the last 24
+months. Comparative labels ("highest recorded", "better than usual", "higher than usual recently", "usual", "below
+usual") need ≥ 3 records spanning ≥ 12 months, and always say "in the history recorded on this site"; otherwise
+"Not enough history". Third-party records are marked and can be excluded (`official_only`).
+
+### 27.6 Valuation (`tracker/valuation.py`, `config/tracker/valuation.yaml`)
+Cash and statement credits at face value. Points/miles only at a cash or statement-credit value an official page
+states (quoted), or at the visitor's own value; otherwise the number of points and no dollar figure. Every dollar
+figure carries its assumption; first-year value = reward − first-year fee, flagged when it depends on points value.
+
+### 27.7 Update flow (`tracker/sync.py`, `bankrec offers update|sync`)
+`bankrec offers update` fetches the tracked cards' official pages through the normal pipeline (robots.txt, at most
+one request per host every `min_host_interval_s`, backoff; §24.5–24.6), then `offers sync` turns the published offers
+into campaigns, versions, checks (`campaign_checks`: seen / changed / not_seen / failed) and statuses, and loads the
+rules. Nothing is deleted. Scheduling: the worker crontab (`bankrec schedule crontab`) runs `offers sync` at
+`update.sync_schedule` after the daily offer-tier ingestion; the GitHub workflow runs it after every scheduled
+ingestion. Neither runs unless the worker container or the workflow is enabled.
+
+### 27.8 Manual entries and review (`tracker/manual.py`, `docs/MANUAL_OFFERS.md`)
+Targeted, branch and referral offers, pages that cannot be read reliably, and third-party history are entered by
+file (`bankrec offers add FILE --by NAME`) with source, excerpt and entry time; they stay `pending_review` until a
+different person approves them (`offers approve|reject`). Reviewers can set a status with a reason
+(`offers set-status`).
+
+### 27.9 Public API and pages
+`GET /campaigns` (filters: bank, card, segment, type, channel, fee, spend, deadline; sort), `GET /campaigns/{id}`
+(versions, status log, checks, rules), `GET /products/{id}/campaigns`, `GET /rules`, `GET /point-values`,
+`GET /tracked-cards`, `POST /campaigns/match`. Pages: `/` and `/offers` (current offers, no profile needed),
+`/offers/[id]`, product pages (current and past campaigns), `/rules`, `/offers/match`.
+
+### 27.10 Personal offer check (`tracker/profile.py`, `tracker/rules.py`, `tracker/match.py`)
+**Profile** (all optional; never SSN/EIN/card numbers/logins): credit score with model and source, credit history
+length, negative marks, student, cards held or had (tracked card or "other bank personal/business card", authorized
+user, opened month, still open, bonus received and month, product change and the original card's bonus month),
+whether that list is complete, cards opened in 24 months (any bank, incl. authorized-user and reporting business
+cards), banks with deposit accounts, natural monthly spend and categories (the recommender's `MonthlySpend`), maximum
+annual fee, reward preference, business income. The web page keeps it in sessionStorage (localStorage only on
+"remember"); the API uses it for one response and never stores or logs it.
+
+**Rule checks are three-valued.** A rule is a *conflict* only when the answers meet it; *clear* only when the answers
+rule it out (a complete card list, or a stated count — e.g. 0 cards in 24 months also settles 2/3/4); otherwise
+*unknown* with the question that settles it. A met firm rule, or a soft rule naming this very card, is a conflict; a
+soft rule about related cards is a *possible conflict*. Month precision: the boundary month is unknown.
+
+**Six separate judgements, no combined score:** offer appeal (history label, value, deadline, status, channel);
+personal fit (fee vs limit, reward type, business income, everyday earning computed with the recommender's
+`annual_rewards`); reaching the spend (natural monthly spend × window ≥ requirement × 1.2; days count 31 per month;
+no manufactured spending, ever); known eligibility (each rule with its basis label); uncertainty (missing answers,
+community-only rules, offer status, unknown end date, income not asked); suggested action. Approval and bonus
+eligibility are shown apart; approval odds are never estimated.
+
+**Action** (strictest wins): *not a fit for now* — an official conflict (approval or bonus), a community approval
+rule clearly met by the visitor's own numbers (e.g. 5/24 with 5 cards; labelled community — the brief's acceptance
+persona requires this), spend not reachable naturally, or a business card with no business income; *improve credit
+first* — history under 1 year or none, negative marks, or a FICO score in FICO's "Poor" range (FICO's published
+ranges, `credit_ranges`; a non-FICO score is never banded); *confirm first* — any unknown or possible conflict,
+missing history/negative-marks/spend answers, reach without the margin, a stale or unverified offer, a
+non-public channel, a business card without confirmed business income; *consider now* — none of the above. A score
+alone never decides; no card has a stated minimum score. The response also lists up to three next questions.
