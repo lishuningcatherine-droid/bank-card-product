@@ -384,7 +384,10 @@ def _reward_text(terms: Any) -> str:
 
 def component_text(c: Any) -> str:
     when = f", {c.expires}" if c.expires else ""
-    return f"{usd(c.amount_cents)} credit for {c.restriction}{when} — restricted, not cash and not converted to points"
+    return (
+        f"{usd(c.amount_cents)} credit for {c.restriction}{when} — no spending requirement is stated for it;"
+        " restricted, not cash and not converted to points"
+    )
 
 
 def first_year(v: Any) -> FirstYear:

@@ -266,14 +266,26 @@ def test_citi_48_month_lookback_and_product_change() -> None:
     assert check("citi_double_cash_48", "citi:double-cash", cards=[unsure]) == "unknown"
 
 
-def test_soft_family_wording_is_only_a_possible_conflict() -> None:
-    csr = HeldCard(card_key="chase:sapphire-reserve", bank_id="chase", opened="2022-01", open_now=True)
-    assert (
-        check("chase_sapphire_family_wording", "chase:sapphire-preferred", cards=[csr]) == "possible_conflict"
-    )
-    assert (
-        check("chase_sapphire_card", "chase:sapphire-preferred", cards=[csr], cards_complete=True) == "clear"
-    )
+def test_sapphire_rules_are_per_card_and_holding_preferred_does_not_block_reserve() -> None:
+    """Owner 2026-11-11, from both Sapphire pages read that day: approval needs this same card not to be open, the
+    bonus is once per card; the other Sapphire card is not named. No family or 48-month rule remains."""
+    keys = {r["rule_key"] for r in RULES if r["bank_id"] == "chase" and "sapphire" in r["rule_key"]}
+    assert keys == {"chase_sapphire_card", "chase_sapphire_bonus"}
+    assert not any("48" in str(r.get("window_months") or "") for r in RULES if "sapphire" in r["rule_key"])
+    csp = HeldCard(card_key="chase:sapphire-preferred", bank_id="chase", opened="2024-02", open_now=True,
+                   bonus="yes", bonus_month="2024-04")  # fmt: skip
+    p = MatchProfile(**{**FULL, "cards": [csp]})
+    reserve = run(view("chase:sapphire-reserve"), p)
+    sapphire = [f for f in reserve.eligibility if "sapphire" in f.rule_key]
+    assert {f.outcome for f in sapphire} == {"clear"}
+    assert reserve.bonus.status == "no_known_conflict" and not reserve.conflicts
+    # the same card: approval blocked while open, bonus not available after having it
+    preferred = run(view("chase:sapphire-preferred"), p)
+    assert {c.rule_key for c in preferred.conflicts} == {"chase_sapphire_card", "chase_sapphire_bonus"}
+    # a closed Preferred whose bonus was earned years ago still does not touch the Reserve
+    closed = csp.model_copy(update={"open_now": False, "bonus_month": "2019-04", "opened": "2019-01"})
+    again = run(view("chase:sapphire-reserve"), MatchProfile(**{**FULL, "cards": [closed]}))
+    assert not again.conflicts and again.bonus.status == "no_known_conflict"
 
 
 @pytest.mark.parametrize(
@@ -533,3 +545,23 @@ def test_manual_entry_validation_for_minimums() -> None:
     with pytest.raises(ValueError, match="only for an up-to"):
         ManualCampaignIn.model_validate({**base, "amount_qualifier": "exact", "guaranteed_min": 1,
                                          "guaranteed_min_text": "at least 1 point"})  # fmt: skip
+
+
+def test_third_party_history_is_labelled_and_can_be_excluded() -> None:
+    from bankrec.tracker import history
+
+    def rec(a: int, y: int, m: int, official: bool, current: bool = False) -> history.Record:
+        start = datetime(y, m, 1, tzinfo=UTC)
+        return history.Record(amount=a, unit="points", valid_from=start, current=current, official=official,
+                              valid_to=None if current else datetime(y, m, 28, tzinfo=UTC))  # fmt: skip
+
+    recs = [
+        rec(125000, 2025, 8, False),
+        rec(150000, 2026, 4, False),
+        rec(100000, 2026, 6, True, current=True),
+    ]
+    mixed = history.label(recs, NOW)
+    assert mixed["code"] == "below_usual" and "including third-party records" in mixed["text"]
+    assert "In the history recorded on this site" in mixed["text"]
+    # official records only: not enough history for any comparison
+    assert history.label(recs, NOW, official_only=True)["code"] == "insufficient_history"

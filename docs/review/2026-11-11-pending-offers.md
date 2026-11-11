@@ -1,10 +1,11 @@
 # Pending manual entries: stored values vs. official pages
 
-Generated 2026-11-11 00:55 UTC by `bankrec offers evidence` (read-only; robots.txt and the rate limit applied). Nothing was approved; the owner reviews each entry.
+Generated 2026-11-11 01:43 UTC by `bankrec offers evidence` (read-only; robots.txt and the rate limit applied). Nothing was approved; the owner reviews each entry.
 
 ### Entry 1: `capital_one:savor`
 
-Source: https://www.capitalone.com/credit-cards/savor/ · read 2026-11-11 00:55 UTC · plain HTTP GET, HTTP 200
+Source: https://www.capitalone.com/credit-cards/savor/ · read 2026-11-11 01:43 UTC · plain HTTP GET, HTTP 200
+
 
 | Stored field | Stored value | Official source text | Verdict |
 |---|---|---|---|
@@ -24,7 +25,8 @@ Result: 11 of 11 fields match.
 
 ### Entry 2: `capital_one:venture`
 
-Source: https://www.capitalone.com/credit-cards/venture/ · read 2026-11-11 00:55 UTC · plain HTTP GET, HTTP 200
+Source: https://www.capitalone.com/credit-cards/venture/ · read 2026-11-11 01:44 UTC · plain HTTP GET, HTTP 200
+
 
 | Stored field | Stored value | Official source text | Verdict |
 |---|---|---|---|
@@ -35,6 +37,7 @@ Source: https://www.capitalone.com/credit-cards/venture/ · read 2026-11-11 00:5
 | offer: window start | account_opening | “…account opening…” in the offer sentence | **match** |
 | amount type | exact | fixed amount in the offer sentence | **match** |
 | component: sentence (verbatim) | Enjoy $300 to use on hotel and vacation rental bookings through Capital One Travel in your first cardholder year | … Limited-Time Offer Enjoy $300 to use on hotel and vacation rental bookings through Capital One Travel in your first cardholder year, plus earn 75,000 b… | **match** |
+| component: spending requirement | none (not tied to the spend) | no spending condition in its sentence | **match** |
 | component: amount | $300 | “…$300…” in that sentence | **match** |
 | component: restriction | hotel and vacation rental bookings through Capital One Travel | “…hotel and vacation rental bookings through Capital One Travel…” in that sentence | **match** |
 | component: expiry | in your first cardholder year | “…in your first cardholder year…” in that sentence | **match** |
@@ -44,11 +47,12 @@ Source: https://www.capitalone.com/credit-cards/venture/ · read 2026-11-11 00:5
 | source excerpt (verbatim) | Enjoy $300 to use on hotel and vacation rental bookings through Capital One Travel in your first cardholder year, plus earn 75,000 bonus miles once you spend $4,000 on purchases within the first 3 months from account opening | found on the page | **match** |
 | channel | public | public card page, no login or invitation | **match** |
 
-Result: 15 of 15 fields match.
+Result: 16 of 16 fields match.
 
 ### Entry 3: `chase:sapphire-preferred`
 
-Source: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred · read 2026-11-11 00:56 UTC · rendered in a browser (as the pipeline does for this page), HTTP 200
+Source: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred · read 2026-11-11 01:44 UTC · rendered in a browser (as the pipeline does for this page), HTTP 200
+
 
 | Stored field | Stored value | Official source text | Verdict |
 |---|---|---|---|
@@ -58,7 +62,7 @@ Source: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred ·
 | offer: window | 3 months | “…3 months…” in the offer sentence | **match** |
 | offer: window start | account_opening | “…account opening…” in the offer sentence | **match** |
 | amount type | exact | fixed amount in the offer sentence | **match** |
-| annual fee | $95 | $95 annual fee† \| 19.49%–27.74% variable APR.† *Offer | **match** |
+| annual fee | $95 | $95 annual fee† 19.49%–27.74% variable APR.† *Offer de | **match** |
 | first-year fee | $95 | (no first-year waiver or intro fee stated: first year = annual fee) | **match** |
 | application deadline | unknown (none stated) | (no end date stated) | **match** |
 | eligibility text (verbatim) | This credit card is unavailable to you if you currently have this card open. The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility. | …ls †Pricing & Terms This credit card is unavailable to you if you currently have this card open. The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility. Sapphire Preferred®… | **match** |
@@ -69,7 +73,8 @@ Result: 12 of 12 fields match.
 
 ### Entry 4: `chase:sapphire-reserve`
 
-Source: https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve · read 2026-11-11 00:56 UTC · rendered in a browser (as the pipeline does for this page), HTTP 200
+Source: https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve · read 2026-11-11 01:44 UTC · rendered in a browser (as the pipeline does for this page), HTTP 200
+
 
 | Stored field | Stored value | Official source text | Verdict |
 |---|---|---|---|
@@ -79,7 +84,7 @@ Source: https://creditcards.chase.com/rewards-credit-cards/sapphire/reserve · r
 | offer: window | 3 months | “…3 months…” in the offer sentence | **match** |
 | offer: window start | account_opening | “…account opening…” in the offer sentence | **match** |
 | amount type | exact | fixed amount in the offer sentence | **match** |
-| annual fee | $795 | $795 annual fee† ; $195 for each authorized user†* \| 19 | **match** |
+| annual fee | $795 | $795 annual fee† ; $195 for each authorized user†* 19.7 | **match** |
 | first-year fee | $795 | (no first-year waiver or intro fee stated: first year = annual fee) | **match** |
 | application deadline | unknown (none stated) | (no end date stated) | **match** |
 | eligibility text (verbatim) | This credit card is unavailable to you if you currently have this card open. The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility. | …ls †Pricing & Terms This credit card is unavailable to you if you currently have this card open. The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility. Reward your lifesty… | **match** |
@@ -90,7 +95,8 @@ Result: 12 of 12 fields match.
 
 ### Entry 5: `amex:gold`
 
-Source: https://www.americanexpress.com/us/credit-cards/card/gold-card/ · read 2026-11-11 00:56 UTC · rendered in a browser (as the pipeline does for this page), HTTP 200
+Source: https://www.americanexpress.com/us/credit-cards/card/gold-card/ · read 2026-11-11 01:44 UTC · rendered in a browser (as the pipeline does for this page), HTTP 200
+
 
 | Stored field | Stored value | Official source text | Verdict |
 |---|---|---|---|
@@ -109,3 +115,43 @@ Source: https://www.americanexpress.com/us/credit-cards/card/gold-card/ · read 
 | channel | public | public card page, no login or invitation | **match** |
 
 Result: 13 of 13 fields match.
+
+### Entry 6: `chase:sapphire-reserve`
+
+Source: https://www.doctorofcredit.com/chase-sapphire-reserve-125000-points-signup-bonus-plus-referral-offer/ · read 2026-11-11 01:44 UTC · third-party page, plain HTTP GET, HTTP 200 · **third-party source, NOT officially verified** (Doctor of Credit (post of August 21, 2025); end inferred from its change log entry of 4/30/26; corroborated by The Points Guy's offer history)
+
+Past offer — observed 2025-08-21 to 2026-04-30 (dates its sources reported it, not the bank's start or end; how each date was found is in the source note above).
+
+| Stored field | Stored value | Third-party source text (not officially verified) | Verdict |
+|---|---|---|---|
+| offer: offer sentence (verbatim) | The revamped Chase Sapphire Reserve is now offering 125,000 points sign up bonus after spending $6,000 within the first three months. | …irect Link to offer The revamped Chase Sapphire Reserve is now offering 125,000 points sign up bonus after spending $6,000 within the first three months. Card Details $795 a… | **match** |
+| offer: amount | 125,000 Chase Ultimate Rewards points | “…125,000…” in the offer sentence | **match** |
+| offer: spend requirement | $6,000 | “…$6,000…” in the offer sentence | **match** |
+| offer: window | 3 months | “…three months…” in the offer sentence | **match** |
+| offer: window start | not_stated | (not stated) | **match** |
+| amount type | exact | fixed amount in the offer sentence | **match** |
+| application deadline | unknown (none stated) | (no end date stated) | **match** |
+| source excerpt (verbatim) | The revamped Chase Sapphire Reserve is now offering 125,000 points sign up bonus after spending $6,000 within the first three months. | found on the page | **match** |
+| channel | public | the source describes a public offer (not an invitation or referral) | **match** |
+
+Result: 9 of 9 fields match.
+
+### Entry 7: `chase:sapphire-reserve`
+
+Source: https://thepointsguy.com/news/chase-sapphire-reserve-150000-point-bonus-last-chance · read 2026-11-11 01:44 UTC · third-party page, rendered (its text is filled in by scripts) · **third-party source, NOT officially verified** (The Points Guy (article of June 8, 2026); dates from Doctor of Credit's change log (added 4/30/26, removed 6/16/26))
+
+Past offer — observed 2026-04-30 to 2026-06-15 (dates its sources reported it, not the bank's start or end; how each date was found is in the source note above).
+
+| Stored field | Stored value | Third-party source text (not officially verified) | Verdict |
+|---|---|---|---|
+| offer: offer sentence (verbatim) | Last chance: Apply for the Chase Sapphire Reserve to earn 150,000 bonus Ultimate Rewards points after spending $6,000 on purchases in the first three months from account opening. | …r seen on the card. Last chance: Apply for the Chase Sapphire Reserve to earn 150,000 bonus Ultimate Rewards points after spending $6,000 on purchases in the first three months fr | **match** |
+| offer: amount | 150,000 Chase Ultimate Rewards points | “…150,000…” in the offer sentence | **match** |
+| offer: spend requirement | $6,000 | “…$6,000…” in the offer sentence | **match** |
+| offer: window | 3 months | “…three months…” in the offer sentence | **match** |
+| offer: window start | account_opening | “…account opening…” in the offer sentence | **match** |
+| amount type | exact | fixed amount in the offer sentence | **match** |
+| application deadline | The offer is scheduled to end June 15 at 9 a.m. EDT | …ee rates and fees). The offer is scheduled to end June 15 at 9 a.m. EDT, leaving eligible a… | **match** |
+| source excerpt (verbatim) | Last chance: Apply for the Chase Sapphire Reserve to earn 150,000 bonus Ultimate Rewards points after spending $6,000 on purchases in the first three months from account opening. | found on the page | **match** |
+| channel | public | the source describes a public offer (not an invitation or referral) | **match** |
+
+Result: 9 of 9 fields match.

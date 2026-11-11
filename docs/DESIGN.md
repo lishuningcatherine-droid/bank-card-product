@@ -1654,3 +1654,20 @@ alone never decides; no card has a stated minimum score. The response also lists
   session-level on a direct connection and transaction-level (held in an open transaction) on a pooled one; the
   workflow refuses a `-pooler` address. Manual workflow runs target the test branch by default and fail rather than
   fall back to another database; the schedule needs `BANKREC_SCHEDULER=github` (not set).
+
+### 27.13 Owner review of 2026-11-11 (second round)
+- **Sapphire rules** (both pages read 2026-11-11): approval is blocked only while *this same card* is open; the bonus is
+  once per card ("previously held this card or received a new cardmember bonus for this card"). Each card's Offer
+  Details panel says "unavailable to you if you currently have one open"; it is read as this card (the panel is about
+  that card, the headline says "this card") and kept as a note. The former family rule (`chase_sapphire_family_wording`)
+  is retired; holding Sapphire Preferred does not affect the Reserve. No 48-month or one-Sapphire rule exists.
+- **Retiring rules:** `offers sync` deletes rules no longer in `config/tracker/rules.yaml` (`rules_retired` in its report).
+- **Restricted components** state that no spending requirement applies when their own sentence names none (Venture's
+  $300 stays credit: its clause has no spend condition; the $4,000 belongs to the miles). How and when it is credited
+  is not stated on the readable page (footnote 1 is not in it), so nothing is recorded about that.
+- **Third-party history:** Sapphire Reserve 125,000 (Doctor of Credit, 2025-08-21; end inferred from its change log,
+  2026-04-30) and 150,000 (The Points Guy 2026-06-08, Doctor of Credit change log 4/30/26–6/16/26, stated end
+  "June 15 at 9 a.m. EDT", kept unconfirmed), entered as `third_party` entries pending the owner's review. History
+  labels say "including third-party records"; `official_only` excludes them.
+- `offers evidence` also reads third-party sources (robots.txt first; rendered only when the text is filled in by
+  scripts) and labels their column "not officially verified".

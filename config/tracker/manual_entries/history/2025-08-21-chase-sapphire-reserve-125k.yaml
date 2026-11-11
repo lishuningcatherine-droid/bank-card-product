@@ -1,0 +1,20 @@
+# Third-party history (owner 2026-11-11): NOT officially verified. Words and dates read 2026-11-11 under robots.txt.
+# - Doctor of Credit, post dated "August 21, 2025": "The revamped Chase Sapphire Reserve is now offering 125,000
+#   points sign up bonus after spending $6,000 within the first three months."
+# - The Points Guy offer history (page dated October 31, 2026): "August 2025 to April 2026 Earn 125,000 bonus points
+#   after spending $6,000 on purchases in the first three months from account opening." (months only)
+# - End: no source states it. observed_to is INFERRED from Doctor of Credit's change log "[4/30/26] Added Chase
+#   Sapphire Reserve 150,000" (the 150,000 offer replaced it). The window start is not stated in the dated source.
+card_key: chase:sapphire-reserve
+channel: public
+offer_type: welcome_bonus
+tiers:
+  - {amount: 125000, unit: points, unit_name: "Chase Ultimate Rewards points", spend_cents: 600000, window_count: 3,
+     window_unit: months, window_start: not_stated,
+     text: "The revamped Chase Sapphire Reserve is now offering 125,000 points sign up bonus after spending $6,000 within the first three months."}
+source_kind: third_party
+source_name: "Doctor of Credit (post of August 21, 2025); end inferred from its change log entry of 4/30/26; corroborated by The Points Guy's offer history"
+source_url: https://www.doctorofcredit.com/chase-sapphire-reserve-125000-points-signup-bonus-plus-referral-offer/
+source_excerpt: "The revamped Chase Sapphire Reserve is now offering 125,000 points sign up bonus after spending $6,000 within the first three months."
+observed_from: 2025-08-21
+observed_to: 2026-04-30

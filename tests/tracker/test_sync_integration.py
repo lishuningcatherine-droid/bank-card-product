@@ -253,6 +253,17 @@ def test_amending_a_pending_entry_keeps_it_pending_and_keeps_the_previous_payloa
         )
 
 
+def test_rule_removed_from_config_is_retired(session, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    _product(session)
+    sync(session, T0)
+    assert session.get(P.ApplicationRule, "chase_5_24") is not None
+    kept = [r for r in config.rules() if r["rule_key"] != "chase_5_24"]
+    monkeypatch.setattr(config, "rules", lambda: kept)
+    rep = sync(session, T0 + timedelta(hours=1))
+    assert rep.rules_retired == ["chase_5_24"]
+    assert session.get(P.ApplicationRule, "chase_5_24") is None
+
+
 def test_manual_time_needs_its_zone() -> None:
     with pytest.raises(ValueError, match="time zone"):
         manual.MomentIn.model_validate(

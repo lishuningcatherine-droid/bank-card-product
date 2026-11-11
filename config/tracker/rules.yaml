@@ -49,7 +49,7 @@ rules:
     verified_at: 2026-11-09
   - rule_key: chase_sapphire_card
     bank_id: chase
-    name: "Sapphire: not if you have this card; bonus may be refused if you held it or earned its bonus"
+    name: "Sapphire: not available while you have this same card open"
     rule_type: family_restriction
     source_type: official
     verification: page_captured
@@ -61,10 +61,13 @@ rules:
     applies_to: {cards: [chase:sapphire-preferred, chase:sapphire-reserve]}
     source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
     excerpt: "This credit card is unavailable to you if you currently have this card open."
-    verified_at: 2026-10-14
+    notes:
+      - "Each card's own “Offer Details” panel words it “This credit card is unavailable to you if you currently have one open.”, followed by “… if you previously held this card …”. Read as this same card: the panel is about that card, and the page's headline says “this card”. Neither Sapphire page restricts holding the other Sapphire card (read 2026-11-11, both pages)."
+      - "Replaces the earlier rule that showed holding the other Sapphire card as a possible conflict (owner 2026-11-11)."
+    verified_at: 2026-11-11
   - rule_key: chase_sapphire_bonus
     bank_id: chase
-    name: "Sapphire new cardmember bonus: may not be available if you held the card or earned its bonus"
+    name: "Sapphire bonus: once per card — may not be available if you ever held this card or earned its bonus"
     rule_type: bonus_once_per_lifetime
     source_type: official
     verification: page_captured
@@ -77,24 +80,9 @@ rules:
     applies_to: {cards: [chase:sapphire-preferred, chase:sapphire-reserve]}
     source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
     excerpt: "The new cardmember bonus may not be available to you if you previously held this card or received a new cardmember bonus for this card. We may also consider the number of cards you have opened and closed in determining your bonus eligibility."
-    verified_at: 2026-10-14
-  - rule_key: chase_sapphire_family_wording
-    bank_id: chase
-    name: "Sapphire: a second wording on the same page says “if you currently have one open”"
-    rule_type: family_restriction
-    source_type: official
-    verification: page_captured
-    source_id: chase:chase-sapphire-preferred
-    effect: approval
-    strength: soft
-    test: holding
-    match: {cards: [chase:sapphire-preferred, chase:sapphire-reserve], same_card: false}
-    applies_to: {cards: [chase:sapphire-preferred, chase:sapphire-reserve]}
-    source_url: https://creditcards.chase.com/rewards-credit-cards/sapphire/preferred
-    excerpt: "This credit card is unavailable to you if you currently have one open."
     notes:
-      - "The page does not say whether “one” means this card or any Sapphire card. Holding another Sapphire card is shown as a possible conflict to confirm with Chase, not as a certain one."
-    verified_at: 2026-10-14
+      - "Per card, with no time limit: having or having had the other Sapphire card is not named. The same wording is on the Sapphire Reserve page (read 2026-11-11). No 48-month or “one Sapphire bonus at a time” rule appears on either page."
+    verified_at: 2026-11-11
   - rule_key: chase_freedom_unlimited_24
     bank_id: chase
     name: "Freedom Unlimited: not for current cardmembers, nor previous cardmembers who earned its bonus in 24 months"

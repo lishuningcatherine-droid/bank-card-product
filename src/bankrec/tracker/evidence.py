@@ -80,6 +80,27 @@ def _end_dates(text: str) -> list[str]:
     return [m.group(0) for m in re.finditer(pat, t, re.I)][:3]
 
 
+_WORDS = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 9: "nine", 12: "twelve"}
+
+
+def _phrase(sentence: str, token: str) -> str | None:
+    """The phrase in the sentence that says the token; a leading number also counts when spelled out."""
+    low = sentence.lower()
+    if token.lower() in low:
+        return token
+    m = re.match(r"^(\d+) (.+)$", token)
+    if m and int(m.group(1)) in _WORDS:
+        spelled = f"{_WORDS[int(m.group(1))]} {m.group(2)}"
+        if spelled.lower() in low:
+            return spelled
+    return None
+
+
+def _says(sentence: str, token: str) -> bool:
+    """The token is in the sentence ("3 months" also matches "three months")."""
+    return _phrase(sentence, token) is not None
+
+
 def compare(entry: ManualCampaignIn, text: str) -> list[Row]:
     rows: list[Row] = []
     tier_ok = []
@@ -108,13 +129,13 @@ def compare(entry: ManualCampaignIn, text: str) -> list[Row]:
                     )
                 )
                 continue
-            ok = on_page and token.lower() in tier.text.lower()
+            found = _phrase(tier.text, token) if on_page else None
             rows.append(
                 Row(
                     f"{label}: {name}",
                     stored,
-                    f"“…{token}…” in the offer sentence" if ok else "",
-                    "match" if ok else "mismatch",
+                    f"“…{found}…” in the offer sentence" if found else "",
+                    "match" if found else "mismatch",
                 )
             )
     # variable amount
@@ -143,6 +164,11 @@ def compare(entry: ManualCampaignIn, text: str) -> list[Row]:
                 "match" if on else "not on page",
             )
         )
+        # the component's own sentence states no spending requirement (any spend belongs to another clause)
+        own = re.split(r",? plus ", norm(c.text), flags=re.I)[0]
+        spend_free = on and not re.search(r"\bspend|\bpurchases? of \$|after you make", own, re.I)
+        rows.append(Row("component: spending requirement", "none (not tied to the spend)",
+                        "no spending condition in its sentence" if spend_free else "", "match" if spend_free else "mismatch"))  # fmt: skip
         for name, stored in (("component: amount", usd(c.amount_cents)), ("component: restriction", c.restriction),
                              ("component: expiry", c.expires or "none")):  # fmt: skip
             ok = on and (stored == "none" or stored.lower() in c.text.lower())
@@ -170,12 +196,18 @@ def compare(entry: ManualCampaignIn, text: str) -> list[Row]:
     # deadline
     ends = _end_dates(text)
     stored_end = entry.end.text if entry.end else "unknown (none stated)"
-    ok = (entry.end is None and not ends) or (entry.end is not None and _find(text, entry.end.text))
+    end_found = entry.end is not None and _find(text, entry.end.text)
+    ok = (entry.end is None and not ends) or end_found
+    shown = (
+        _context(text, entry.end.text)
+        if end_found and entry.end is not None
+        else " | ".join(ends) or "(no end date stated)"
+    )
     rows.append(
         Row(
             "application deadline",
             stored_end,
-            " | ".join(ends) or "(no end date stated)",
+            shown,
             "match" if ok else "mismatch",
         )
     )
@@ -196,7 +228,9 @@ def compare(entry: ManualCampaignIn, text: str) -> list[Row]:
         Row(
             "channel",
             entry.channel,
-            "public card page, no login or invitation",
+            "public card page, no login or invitation"
+            if entry.source_kind == "official"
+            else "the source describes a public offer (not an invitation or referral)",
             "match" if entry.channel == "public" else "mismatch",
         )
     )
@@ -214,9 +248,29 @@ def markdown(
     lines = [
         f"### Entry {entry_id}: `{entry.card_key}`",
         "",
-        f"Source: {url} · read {when} · {how}",
+        f"Source: {url} · read {when} · {how}"
+        + (
+            ""
+            if entry.source_kind == "official"
+            else f" · **third-party source, NOT officially verified** ({entry.source_name})"
+        ),
         "",
-        "| Stored field | Stored value | Official source text | Verdict |",
+        *(
+            [
+                f"Past offer — observed {entry.observed_from} to {entry.observed_to} (dates its sources reported it,"
+                " not the bank's start or end; how each date was found is in the source note above)."
+            ]
+            if entry.observed_to is not None
+            else []
+        ),
+        "",
+        "| Stored field | Stored value | "
+        + (
+            "Official source text"
+            if entry.source_kind == "official"
+            else "Third-party source text (not officially verified)"
+        )
+        + " | Verdict |",
         "|---|---|---|---|",
     ]
     lines += [
@@ -230,3 +284,36 @@ def markdown(
 
 def entry_of(payload: dict[str, Any]) -> ManualCampaignIn:
     return ManualCampaignIn.model_validate({k: v for k, v in payload.items() if k != "amendments"})
+
+
+def read_third_party(
+    entry: ManualCampaignIn, fetcher: Any, settings: Any, get_browser: Any
+) -> tuple[str, datetime | None, str]:
+    """A third-party page: robots.txt first, then a plain read; rendered only when the entry's words are not in the
+    plain page (the article body is filled in by scripts). Returns (text, read at, how)."""
+    from datetime import UTC
+    from urllib.parse import urlsplit
+
+    from bankrec.ingest.common.html import parse_html
+
+    url = entry.source_url
+    if fetcher.robots.check(url) is not None:
+        return "", None, "robots.txt disallows this page: not read, entry stays pending"
+    fetcher.limiter.wait(urlsplit(url).netloc)
+    r = fetcher.client.get(url)
+    at = datetime.now(UTC)
+    if r.status_code != 200:
+        return "", None, f"third-party page answered HTTP {r.status_code}: not read, entry stays pending"
+    text = parse_html(r.text).text
+    if _find(text, entry.source_excerpt):
+        return text, at, "third-party page, plain HTTP GET, HTTP 200"
+    ctx = get_browser().new_context(user_agent=settings.user_agent, locale="en-US")
+    try:
+        page = ctx.new_page()
+        fetcher.limiter.wait(urlsplit(url).netloc)
+        page.goto(url, wait_until="domcontentloaded", timeout=45_000)
+        page.wait_for_timeout(4000)
+        text = page.inner_text("body")
+    finally:
+        ctx.close()
+    return text, datetime.now(UTC), "third-party page, rendered (its text is filled in by scripts)"

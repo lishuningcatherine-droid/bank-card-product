@@ -33,6 +33,7 @@ class SyncReport:
     status_changes: list[str] = field(default_factory=list)
     checks: dict[str, int] = field(default_factory=dict)
     rules: int = 0
+    rules_retired: list[str] = field(default_factory=list)
 
     def as_dict(self) -> dict[str, Any]:
         return self.__dict__.copy()
@@ -103,6 +104,12 @@ def sync_rules(session: Session, report: SyncReport) -> None:
         row.verified_at = _date(r["verified_at"]) or date.today()
         session.add(row)
         report.rules += 1
+    # a rule removed from config/tracker/rules.yaml is retired: it must no longer be applied or shown
+    keep = {r["rule_key"] for r in config.rules()}
+    for row in session.scalars(select(P.ApplicationRule)):
+        if row.rule_key not in keep:
+            report.rules_retired.append(row.rule_key)
+            session.delete(row)
     session.flush()
 
 

@@ -74,3 +74,18 @@ def test_check_target_never_prints_the_connection_string(db_url: str, monkeypatc
         engine_for.cache_clear()
     assert '"server_version"' in out
     assert db_url not in out and "@" not in out and "postgresql" not in out
+
+
+def test_component_spending_condition_is_checked_in_its_own_sentence() -> None:
+    assert verdicts(ENTRY)["component: spending requirement"] == "match"
+    tied = "Get $200 for hotel bookings through Example Travel in your first cardholder year after you spend $1,000"
+    page = PAGE.replace(ENTRY["offer_components"][0]["text"], tied)  # type: ignore[index]
+    entry = {**ENTRY, "offer_components": [{**ENTRY["offer_components"][0], "text": tied}]}  # type: ignore[index]
+    assert verdicts(entry, page)["component: spending requirement"] == "mismatch"
+
+
+def test_spelled_out_numbers_count_as_the_same_window() -> None:
+    from bankrec.tracker.evidence import _says
+
+    assert _says("after spending $6,000 within the first three months", "3 months")
+    assert not _says("after spending $6,000 within the first six months", "3 months")

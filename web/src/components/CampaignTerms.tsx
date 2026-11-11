@@ -40,7 +40,7 @@ export function ComponentsList({ t }: { t: Pick<CampaignTerms, "offer_components
       {comps.map((c, i) => (
         <li key={i}>
           <span className="font-medium text-ink-900">Plus {usd(c.amount_cents)} restricted credit</span>: for {c.restriction}
-          {c.expires ? `, ${c.expires}` : ""}. <span className="text-ink-500">Not cash and not converted to points; not counted in the value.</span>
+          {c.expires ? `, ${c.expires}` : ""}. No spending requirement is stated for it. <span className="text-ink-500">Not cash and not converted to points; not counted in the value.</span>
         </li>
       ))}
     </ul>

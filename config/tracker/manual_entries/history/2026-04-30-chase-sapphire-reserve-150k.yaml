@@ -1,0 +1,21 @@
+# Third-party history (owner 2026-11-11): NOT officially verified. Words and dates read 2026-11-11 under robots.txt.
+# - Doctor of Credit change log: "[4/30/26] Added Chase Sapphire Reserve 150,000" and
+#   "[6/16/26] Removed Chase Sapphire Reserve 150,000".
+# - The Points Guy, article dated June 8, 2026: "Last chance: Apply for the Chase Sapphire Reserve to earn 150,000
+#   bonus Ultimate Rewards points after spending $6,000 on purchases in the first three months from account opening."
+#   and "The offer is scheduled to end June 15 at 9 a.m. EDT".
+# The end time is a third party's statement, kept unconfirmed (never shown as an issuer deadline).
+card_key: chase:sapphire-reserve
+channel: public
+offer_type: welcome_bonus
+tiers:
+  - {amount: 150000, unit: points, unit_name: "Chase Ultimate Rewards points", spend_cents: 600000, window_count: 3,
+     window_unit: months, window_start: account_opening,
+     text: "Last chance: Apply for the Chase Sapphire Reserve to earn 150,000 bonus Ultimate Rewards points after spending $6,000 on purchases in the first three months from account opening."}
+end: {date: 2026-06-15, time: "09:00", time_zone: ET, text: "The offer is scheduled to end June 15 at 9 a.m. EDT"}
+source_kind: third_party
+source_name: "The Points Guy (article of June 8, 2026); dates from Doctor of Credit's change log (added 4/30/26, removed 6/16/26)"
+source_url: https://thepointsguy.com/news/chase-sapphire-reserve-150000-point-bonus-last-chance
+source_excerpt: "Last chance: Apply for the Chase Sapphire Reserve to earn 150,000 bonus Ultimate Rewards points after spending $6,000 on purchases in the first three months from account opening."
+observed_from: 2026-04-30
+observed_to: 2026-06-15

@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-11-11 (owner decisions of 2026-11-11: DESIGN §27.12; Neon prepared, not switched). Read this first in a new session, then
+Last updated: 2026-11-11 (DESIGN §27.12–27.13; Neon prepared, not switched; Sapphire rules per card). Read this first in a new session, then
 `CLAUDE.md` and the `docs/DESIGN.md` sections it points to.
 
 Requirements come from `~/Downloads/BUILD_PROMPT_v2.md` (the brief) and the owner's later messages. Where they
@@ -101,10 +101,11 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 - **Offer tracker (brief of 2026-11-09, DESIGN §27): phases 1–3 done; owner decisions of 2026-11-10 applied (§27.11).**
   25 tracked cards / 7 issuers (5 starter cards). Personal check: `POST /api/v1/campaigns/match`, `/offers/match`,
   `bankrec offers match FILE`.
-  - **5 manual entries pending review** (entered by `claude`): 1 Capital One Savor, 2 Capital One Venture (amended
-    2026-11-11: $300 stays credit as a restricted component), 3 Chase Sapphire Preferred, 4 Chase Sapphire Reserve,
-    5 Amex Gold (variable "as high as" offer). Evidence tables: `docs/review/2026-11-11-pending-offers.md` (all fields
-    match the official pages read 2026-11-11). **The owner approves; Claude never does.**
+  - **7 manual entries pending review** (entered by `claude`; the owner approves, Claude never does): 1 Savor,
+    2 Venture (with the restricted $300 stays credit), 3 Sapphire Preferred, 4 Sapphire Reserve, 5 Amex Gold (variable),
+    6 Sapphire Reserve 125k history and 7 Sapphire Reserve 150k history (third-party, not officially verified).
+    Evidence: `docs/review/2026-11-11-pending-offers.md` (all fields match). As of 2026-11-11 the owner said they
+    approved 1–5, but the database still showed them pending: the approvals have to be run (`bankrec offers approve`).
   - Venture X: no readable public offer (manual entry from an official source needed). Discover it Student and it
     Miles: first-year match states no amount, not recorded as a campaign.
   - **Automatic updates are not running.** Neon migration prepared and rehearsed locally (`docs/NEON_MIGRATION.md`);

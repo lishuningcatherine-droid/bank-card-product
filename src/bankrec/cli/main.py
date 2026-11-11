@@ -813,7 +813,7 @@ def offers_evidence(
         rows = [r for r in rows if not entry or r.id in entry]
         payloads = [(r.id, r.payload) for r in rows]
     fetcher = Fetcher(settings)
-    browser_ctx = renderer = None
+    renderer = None
     parts = [
         "# Pending manual entries: stored values vs. official pages",
         "",
@@ -821,6 +821,18 @@ def offers_evidence(
         " limit applied). Nothing was approved; the owner reviews each entry.",
         "",
     ]
+    shared: dict[str, Any] = {}
+
+    def get_browser() -> Any:  # one browser for the whole command
+        if "browser" not in shared:
+            from playwright.sync_api import sync_playwright
+
+            shared["ctx"] = sync_playwright().start()
+            shared["browser"] = shared["ctx"].chromium.launch(
+                headless=True, executable_path=settings.chromium_executable
+            )
+        return shared["browser"]
+
     try:
         for eid, payload in payloads:
             e = E.entry_of(payload)
@@ -833,21 +845,17 @@ def offers_evidence(
                 None,
             )
             how, text, at = "", "", None
-            if src is None:
+            if src is None and e.source_kind == "third_party":
+                text, at, how = E.read_third_party(e, fetcher, settings, get_browser)
+            elif src is None:
                 how = "no registered source for this URL: not fetched, entry stays pending"
             else:
                 bank = reg.bank(src.bank_id)
                 if src.requires_render:
                     if renderer is None:
-                        from playwright.sync_api import sync_playwright
-
                         from bankrec.ingest.render import Renderer
 
-                        browser_ctx = sync_playwright().start()
-                        browser = browser_ctx.chromium.launch(
-                            headless=True, executable_path=settings.chromium_executable
-                        )
-                        renderer = Renderer(settings, browser, fetcher.robots, fetcher.limiter)
+                        renderer = Renderer(settings, get_browser(), fetcher.robots, fetcher.limiter)
                     fr = renderer.render(src, bank)
                     how = "rendered in a browser (as the pipeline does for this page)"
                 else:
@@ -864,8 +872,9 @@ def offers_evidence(
                 parts.append(f"### Entry {eid}: `{e.card_key}`\n\nSource: {e.source_url} · {how}\n")
             typer.echo(f"entry {eid}: {how}")
     finally:
-        if browser_ctx is not None:
-            browser_ctx.stop()
+        if "ctx" in shared:
+            shared["browser"].close()
+            shared["ctx"].stop()
         fetcher.close()
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text("\n".join(parts), encoding="utf-8")
