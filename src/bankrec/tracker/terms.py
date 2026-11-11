@@ -41,6 +41,7 @@ MATERIAL = (
     "guaranteed_min",
     "offer_components",
 )
+TIER_TERMS = ("amount", "unit", "spend_cents", "window_count", "window_unit", "window_start", "incremental")
 # The campaign's channel (public / targeted / referral / branch) is part of its identity. Which official pages showed
 # it (``channels_seen``) is recorded but is not a term of the offer, so it never makes a new version.
 _WINDOW_START = (
@@ -158,7 +159,12 @@ def campaign_key(card_key: str, t: dict[str, Any]) -> str:
 
 def material(t: dict[str, Any]) -> dict[str, Any]:
     out = {k: t.get(k) for k in MATERIAL}
-    out["tiers"] = [{k: v for k, v in tier.items() if k != "text"} for tier in t.get("tiers") or []]
+    # a tier's terms only: display labels (unit_name) and wording (text) are not terms, and an absent "incremental"
+    # means not incremental — so the same offer read by an adapter or entered by hand hashes the same
+    out["tiers"] = [
+        {k: (bool(tier.get(k)) if k == "incremental" else tier.get(k)) for k in TIER_TERMS}
+        for tier in t.get("tiers") or []
+    ]
     # absent and empty are the same: offers read before these fields existed must hash as they did
     out["offer_components"] = [
         {k: v for k, v in c.items() if k != "text"} for c in t.get("offer_components") or []

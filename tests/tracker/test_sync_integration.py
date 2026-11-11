@@ -264,8 +264,81 @@ def test_rule_removed_from_config_is_retired(session, monkeypatch) -> None:  # t
     assert session.get(P.ApplicationRule, "chase_5_24") is None
 
 
+def _same_as_offer(**extra) -> manual.ManualCampaignIn:  # type: ignore[no-untyped-def]
+    """A hand entry of the offer `_offer` publishes (same terms), as a reviewer would enter it."""
+    return manual.ManualCampaignIn.model_validate({
+        "card_key": CARD["card_key"], "channel": "public", "offer_type": "welcome_bonus",
+        "tiers": [{"amount": 20000, "unit": "cash", "unit_name": None, "spend_cents": 50000, "window_count": 3,
+                   "window_unit": "months", "window_start": "account_opening",
+                   "text": "Earn a $200 bonus after you spend $500 on purchases in the first 3 months from account opening."}],
+        "annual_fee_cents": 0, "first_year_fee_cents": 0,
+        "source_kind": "official", "source_url": "https://www.examplebank.example/cards/everyday",
+        "source_excerpt": "Earn a $200 bonus after you spend $500", "observed_from": "2026-11-02", "demo": True, **extra,
+    })  # fmt: skip
+
+
+def test_approving_an_entry_for_a_tracked_offer_verifies_it_instead_of_duplicating(session) -> None:  # type: ignore[no-untyped-def]
+    p = _product(session)
+    _offer(session, p)
+    sync(session, T0)
+    [official] = _campaigns(session)
+    row = manual.add(session, _same_as_offer(), by="claude", now=T0)
+    c = manual.approve(session, row.id, reviewer="owner", now=T0 + timedelta(days=2))
+    assert c.id == official.id and len(_campaigns(session)) == 1
+    assert len(c.versions) == 1  # same terms: a verification only
+    assert row.state == "approved" and row.campaign_id == str(c.id)
+    checks = [k for k in session.scalars(select(P.CampaignCheck).where(P.CampaignCheck.campaign_id == c.id))]
+    assert any(k.outcome == "manual" and "same terms" in (k.detail or "") for k in checks)
+    # a reviewed entry with an extra restricted credit adds a version to the same campaign, keeping the old one
+    extra = {"offer_components": [{"kind": "travel_credit", "amount_cents": 10000, "restriction": "hotel bookings",
+                                   "expires": None, "text": "Plus $100 for hotel bookings"}]}  # fmt: skip
+    row2 = manual.add(session, _same_as_offer(**extra), by="claude", now=T0)
+    c2 = manual.approve(session, row2.id, reviewer="owner", now=T0 + timedelta(days=3))
+    assert c2.id == official.id and [v.version for v in c2.versions] == [1, 2]
+    assert (
+        c2.versions[0].valid_to is not None
+        and c2.versions[1].change_summary[0]["field"] == "offer_components"
+    )
+
+
+def test_existing_duplicates_are_merged(session, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    p = _product(session)
+    _offer(session, p)
+    sync(session, T0)
+    [official] = _campaigns(session)
+    row = manual.add(session, _same_as_offer(), by="claude", now=T0)
+    monkeypatch.setattr(
+        manual, "same_offer", lambda *a, **k: None
+    )  # the old approval path: always a new campaign
+    manual.approve(session, row.id, reviewer="owner", now=T0)
+    monkeypatch.undo()
+    assert len(_campaigns(session)) == 2
+    plan = manual.merge_duplicates(session, now=T0 + timedelta(days=1), apply=False)
+    assert (
+        len(plan) == 1 and "verification" in plan[0] and len(_campaigns(session)) == 2
+    )  # dry run changes nothing
+    manual.merge_duplicates(session, now=T0 + timedelta(days=1), apply=True)
+    [c] = _campaigns(session)
+    assert c.id == official.id and row.campaign_id == str(c.id) and len(c.versions) == 1
+    assert manual.merge_duplicates(session, now=T0 + timedelta(days=1), apply=True) == []
+
+
 def test_manual_time_needs_its_zone() -> None:
     with pytest.raises(ValueError, match="time zone"):
         manual.MomentIn.model_validate(
             {"date": "2026-12-05", "time": "23:59", "text": "Apply by 12/5 11:59pm"}
         )
+
+
+def test_a_version_that_keeps_the_amount_is_one_history_record(session) -> None:  # type: ignore[no-untyped-def]
+    from bankrec.tracker import views as TV
+
+    p = _product(session)
+    _offer(session, p)
+    sync(session, T0)
+    extra = {"eligibility_text": "Not available if you have had this card."}  # a material change, same amount
+    row = manual.add(session, _same_as_offer(**extra), by="claude", now=T0)
+    c = manual.approve(session, row.id, reviewer="owner", now=T0 + timedelta(days=2))
+    assert [v.version for v in c.versions] == [1, 2]
+    recs = TV.Builder(session, allow_demo=True).records(CARD["card_key"], "cash", c)
+    assert len(recs) == 1 and recs[0].current and recs[0].valid_from == c.versions[0].valid_from

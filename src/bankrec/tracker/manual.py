@@ -243,6 +243,17 @@ def approve(session: Session, entry_id: int, *, reviewer: str, now: datetime) ->
         raise ValueError(f"card {entry.card_key} is not synced yet (run `bankrec offers sync`)")
     t = entry.to_terms()
     observed = datetime.combine(entry.observed_from, time(12), tzinfo=UTC)
+    if entry.observed_to is None:
+        # the same current offer already tracked (same card, channel, type and reward structure): the review
+        # verifies it — or adds a version when a term differs — instead of creating a duplicate (owner 2026-11-11)
+        existing = same_offer(session, entry.card_key, t)
+        if existing is not None:
+            verify_existing(session, existing, entry, t, entry_id=row.id, entered_by=row.entered_by,
+                            reviewer=reviewer, now=now)  # fmt: skip
+            row.state, row.reviewed_by, row.reviewed_at = "approved", reviewer, now
+            row.campaign_id = str(existing.id)
+            session.flush()
+            return existing
     c = P.Campaign(
         campaign_key=f"{terms.campaign_key(entry.card_key, t)}|m{row.id}",
         card_key=entry.card_key,
@@ -306,6 +317,95 @@ def approve(session: Session, entry_id: int, *, reviewer: str, now: datetime) ->
     row.state, row.reviewed_by, row.reviewed_at, row.campaign_id = "approved", reviewer, now, str(c.id)
     session.flush()
     return c
+
+
+def same_offer(session: Session, card_key: str, t: dict[str, Any]) -> P.Campaign | None:
+    """The current campaign with this offer's identity, if any (expired or withdrawn ones are history)."""
+    return session.scalar(
+        select(P.Campaign).where(
+            P.Campaign.campaign_key == terms.campaign_key(card_key, t),
+            P.Campaign.status.not_in(tuple(status.FINAL)),
+        )
+    )
+
+
+def verify_existing(
+    session: Session,
+    c: P.Campaign,
+    entry: ManualCampaignIn,
+    t: dict[str, Any],
+    *,
+    entry_id: int,
+    entered_by: str,
+    reviewer: str,
+    now: datetime,
+) -> bool:
+    """Record a reviewed manual entry on the campaign it describes. Same terms → a verification only; a material
+    difference → a new version (the old one kept). Returns whether a version was added."""
+    observed = datetime.combine(entry.observed_from, time(12), tzinfo=UTC)
+    latest = max(c.versions, key=lambda v: v.version)
+    changed = terms.material_hash(t) != terms.material_hash(latest.terms)
+    detail = f"manual entry {entry_id}: entered by {entered_by}, approved by {reviewer}; source read {entry.observed_from}"
+    if changed:
+        changes = terms.diff(latest.terms, t)
+        add_version(session, c, t, max(observed, latest.valid_from), url=entry.source_url,
+                    excerpt=entry.source_excerpt, changes=changes)  # fmt: skip
+        detail += "; new version: " + ", ".join(ch["field"] for ch in changes)
+    else:
+        detail += "; same terms"
+    session.add(P.CampaignCheck(campaign_id=c.id, at=now, outcome="manual", detail=detail))
+    official = entry.source_kind == "official"
+    if official:
+        c.officially_verified = True
+        if c.last_verified_at is None or observed > c.last_verified_at:
+            c.last_verified_at, c.consecutive_failures = observed, 0
+    st, why = status.compute(
+        c.status,
+        end=t.get("end"),
+        now=now,
+        last_verified_at=c.last_verified_at if c.source_kind == "official" else None,
+        consecutive_failures=c.consecutive_failures,
+        not_seen=False,
+    )
+    if st != c.status:
+        log_status(session, c, st, f"manual entry {entry_id} approved by {reviewer}; {why}", now,
+                   trigger="manual", actor=reviewer)  # fmt: skip
+    session.flush()
+    return changed
+
+
+def merge_duplicates(session: Session, *, now: datetime, apply: bool) -> list[str]:
+    """Campaigns created from approved manual entries while the same current offer was already tracked: fold each
+    into that campaign (a verification, or a new version) and remove the duplicate. Dry run unless ``apply``."""
+    done: list[str] = []
+    rows = session.scalars(
+        select(S.ManualCampaignEntry).where(
+            S.ManualCampaignEntry.state == "approved", S.ManualCampaignEntry.campaign_id.is_not(None)
+        )
+    )
+    for row in rows:
+        dup = session.get(P.Campaign, row.campaign_id)
+        if dup is None or "|m" not in dup.campaign_key or dup.status in status.FINAL:
+            continue
+        entry = ManualCampaignIn.model_validate({k: v for k, v in row.payload.items() if k != "amendments"})
+        if entry.observed_to is not None:
+            continue
+        t = entry.to_terms()
+        target = same_offer(session, entry.card_key, t)
+        if target is None or target.id == dup.id:
+            continue
+        latest = max(target.versions, key=lambda v: v.version)
+        what = (
+            "new version" if terms.material_hash(t) != terms.material_hash(latest.terms) else "verification"
+        )
+        done.append(f"entry {row.id} ({entry.card_key}): merge into the existing campaign as a {what}")
+        if apply:
+            verify_existing(session, target, entry, t, entry_id=row.id, entered_by=row.entered_by,
+                            reviewer=row.reviewed_by or "owner", now=now)  # fmt: skip
+            row.campaign_id = str(target.id)
+            session.delete(dup)
+            session.flush()
+    return done
 
 
 def reject(session: Session, entry_id: int, *, reviewer: str, note: str, now: datetime) -> None:

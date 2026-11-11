@@ -881,6 +881,23 @@ def offers_evidence(
     typer.echo(f"written: {out}")
 
 
+@offers_app.command("merge-duplicates")
+def offers_merge_duplicates(
+    apply: Annotated[bool, typer.Option(help="make the changes (default: only list them)")] = False,
+) -> None:
+    """Fold campaigns created from approved manual entries into the same current offer that was already tracked."""
+    from bankrec.tracker.manual import merge_duplicates
+
+    with _session() as s:
+        done = merge_duplicates(s, now=_now(), apply=apply)
+        if apply:
+            s.commit()
+    for line in done or ["nothing to merge"]:
+        typer.echo(line)
+    if done and not apply:
+        typer.echo("dry run: re-run with --apply to merge")
+
+
 @offers_app.command("pending")
 def offers_pending() -> None:
     """List hand-entered campaigns waiting for review."""

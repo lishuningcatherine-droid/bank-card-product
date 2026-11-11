@@ -101,11 +101,10 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 - **Offer tracker (brief of 2026-11-09, DESIGN §27): phases 1–3 done; owner decisions of 2026-11-10 applied (§27.11).**
   25 tracked cards / 7 issuers (5 starter cards). Personal check: `POST /api/v1/campaigns/match`, `/offers/match`,
   `bankrec offers match FILE`.
-  - **7 manual entries pending review** (entered by `claude`; the owner approves, Claude never does): 1 Savor,
-    2 Venture (with the restricted $300 stays credit), 3 Sapphire Preferred, 4 Sapphire Reserve, 5 Amex Gold (variable),
-    6 Sapphire Reserve 125k history and 7 Sapphire Reserve 150k history (third-party, not officially verified).
-    Evidence: `docs/review/2026-11-11-pending-offers.md` (all fields match). As of 2026-11-11 the owner said they
-    approved 1–5, but the database still showed them pending: the approvals have to be run (`bankrec offers approve`).
+  - **All 7 manual entries approved by the owner (2026-11-11).** Savor, Venture, Sapphire Preferred and Reserve were
+    folded into their existing campaigns (one current offer per card); Amex Gold is a manual campaign; the two
+    Sapphire Reserve history entries (125k, 150k; third-party, not officially verified) are expired campaigns.
+    Evidence: `docs/review/2026-11-11-pending-offers.md`.
   - Venture X: no readable public offer (manual entry from an official source needed). Discover it Student and it
     Miles: first-year match states no amount, not recorded as a campaign.
   - **Automatic updates are not running.** Neon migration prepared and rehearsed locally (`docs/NEON_MIGRATION.md`);

@@ -1671,3 +1671,9 @@ alone never decides; no card has a stated minimum score. The response also lists
   labels say "including third-party records"; `official_only` excludes them.
 - `offers evidence` also reads third-party sources (robots.txt first; rendered only when the text is filled in by
   scripts) and labels their column "not officially verified".
+- **Approving a manual entry for an offer already tracked** (same identity, not expired/withdrawn) verifies that
+  campaign — a `manual` check, and a new version only when a material term differs — instead of creating a second
+  current campaign. `bankrec offers merge-duplicates [--apply]` folded the four duplicates created on 2026-11-11
+  (Savor: verification; Sapphire Preferred / Reserve: v2 adding the eligibility wording; Venture: v2 adding the $300
+  stays credit). Tier terms compare only amount, unit, spend, window and incremental (display labels are not terms).
+- **History records:** consecutive versions of one campaign with the same reward amount count as one record.
