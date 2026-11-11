@@ -38,6 +38,8 @@ MATERIAL = (
     "start",
     "end",
     "eligibility_text",
+    "guaranteed_min",
+    "offer_components",
 )
 # The campaign's channel (public / targeted / referral / branch) is part of its identity. Which official pages showed
 # it (``channels_seen``) is recorded but is not a term of the offer, so it never makes a new version.
@@ -157,6 +159,10 @@ def campaign_key(card_key: str, t: dict[str, Any]) -> str:
 def material(t: dict[str, Any]) -> dict[str, Any]:
     out = {k: t.get(k) for k in MATERIAL}
     out["tiers"] = [{k: v for k, v in tier.items() if k != "text"} for tier in t.get("tiers") or []]
+    # absent and empty are the same: offers read before these fields existed must hash as they did
+    out["offer_components"] = [
+        {k: v for k, v in c.items() if k != "text"} for c in t.get("offer_components") or []
+    ] or None
     for k in ("start", "end"):
         m = out.get(k)
         out[k] = {f: m.get(f) for f in ("date", "time", "time_known")} if m else None

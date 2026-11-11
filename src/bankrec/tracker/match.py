@@ -40,6 +40,7 @@ ACTION_LABEL: dict[str, str] = {
 ACTION_ORDER = {"consider_now": 0, "verify_first": 1, "improve_credit": 2, "not_suitable": 3}
 OUTCOME_LABEL = {
     "conflict": "Conflict",
+    "needs_verification": "Needs verification",
     "possible_conflict": "Possible conflict",
     "unknown": "Needs your answer",
     "clear": "No conflict found",
@@ -134,7 +135,7 @@ class FindingView(BaseModel):
     boundary: bool = Field(
         False, description="unknown only because an answer falls in the window's boundary month"
     )
-    outcome: Literal["conflict", "possible_conflict", "unknown", "clear", "info"]
+    outcome: Literal["conflict", "needs_verification", "possible_conflict", "unknown", "clear", "info"]
     outcome_label: str
     explanation: str
     needs: list[str]
@@ -364,15 +365,42 @@ def _reward_text(terms: Any) -> str:
     amt, unit = terms.total_amount, terms.unit
     if amt is None:
         return "a reward whose amount was not read"
-    if unit in ("points", "miles"):
-        return f"{amt:,} {terms.unit_name or unit}"
-    return usd(amt) + (" statement credit" if unit == "statement_credit" else "")
+    text = (
+        f"{amt:,} {terms.unit_name or unit}"
+        if unit in ("points", "miles")
+        else usd(amt) + (" statement credit" if unit == "statement_credit" else "")
+    )
+    if terms.amount_qualifier == "up_to":
+        floor = (
+            f"; published minimum {terms.guaranteed_min:,}"
+            if terms.guaranteed_min is not None
+            else "; no guaranteed minimum published"
+        )
+        return f"up to {text} (varies by applicant{floor})"
+    if terms.amount_qualifier == "starting_at":
+        return f"at least {text}"
+    return text
+
+
+def component_text(c: Any) -> str:
+    when = f", {c.expires}" if c.expires else ""
+    return f"{usd(c.amount_cents)} credit for {c.restriction}{when} — restricted, not cash and not converted to points"
+
+
+def first_year(v: Any) -> FirstYear:
+    fy = _first_year(v)
+    comps = list(getattr(v.terms, "offer_components", None) or [])
+    if comps:
+        fy.text += " Not counted above: " + "; ".join(component_text(c) for c in comps) + "."
+    return fy
 
 
 def offer_appeal(v: Any) -> Judgement:
     h = v.history
     pts = [f"Offer: {_reward_text(v.terms)}" + (f" after spending {usd(v.terms.min_spend_cents)}"
            if v.terms.min_spend_cents else "") + "."]  # fmt: skip
+    for comp in getattr(v.terms, "offer_components", None) or []:
+        pts.append("Plus a separate component: " + component_text(comp) + ".")
     pts.append(h.text)
     if v.value.cents is not None:
         pts.append(
@@ -397,6 +425,7 @@ def offer_appeal(v: Any) -> Judgement:
         "usual": "The usual level recorded here",
         "below_usual": "Below the usual level recorded here",
         "no_comparison": "Not enough history to compare",
+        "variable_offer": "Variable offer: not compared with history",
     }[status]
     return Judgement(status=status, label=label, points=pts)
 
@@ -553,7 +582,7 @@ def credit_signals(
     return strong, caution, missing
 
 
-def first_year(v: Any) -> FirstYear:
+def _first_year(v: Any) -> FirstYear:
     val = v.value
     fee = val.first_year_fee_cents
     if val.cents is None:
@@ -595,7 +624,14 @@ def assess(
     cfg = config.settings()
     margin = float(cfg["reach"]["safety_margin"])
     findings = [evaluate(r, card, facts, p, today) for r in rules if applies(r, card)]
-    order = {"conflict": 0, "possible_conflict": 1, "unknown": 2, "info": 3, "clear": 4}
+    order = {
+        "conflict": 0,
+        "needs_verification": 1,
+        "possible_conflict": 2,
+        "unknown": 3,
+        "info": 4,
+        "clear": 5,
+    }
     findings.sort(key=lambda f: (order[f.outcome], f.effect != "bonus", f.basis != "official"))
     views = [finding_view(f) for f in findings]
     conflicts = [x for x in views if x.outcome == "conflict"]
@@ -611,9 +647,11 @@ def assess(
     def judge(effect: str) -> Judgement:
         fs = [x for x in views if x.effect == effect]
         pts = [f"{x.outcome_label}: {x.name} ({x.basis_label.lower()}) — {x.explanation}" for x in fs
-               if x.outcome in ("conflict", "possible_conflict", "unknown")]  # fmt: skip
+               if x.outcome in ("conflict", "needs_verification", "possible_conflict", "unknown")]  # fmt: skip
         if any(x.outcome == "conflict" for x in fs):
             st = "known_conflict"
+        elif any(x.outcome == "needs_verification" for x in fs):
+            st = "needs_verification"
         elif any(x.outcome == "possible_conflict" for x in fs):
             st = "possible_conflict"
         elif any(x.outcome == "unknown" for x in fs):
@@ -629,6 +667,7 @@ def assess(
             pts.append("Only the issuer decides approval; this site does not estimate approval odds.")
             label = {
                 "known_conflict": "A known approval rule blocks this application",
+                "needs_verification": "Needs verification: a rule quoted only by a third party may apply",
                 "possible_conflict": "A rule may block approval",
                 "credit_risk": "No known rule conflict, but your credit history is a risk",
                 "needs_info": "Not enough information to judge",
@@ -642,6 +681,7 @@ def assess(
                 )
             label = {
                 "known_conflict": "You are not eligible for this bonus by your answers",
+                "needs_verification": "Needs verification: a restriction quoted only by a third party may apply",
                 "possible_conflict": "You may not be eligible for this bonus",
                 "needs_info": "Bonus eligibility needs your answers",
                 "no_known_conflict": "No known bonus restriction applies by your answers",
@@ -658,6 +698,12 @@ def assess(
             uncertainty.append(m)
     if r.status == "unknown":
         uncertainty.append(r.text)
+    for x in views:
+        if x.outcome == "needs_verification":
+            uncertainty.append(
+                f"“{x.name}” matches your answers, but this site has only a third party's quotation of the issuer's"
+                " wording; it needs verification against the issuer's own terms before it is treated as a conflict."
+            )
     community = [x for x in views if x.basis == "community" and x.outcome != "clear"]
     for x in community:
         uncertainty.append(f"“{x.name}” is a community-reported rule; the issuer does not publish it.")
@@ -699,7 +745,7 @@ def assess(
     else:
         blockers: list[str] = list(inc_confirm)
         for x in views:
-            if x.outcome in ("possible_conflict", "unknown", "conflict"):
+            if x.outcome in ("needs_verification", "possible_conflict", "unknown", "conflict"):
                 blockers.append(f"{x.name}: {x.explanation} ({x.basis_label})")
         if missing:
             blockers.append("Missing: " + "; ".join(m.lower() for m in missing) + ".")

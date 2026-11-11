@@ -58,8 +58,9 @@ async def test_current_offers_without_a_profile(client: httpx.AsyncClient) -> No
         # no stated end date → no invented end and no countdown
         if i["terms"]["end"]["date"] is None:
             assert i["deadline_label"] == "Deadline unknown" and i["countdown_to"] is None
-        # one record only → never a comparative label
-        assert i["history"]["code"] == "insufficient_history"
+        # one record only → never a comparative label; a variable ("up to") offer is never compared at all
+        expected = "variable_offer" if i["terms"]["amount_qualifier"] == "up_to" else "insufficient_history"
+        assert i["history"]["code"] == expected
     assert any("Eastern" in a for a in body["assumptions"])
 
 

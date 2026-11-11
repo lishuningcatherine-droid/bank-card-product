@@ -55,12 +55,25 @@ class Tier(BaseModel):
     text: str | None = None
 
 
+class Component(BaseModel):
+    """A restricted part of a welcome offer, shown on its own: never counted as cash, never converted to points."""
+
+    kind: str
+    amount_cents: int
+    restriction: str
+    expires: str | None = None
+    text: str
+
+
 class Terms(BaseModel):
     offer_type: str
     channel: str
     tiers: list[Tier]
     amount_qualifier: str | None = None
     total_amount: int | None
+    guaranteed_min: int | None = None
+    guaranteed_min_text: str | None = None
+    offer_components: list[Component] = Field(default_factory=list)
     unit: str
     unit_name: str | None = None
     stated_cash_value_cents: int | None = None
@@ -90,7 +103,13 @@ class Value(BaseModel):
 
 class HistoryLabel(BaseModel):
     code: Literal[
-        "insufficient_history", "all_time_high", "above_usual", "recent_high", "usual", "below_usual"
+        "insufficient_history",
+        "variable_offer",
+        "all_time_high",
+        "above_usual",
+        "recent_high",
+        "usual",
+        "below_usual",
     ]
     text: str
     records: int
@@ -237,8 +256,9 @@ def terms_view(t: dict[str, Any]) -> Terms:
         **{
             k: t.get(k)
             for k in Terms.model_fields
-            if k not in ("tiers", "start", "end", "categories", "window_start")
+            if k not in ("tiers", "start", "end", "categories", "window_start", "offer_components")
         },
+        offer_components=[Component(**c) for c in t.get("offer_components") or []],
         tiers=[Tier(**{k: v for k, v in x.items() if k in Tier.model_fields}) for x in t.get("tiers") or []],
         window_start=t.get("window_start") or "not_stated",
         categories=list(t.get("categories") or []),
@@ -319,11 +339,13 @@ class Builder:
         ):
             latest = max(c.versions, key=lambda v: v.version)
             for v in c.versions:
-                if v.reward_amount is None or v.reward_unit != unit:
+                # a variable offer ("as high as") counts only at a published guaranteed minimum, else not at all
+                amount = valuation.guaranteed_amount(v.terms)
+                if amount is None or v.reward_unit != unit:
                     continue
                 out.append(
                     history.Record(
-                        amount=int(v.reward_amount),
+                        amount=amount,
                         unit=unit,
                         valid_from=v.valid_from,
                         valid_to=v.valid_to,
@@ -349,7 +371,18 @@ class Builder:
                 not_seen=c.status == "pending_verification",
             )
         v = valuation.value(t, card.points_program, self.overrides)
-        h = history.label(self.records(c.card_key, t.get("unit") or "", c), now)
+        if valuation.guaranteed_amount(t) is None and valuation.is_variable(t):
+            h = {
+                "code": "variable_offer",
+                "text": "Variable offer (stated as “as high as”, no published minimum): not compared with the"
+                " history recorded on this site and never labelled as a high.",
+                "records": 0,
+                "coverage_months": 0,
+                "median": None,
+                "official_only": False,
+            }
+        else:
+            h = history.label(self.records(c.card_key, t.get("unit") or "", c), now)
         return CampaignView(
             id=str(c.id),
             campaign_key=c.campaign_key,

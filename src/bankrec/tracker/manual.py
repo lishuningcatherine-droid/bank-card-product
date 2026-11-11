@@ -41,6 +41,20 @@ class TierIn(BaseModel):
     text: str = Field(min_length=3)
 
 
+class ComponentIn(BaseModel):
+    """A separate, restricted part of a welcome offer (e.g. a travel credit usable only on certain bookings). It is
+    never counted as cash and never converted into points or miles; its restriction and expiry stay as stated."""
+
+    model_config = ConfigDict(extra="forbid")
+    kind: Literal["travel_credit", "restricted_statement_credit", "other"]
+    amount_cents: int = Field(gt=0)
+    restriction: str = Field(min_length=5, description="what it can be used for, as stated")
+    expires: str | None = Field(
+        None, description="when it must be used, as stated (e.g. 'first cardholder year')"
+    )
+    text: str = Field(min_length=10, description="the sentence that states it, verbatim")
+
+
 class MomentIn(BaseModel):
     """A stated date. A time is kept only when stated, with the zone it was stated in; it is never filled in."""
 
@@ -88,6 +102,10 @@ class ManualCampaignIn(BaseModel):
     offer_type: Literal["welcome_bonus", "spend_multiplier", "first_year_fee", "first_year_match", "other"]
     tiers: list[TierIn] = Field(min_length=1)
     amount_qualifier: Literal["exact", "up_to", "starting_at", "tiered", "unbounded"] = "exact"
+    # for a variable ("as high as") offer: a guaranteed minimum the issuer publishes, with its words
+    guaranteed_min: int | None = Field(default=None, ge=0)
+    guaranteed_min_text: str | None = None
+    offer_components: list[ComponentIn] = Field(default_factory=list)
     annual_fee_cents: int | None = Field(default=None, ge=0)
     first_year_fee_cents: int | None = Field(default=None, ge=0)
     start: MomentIn | None = None
@@ -118,6 +136,12 @@ class ManualCampaignIn(BaseModel):
             raise ValueError(f"unknown card_key {self.card_key!r} (config/tracker/cards.yaml)")
         if self.amount_qualifier == "tiered" and len(self.tiers) < 2:
             raise ValueError("a tiered offer has at least two tiers")
+        if (self.guaranteed_min is None) != (self.guaranteed_min_text is None):
+            raise ValueError(
+                "a guaranteed minimum needs the words that state it (guaranteed_min_text), and back"
+            )
+        if self.guaranteed_min is not None and self.amount_qualifier != "up_to":
+            raise ValueError("guaranteed_min is only for an up-to (variable) offer")
         if self.observed_to is not None and self.observed_to < self.observed_from:
             raise ValueError("observed_to precedes observed_from")
         if self.demo and not re.search(r"example", self.card_key):
@@ -134,6 +158,9 @@ class ManualCampaignIn(BaseModel):
             "tiers": [t.model_dump() for t in self.tiers],
             "amount_qualifier": self.amount_qualifier,
             "total_amount": total,
+            "guaranteed_min": self.guaranteed_min,
+            "guaranteed_min_text": terms.norm(self.guaranteed_min_text),
+            "offer_components": [c.model_dump() for c in self.offer_components],
             "unit": first.unit,
             "unit_name": first.unit_name,
             "stated_cash_value_cents": None,
@@ -174,6 +201,26 @@ def add(session: Session, entry: ManualCampaignIn, *, by: str, now: datetime) ->
     return row
 
 
+def amend(
+    session: Session, entry_id: int, entry: ManualCampaignIn, *, by: str, reason: str, now: datetime
+) -> S.ManualCampaignEntry:
+    """Replace the payload of an entry that is still pending review. It stays pending; the previous payload, who
+    amended it, when and why are kept in the payload's ``amendments`` list. Approved or rejected entries are final."""
+    row = session.get(S.ManualCampaignEntry, entry_id)
+    if row is None or row.state != "pending_review":
+        raise ValueError(f"entry {entry_id} is not pending review")
+    if entry.card_key != row.card_key:
+        raise ValueError("an amendment keeps the entry's card")
+    history = list((row.payload or {}).get("amendments") or [])
+    previous = {k: v for k, v in (row.payload or {}).items() if k != "amendments"}
+    history.append({"by": by, "at": now.isoformat(), "reason": reason, "previous": previous})
+    row.payload = {**entry.model_dump(mode="json"), "amendments": history}
+    row.channel, row.source_kind, row.source_name = entry.channel, entry.source_kind, entry.source_name
+    row.source_url, row.source_excerpt = entry.source_url, entry.source_excerpt
+    session.flush()
+    return row
+
+
 def pending(session: Session) -> list[S.ManualCampaignEntry]:
     return list(
         session.scalars(
@@ -190,7 +237,7 @@ def approve(session: Session, entry_id: int, *, reviewer: str, now: datetime) ->
         raise ValueError(f"entry {entry_id} is not pending review")
     if row.entered_by == reviewer:
         raise ValueError("an entry is approved by someone other than the person who entered it")
-    entry = ManualCampaignIn.model_validate(row.payload)
+    entry = ManualCampaignIn.model_validate({k: v for k, v in row.payload.items() if k != "amendments"})
     card = session.get(P.TrackedCard, entry.card_key)
     if card is None:
         raise ValueError(f"card {entry.card_key} is not synced yet (run `bankrec offers sync`)")

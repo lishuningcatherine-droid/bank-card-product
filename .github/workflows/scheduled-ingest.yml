@@ -12,11 +12,18 @@ on:
         description: "empty = the offer tracker's cards; or a tier: apy | offer | terms | regulator_release"
         required: false
         default: ""
+      database:
+        description: "test = the Neon test branch (secret DATABASE_URL_TEST); production = secret DATABASE_URL"
+        type: choice
+        options: [test, production]
+        default: test
 permissions:
   contents: read
 jobs:
   ingest:
-    if: vars.BANKREC_SCHEDULER == 'github'
+    # the daily schedule runs only once BANKREC_SCHEDULER is "github"; a manual run is always allowed (for testing the
+    # cloud database before the schedule is switched on) and targets the test branch unless "production" is chosen
+    if: github.event_name == 'workflow_dispatch' || vars.BANKREC_SCHEDULER == 'github'
     runs-on: ubuntu-latest
     concurrency:
       group: ingest-${{ inputs.tier || 'tracker' }}
@@ -25,18 +32,32 @@ jobs:
       BANKREC_ENV: prod
       BANKREC_SCHEDULER: github
       CAPTURE_RUNNER_LABEL: github-actions
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      # test unless a manual run explicitly chose production; the schedule always means production
+      DB_TARGET: ${{ (github.event_name == 'workflow_dispatch' && inputs.database != 'production') && 'test' || 'production' }}
       BANKREC_CONTACT_EMAIL: ${{ secrets.BANKREC_CONTACT_EMAIL }}
       REVALIDATE_URL: ${{ secrets.REVALIDATE_URL }}
       REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
       ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
       ALERT_WEBHOOK_SECRET: ${{ secrets.ALERT_WEBHOOK_SECRET }}
     steps:
+      - name: Choose the database (fails rather than fall back to another one)
+        env:
+          URL_TEST: ${{ secrets.DATABASE_URL_TEST }}
+          URL_PROD: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ "$DB_TARGET" = test ]; then url="$URL_TEST"; else url="$URL_PROD"; fi
+          if [ -z "$url" ]; then echo "::error::no database secret for the $DB_TARGET target"; exit 1; fi
+          case "$url" in *-pooler.*) echo "::error::use the direct (unpooled) connection string"; exit 1 ;; esac
+          echo "::add-mask::$url"
+          { echo "DATABASE_URL<<EOF_DB_URL"; echo "$url"; echo "EOF_DB_URL"; } >> "$GITHUB_ENV"
+          echo "database target: $DB_TARGET"
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
         with: { version: "0.11.32" }
       - run: uv sync --frozen --no-dev
       - run: uv run playwright install --with-deps chromium
+      # which database this run writes to, without printing its address: endpoint kind, revision, row counts
+      - run: uv run bankrec db check-target
       - name: Offer tracker cards
         if: ${{ !inputs.tier }}
         run: uv run bankrec offers update --trigger github

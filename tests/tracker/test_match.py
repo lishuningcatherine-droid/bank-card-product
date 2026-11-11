@@ -126,13 +126,20 @@ def test_persona3_amex_bonus_received_before_separates_approval_from_bonus() -> 
                     open_now=False, bonus="yes", bonus_month="2021-06")  # fmt: skip
     p = MatchProfile(**{**FULL, "cards": [held]})
     a = run(view("amex:blue-cash-preferred"), p)
-    assert a.bonus.status == "known_conflict"
+    # the once-per-lifetime wording is known only from a third party's quotation: "needs verification" (owner
+    # 2026-11-10), shown as a bonus-eligibility issue, never as an approval conflict
+    assert a.bonus.status == "needs_verification" and "Needs verification" in a.bonus.label
     assert a.approval.status == "no_known_conflict"
     assert a.approval.label != a.bonus.label
     assert any("does not estimate approval odds" in x for x in a.approval.points)
-    [c] = a.conflicts
-    assert c.rule_key == "amex_once_per_lifetime" and c.basis == "official" and c.effect == "bonus"
-    assert a.action == "not_suitable"
+    assert a.conflicts == []
+    [f] = [f for f in a.eligibility if f.rule_key == "amex_once_per_lifetime"]
+    assert f.outcome == "needs_verification" and f.basis == "official" and f.effect == "bonus"
+    assert f.verification == "third_party_quote" and f.officially_verified is False
+    assert f.source_url.startswith("https://") and f.excerpt  # the original source is kept
+    assert a.eligibility[0].rule_key == "amex_once_per_lifetime"  # listed first
+    assert a.action == "verify_first"
+    assert any("third party" in u for u in a.uncertainty)
     assert any("during the application" in x for x in a.bonus.points)  # the pop-up notice
 
 
@@ -311,8 +318,9 @@ def test_amex_third_party_quote_is_marked_not_officially_verified() -> None:
     held = HeldCard(card_key="amex:blue-cash-preferred", bank_id="american_express", opened="2021-03",
                     open_now=False, bonus="yes", bonus_month="2021-06")  # fmt: skip
     a = run(view("amex:blue-cash-preferred"), MatchProfile(**{**FULL, "cards": [held]}))
-    [c] = a.conflicts
-    assert c.officially_verified is False and "not officially verified" in c.basis_label
+    [f] = [f for f in a.eligibility if f.rule_key == "amex_once_per_lifetime"]
+    assert f.officially_verified is False and "not officially verified" in f.basis_label
+    assert f.outcome_label == "Needs verification"
     assert any("not officially verified" in r for r in a.action_reasons)
     sapphire = finding_for("chase_sapphire_card", "chase:sapphire-preferred")
     assert sapphire.officially_verified is True
@@ -425,3 +433,103 @@ def test_valuation_own_value_exact_offer_and_up_to_offer() -> None:
     assert (
         u["cents"] is None and "up to 60,000" in u["assumption"] and "varies by applicant" in u["assumption"]
     )
+
+
+def test_third_party_rule_becomes_a_conflict_only_once_the_issuer_confirms_it() -> None:
+    held = HeldCard(card_key="amex:blue-cash-preferred", bank_id="american_express", opened="2021-03",
+                    open_now=False, bonus="yes", bonus_month="2021-06")  # fmt: skip
+    p = MatchProfile(cards=[held])
+    quoted = rule("amex_once_per_lifetime")
+    assert (
+        evaluate(quoted, FACTS["amex:blue-cash-preferred"], FACTS, p, TODAY).outcome == "needs_verification"
+    )
+    confirmed = {**quoted, "verification": "page_captured"}  # as if read on the issuer's own terms
+    assert evaluate(confirmed, FACTS["amex:blue-cash-preferred"], FACTS, p, TODAY).outcome == "conflict"
+
+
+# ----------------------------------------------------------------------------------- owner decisions 2026-11-11
+
+
+def _entry(name: str) -> Any:
+    import yaml
+
+    from bankrec.tracker.manual import ManualCampaignIn
+
+    return ManualCampaignIn.model_validate(
+        yaml.safe_load((config.DIR / "manual_entries" / name).read_text(encoding="utf-8"))
+    )
+
+
+def test_venture_stays_credit_is_a_separate_restricted_component() -> None:
+    from bankrec.tracker import terms as T
+    from bankrec.tracker.valuation import value
+
+    t = _entry("2026-11-10-capital-one-venture.yaml").to_terms()
+    [c] = t["offer_components"]
+    assert c["amount_cents"] == 30000 and c["kind"] == "travel_credit"
+    assert c["restriction"] == "hotel and vacation rental bookings through Capital One Travel"
+    assert c["expires"] == "in your first cardholder year"
+    # the miles stay miles; the credit is never added to them nor counted as cash
+    assert t["total_amount"] == 75000 and t["unit"] == "miles"
+    v = value(t, "c1_miles", {"c1_miles": 1.0})
+    assert v["cents"] == 75000  # 75,000 miles at the visitor's 1¢ — the $300 credit is not in it
+    # the component is a material term: changing it makes a new version, its wording alone does not
+    other = {**t, "offer_components": [{**c, "amount_cents": 25000}]}
+    assert T.material_hash(other) != T.material_hash(t)
+    reworded = {**t, "offer_components": [{**c, "text": c["text"] + " (see terms)"}]}
+    assert T.material_hash(reworded) == T.material_hash(t)
+    # offers read before offer_components existed hash as they did
+    old = {k: x for k, x in t.items() if k != "offer_components"}
+    assert T.material_hash({**old, "offer_components": []}) == T.material_hash(old)
+
+
+def test_component_is_shown_apart_in_the_check() -> None:
+    v = view("example_bank:everyday-cash", amount=20000, spend=50000, months=3)
+    comp = TV.Component(kind="travel_credit", amount_cents=30000, restriction="hotel bookings through Example Travel",
+                        expires="in your first cardholder year", text="Enjoy $300 for hotel bookings.")  # fmt: skip
+    v = v.model_copy(update={"terms": v.terms.model_copy(update={"offer_components": [comp]})})
+    a = run(v, MatchProfile(**FULL))
+    assert a.first_year.net_cents == 20000  # the $300 credit is not in the net value
+    assert "Not counted above: $300 credit for hotel bookings through Example Travel" in a.first_year.text
+    assert any("restricted, not cash and not converted to points" in x for x in a.offer_appeal.points)
+
+
+def test_amex_gold_is_a_variable_offer_without_a_guaranteed_minimum() -> None:
+    from bankrec.tracker.valuation import guaranteed_amount, value
+
+    t = _entry("2026-11-10-amex-gold.yaml").to_terms()
+    assert t["amount_qualifier"] == "up_to" and t["total_amount"] == 100000 and t["guaranteed_min"] is None
+    assert guaranteed_amount(t) is None
+    for overrides in (None, {"amex_mr": 1.0}):  # not even at the visitor's own point value
+        v = value(t, "amex_mr", overrides)
+        assert v["cents"] is None and "varies by applicant" in v["assumption"]
+    assert "AS HIGH AS 100,000" in t["verbatim"]
+
+
+def test_published_guaranteed_minimum_is_the_only_amount_used() -> None:
+    from bankrec.tracker import history
+    from bankrec.tracker.valuation import guaranteed_amount, value
+
+    t = {"unit": "cash", "total_amount": 50000, "amount_qualifier": "up_to", "guaranteed_min": 20000}
+    assert guaranteed_amount(t) == 20000
+    v = value(t, None)
+    assert v["cents"] == 20000 and "published minimum of 20,000" in v["assumption"]
+    # "starting at N" publishes N as its minimum
+    assert guaranteed_amount({"total_amount": 30000, "amount_qualifier": "starting_at"}) == 30000
+    # history compares the minimum, so a variable offer's top figure can never make it the "highest"
+    past = [history.Record(amount=a, unit="cash", valid_from=datetime(2025, m, 1, tzinfo=UTC),
+                           valid_to=datetime(2025, m, 28, tzinfo=UTC), official=True) for a, m in ((25000, 1), (30000, 4), (25000, 8))]  # fmt: skip
+    current = history.Record(amount=guaranteed_amount(t) or 0, unit="cash", valid_from=NOW, valid_to=None,
+                             official=True, current=True)  # fmt: skip
+    assert history.label([*past, current], NOW)["code"] == "below_usual"
+
+
+def test_manual_entry_validation_for_minimums() -> None:
+    from bankrec.tracker.manual import ManualCampaignIn
+
+    base = _entry("2026-11-10-amex-gold.yaml").model_dump(mode="json")
+    with pytest.raises(ValueError, match="guaranteed_min_text"):
+        ManualCampaignIn.model_validate({**base, "guaranteed_min": 50000})
+    with pytest.raises(ValueError, match="only for an up-to"):
+        ManualCampaignIn.model_validate({**base, "amount_qualifier": "exact", "guaranteed_min": 1,
+                                         "guaranteed_min_text": "at least 1 point"})  # fmt: skip

@@ -27,3 +27,6 @@ data/raw/*
 reports/*/
 web/next-env.d.ts
 web/tsconfig.tsbuildinfo
+
+# Database backups (contain real data; never committed)
+backups/

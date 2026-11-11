@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CampaignStatus, DemoBadge, SourceBadge } from "@/components/CampaignStatus";
-import { rewardText, spendText, TiersList } from "@/components/CampaignTerms";
+import { ComponentsList, offerAmountText, spendText, TiersList } from "@/components/CampaignTerms";
 import { Countdown } from "@/components/Countdown";
 import { Disclaimer } from "@/components/Disclaimer";
 import { FitCheck } from "@/components/FitCheck";
@@ -53,7 +53,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function TermsTable({ t }: { t: CampaignTerms }) {
   return (
     <dl className="divide-y divide-border rounded-md border border-border text-sm">
-      <Row label="Reward">{rewardText(t.total_amount, t.unit, t.unit_name)}{t.amount_qualifier === "up_to" ? " (up to; the amount you are offered may be lower)" : ""}<TiersList t={t} /></Row>
+      <Row label="Reward">{offerAmountText(t)}<TiersList t={t} /><ComponentsList t={t} /></Row>
       <Row label="Spending requirement">{spendText(t) ?? "No spending requirement stated"}</Row>
       <Row label="Application deadline">{t.end.label}{t.end.text ? <span className="block text-xs text-ink-500">Issuer&apos;s words: “{t.end.text}”</span> : null}</Row>
       <Row label="Offer start">{t.start?.date ? `${t.start.date}${t.start.text ? ` — “${t.start.text}”` : ""}` : "Not stated by the issuer"}</Row>
@@ -77,7 +77,7 @@ export default async function CampaignPage({ params, searchParams }: Props) {
     <article className="space-y-8">
       <header>
         <p className="text-sm text-ink-500">{c.card.bank_name} · {c.card.segment === "business" ? "Business card" : "Personal card"} · {c.channel_label}</p>
-        <h1 className="mt-1 text-3xl">{c.card.name}: {rewardText(t.total_amount, t.unit, t.unit_name)}</h1>
+        <h1 className="mt-1 text-3xl">{c.card.name}: {offerAmountText(t)}</h1>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <CampaignStatus c={c} />
           <SourceBadge c={c} />

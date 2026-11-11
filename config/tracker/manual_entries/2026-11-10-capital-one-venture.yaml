@@ -1,5 +1,9 @@
 # The page no longer states "Venture Rewards from Capital One"; it is classified as a non-product page (2026-11-10).
 # Excerpt from the official page captured in run 20261110T000117Z-aa64fa.
+# Amended 2026-11-11 (owner): the $300 Capital One Travel stays credit is a separate, restricted component — never
+# cash, never converted into miles; its booking restriction and first-cardholder-year limit are kept as stated. The
+# page calls the offer "Limited-Time Offer" without a date: the end date stays unknown. Footnote 1's full terms are
+# not in the static page.
 card_key: capital_one:venture
 channel: public
 offer_type: welcome_bonus
@@ -7,6 +11,12 @@ tiers:
   - {amount: 75000, unit: miles, unit_name: "Capital One miles", spend_cents: 400000, window_count: 3,
      window_unit: months, window_start: account_opening,
      text: "earn 75,000 bonus miles once you spend $4,000 on purchases within the first 3 months from account opening"}
+offer_components:
+  - kind: travel_credit
+    amount_cents: 30000
+    restriction: "hotel and vacation rental bookings through Capital One Travel"
+    expires: "in your first cardholder year"
+    text: "Enjoy $300 to use on hotel and vacation rental bookings through Capital One Travel in your first cardholder year"
 annual_fee_cents: 9500
 first_year_fee_cents: 9500
 source_kind: official

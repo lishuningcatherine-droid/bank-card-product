@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated: 2026-11-10 (offer tracker owner decisions of 2026-11-10; DESIGN §27.11). Read this first in a new session, then
+Last updated: 2026-11-11 (owner decisions of 2026-11-11: DESIGN §27.12; Neon prepared, not switched). Read this first in a new session, then
 `CLAUDE.md` and the `docs/DESIGN.md` sections it points to.
 
 Requirements come from `~/Downloads/BUILD_PROMPT_v2.md` (the brief) and the owner's later messages. Where they
@@ -101,14 +101,15 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 - **Offer tracker (brief of 2026-11-09, DESIGN §27): phases 1–3 done; owner decisions of 2026-11-10 applied (§27.11).**
   25 tracked cards / 7 issuers (5 starter cards). Personal check: `POST /api/v1/campaigns/match`, `/offers/match`,
   `bankrec offers match FILE`.
-  - **5 manual entries pending review** (entered by `claude`): 1 Capital One Savor, 2 Capital One Venture, 3 Chase
-    Sapphire Preferred, 4 Chase Sapphire Reserve (2026-11-10, adapters stopped reading those pages), 5 Amex Gold
-    ("as high as" offer). The owner reviews them (`bankrec offers pending|approve|reject`).
+  - **5 manual entries pending review** (entered by `claude`): 1 Capital One Savor, 2 Capital One Venture (amended
+    2026-11-11: $300 stays credit as a restricted component), 3 Chase Sapphire Preferred, 4 Chase Sapphire Reserve,
+    5 Amex Gold (variable "as high as" offer). Evidence tables: `docs/review/2026-11-11-pending-offers.md` (all fields
+    match the official pages read 2026-11-11). **The owner approves; Claude never does.**
   - Venture X: no readable public offer (manual entry from an official source needed). Discover it Student and it
     Miles: first-year match states no amount, not recorded as a campaign.
-  - **Automatic updates are not running.** `scheduled-ingest.yml` runs once a day when the repository variable
-    `BANKREC_SCHEDULER=github` is set and the `DATABASE_URL` secret points to a database reachable from GitHub (the
-    real data is only in the local docker volume today). Owner to choose hosting; see the 2026-11-10 report.
+  - **Automatic updates are not running.** Neon migration prepared and rehearsed locally (`docs/NEON_MIGRATION.md`);
+    the owner creates the Neon project/branches and secrets. Do not set `BANKREC_SCHEDULER=github` before the cloud
+    database passes the runbook's checks.
   - Owner rule change: community-reported rules are allowed in the tracker, always labelled with their source (§27 intro).
 
 - **Phase 1 (public home page, offer types, multi-channel offers): done**, accepted by the owner 2026-10-20.
@@ -125,9 +126,8 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 
 ## 4. Waiting for the owner
 
-0. **Offer tracker:** review the 5 pending manual entries; choose a hosted database for the daily GitHub schedule,
-   then set `DATABASE_URL` (secret) and `BANKREC_SCHEDULER=github` (variable); choose the crawler contact address
-   (`BANKREC_CONTACT_EMAIL`).
+0. **Offer tracker:** approve or reject the 5 pending entries (evidence in `docs/review/`); follow
+   `docs/NEON_MIGRATION.md` steps 1–8 (the schedule is the last step); choose the crawler contact address.
 
 1. **Point values per program** (hotel, airline, bank points) with their basis; until then non-fixed points rank
    only among themselves.

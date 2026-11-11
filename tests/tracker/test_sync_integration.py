@@ -131,6 +131,41 @@ def test_stale_stored_hash_creates_no_version(session) -> None:  # type: ignore[
     assert len(c.versions) == 1 and c.versions[0].material_hash != "0" * 40
 
 
+def _counts(session) -> dict[str, int]:  # type: ignore[no-untyped-def]
+    from sqlalchemy import func
+
+    return {
+        m.__tablename__: session.scalar(select(func.count()).select_from(m))
+        for m in (
+            P.Campaign,
+            P.CampaignVersion,
+            P.CampaignStatusLog,
+            P.CampaignCheck,
+            P.ApplicationRule,
+            P.TrackedCard,
+        )
+    }
+
+
+def test_repeated_sync_of_unchanged_offers_is_idempotent(session) -> None:  # type: ignore[no-untyped-def]
+    """Owner requirement 2026-11-10: syncing the same published offers again changes nothing — no campaign, version,
+    status entry or check is added, and the stored terms and hashes stay as they are."""
+    p = _product(session)
+    _offer(session, p, amount=20000)
+    _offer(session, p, amount=30000, audience="targeted")
+    first = sync(session, T0)
+    assert len(first.new_campaigns) == 2
+    before = _counts(session)
+    hashes = {v.id: (v.material_hash, v.terms, v.valid_to) for c in _campaigns(session) for v in c.versions}
+    for hours in (1, 2, 24):  # later runs of the same unchanged state, with no new page captures
+        again = sync(session, T0 + timedelta(hours=hours))
+        assert again.new_campaigns == [] and again.new_versions == [] and again.status_changes == []
+    assert _counts(session) == before
+    assert {
+        v.id: (v.material_hash, v.terms, v.valid_to) for c in _campaigns(session) for v in c.versions
+    } == hashes
+
+
 def test_failed_checks_never_end_a_campaign(session) -> None:  # type: ignore[no-untyped-def]
     p = _product(session)
     _offer(session, p)
@@ -187,6 +222,35 @@ def test_manual_entry_waits_for_review(session) -> None:  # type: ignore[no-unty
     assert c.channel == "branch" and c.source_kind == "manual" and c.demo
     assert c.versions[0].terms["end"]["time"] is None  # no time stated → none invented
     assert row.state == "approved" and row.reviewed_by == "bob"
+
+
+def test_amending_a_pending_entry_keeps_it_pending_and_keeps_the_previous_payload(session) -> None:  # type: ignore[no-untyped-def]
+    _product(session)
+    sync(session, T0)
+    data = {
+        "card_key": CARD["card_key"], "channel": "public", "offer_type": "welcome_bonus",
+        "tiers": [{"amount": 30000, "unit": "cash", "spend_cents": 100000, "window_count": 3,
+                   "window_unit": "months", "window_start": "account_opening",
+                   "text": "Get $300 after $1,000 in 3 months"}],
+        "source_kind": "official", "source_url": "https://www.examplebank.example/offer",
+        "source_excerpt": "Get $300 after $1,000 in 3 months.", "observed_from": "2026-11-01", "demo": True,
+    }  # fmt: skip
+    row = manual.add(session, manual.ManualCampaignIn.model_validate(data), by="alice", now=T0)
+    fixed = {**data, "offer_components": [{"kind": "travel_credit", "amount_cents": 10000,
+                                     "restriction": "hotel bookings through Example Travel",
+                                     "expires": "in your first cardholder year",
+                                     "text": "Plus $100 for hotel bookings through Example Travel"}]}  # fmt: skip
+    manual.amend(session, row.id, manual.ManualCampaignIn.model_validate(fixed), by="alice", reason="add the credit",
+                 now=T0)  # fmt: skip
+    assert row.state == "pending_review"
+    [a] = row.payload["amendments"]
+    assert a["by"] == "alice" and a["reason"] == "add the credit" and a["previous"]["offer_components"] == []
+    c = manual.approve(session, row.id, reviewer="bob", now=T0)
+    assert c.versions[0].terms["offer_components"][0]["amount_cents"] == 10000
+    with pytest.raises(ValueError, match="not pending"):
+        manual.amend(
+            session, row.id, manual.ManualCampaignIn.model_validate(data), by="alice", reason="x", now=T0
+        )
 
 
 def test_manual_time_needs_its_zone() -> None:

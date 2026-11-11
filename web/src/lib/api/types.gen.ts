@@ -882,19 +882,6 @@ export interface components {
             /** Rows */
             rows: string[];
         };
-        /** Component */
-        Component: {
-            /** Contribution */
-            contribution: number;
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Normalized */
-            normalized: number;
-            /** Weight */
-            weight: number;
-        };
         /** DeleteIn */
         DeleteIn: {
             /**
@@ -993,7 +980,7 @@ export interface components {
              * Outcome
              * @enum {string}
              */
-            outcome: "conflict" | "possible_conflict" | "unknown" | "clear" | "info";
+            outcome: "conflict" | "needs_verification" | "possible_conflict" | "unknown" | "clear" | "info";
             /** Outcome Label */
             outcome_label: string;
             /** Rule Key */
@@ -1134,7 +1121,7 @@ export interface components {
              * Code
              * @enum {string}
              */
-            code: "insufficient_history" | "all_time_high" | "above_usual" | "recent_high" | "usual" | "below_usual";
+            code: "insufficient_history" | "variable_offer" | "all_time_high" | "above_usual" | "recent_high" | "usual" | "below_usual";
             /** Coverage Months */
             coverage_months: number;
             /** Median */
@@ -1874,8 +1861,14 @@ export interface components {
             end: components["schemas"]["Moment"];
             /** First Year Fee Cents */
             first_year_fee_cents: number | null;
+            /** Guaranteed Min */
+            guaranteed_min?: number | null;
+            /** Guaranteed Min Text */
+            guaranteed_min_text?: string | null;
             /** Min Spend Cents */
             min_spend_cents: number | null;
+            /** Offer Components */
+            offer_components?: components["schemas"]["bankrec__tracker__views__Component"][];
             /** Offer Type */
             offer_type: string;
             /** Offer Url */
@@ -2017,6 +2010,35 @@ export interface components {
             valid_to: string | null;
             /** Version */
             version: number;
+        };
+        /** Component */
+        bankrec__recommend__models__Component: {
+            /** Contribution */
+            contribution: number;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Normalized */
+            normalized: number;
+            /** Weight */
+            weight: number;
+        };
+        /**
+         * Component
+         * @description A restricted part of a welcome offer, shown on its own: never counted as cash, never converted to points.
+         */
+        bankrec__tracker__views__Component: {
+            /** Amount Cents */
+            amount_cents: number;
+            /** Expires */
+            expires?: string | null;
+            /** Kind */
+            kind: string;
+            /** Restriction */
+            restriction: string;
+            /** Text */
+            text: string;
         };
     };
     responses: never;

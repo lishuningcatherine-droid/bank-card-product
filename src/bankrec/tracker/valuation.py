@@ -16,10 +16,49 @@ def assumption_text(cents: float, basis: str) -> str:
     return f"Counted at 1 point = ${cents / 100:.4f}".rstrip("0").rstrip(".") + f" ({basis})"
 
 
+def guaranteed_amount(terms: dict[str, Any]) -> int | None:
+    """The amount an applicant is sure to get. A variable offer ("as high as" / "up to") counts only at a minimum the
+    issuer publishes (``guaranteed_min``); "starting at N" publishes N as its minimum; an exact offer is its amount."""
+    amount = terms.get("total_amount")
+    q = terms.get("amount_qualifier")
+    if amount is None:
+        return None
+    if q == "up_to":
+        gm = terms.get("guaranteed_min")
+        return int(gm) if gm is not None else None
+    return int(amount)
+
+
+def is_variable(terms: dict[str, Any]) -> bool:
+    return terms.get("amount_qualifier") in ("up_to", "starting_at")
+
+
 def value(
     terms: dict[str, Any], program: str | None, overrides: dict[str, float] | None = None
 ) -> dict[str, Any]:
-    unit, amount = terms.get("unit"), terms.get("total_amount")
+    out = _value(terms, program, overrides)
+    q = terms.get("amount_qualifier")
+    if q in ("up_to", "starting_at") and terms.get("total_amount") is not None:
+        word = "up to" if q == "up_to" else "starting at"
+        top = f"{int(terms['total_amount']):,}"
+        if guaranteed_amount(terms) is None:
+            out.update(
+                cents=None,
+                cents_per_point=None,
+                depends_on_points_value=terms.get("unit") in ("points", "miles"),
+                assumption=f"No dollar value: the offer amount varies by applicant ({word} {top});"
+                " no guaranteed minimum is published",
+            )
+        else:
+            note = f"Counted at the published minimum of {guaranteed_amount(terms):,} (the offer is {word} {top})"
+            out["assumption"] = note + (f"; {out['assumption']}" if out.get("assumption") else "")
+    return out
+
+
+def _value(
+    terms: dict[str, Any], program: str | None, overrides: dict[str, float] | None = None
+) -> dict[str, Any]:
+    unit, amount = terms.get("unit"), guaranteed_amount(terms)
     out: dict[str, Any] = {
         "cents": None,
         "depends_on_points_value": False,
@@ -27,14 +66,6 @@ def value(
         "cents_per_point": None,
     }
     if amount is None:
-        return out
-    if terms.get("amount_qualifier") in ("up_to", "starting_at"):
-        # "as high as" / "up to": the amount varies by applicant; counting the top figure would overstate it
-        out["depends_on_points_value"] = unit in ("points", "miles")
-        out["assumption"] = (
-            f"No dollar value: the offer is stated as {'up to' if terms['amount_qualifier'] == 'up_to' else 'starting at'}"
-            f" {amount:,} and varies by applicant"
-        )
         return out
     if unit in ("cash", "statement_credit"):
         out["cents"] = int(amount)
@@ -50,7 +81,7 @@ def value(
             assumption=assumption_text(user, "your own value"),
         )
         return out
-    if terms.get("stated_cash_value_cents") is not None:
+    if terms.get("stated_cash_value_cents") is not None and not is_variable(terms):
         out.update(
             cents=int(terms["stated_cash_value_cents"]),
             assumption="Dollar value as stated on the issuer's page",

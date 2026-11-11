@@ -1632,3 +1632,25 @@ alone never decides; no card has a stated minimum score. The response also lists
   definition of the material fields never makes a version (nine such duplicate versions written on 2026-11-10 were
   removed the same day).
 - **E2E:** `BANKREC_TRACKER_CARDS_FILE` points the tracker at fictional Example Bank cards; refused in production.
+
+### 27.12 Owner decisions of 2026-11-11
+- **Review evidence:** `bankrec offers evidence --out FILE` reads each pending entry's official page now (robots.txt,
+  rate limit; rendered when the pipeline renders that page) and writes, per stored field, the official words and
+  match / mismatch / not on page. Read-only; nothing is approved. Unreadable pages leave the entry pending with the
+  reason. `bankrec offers amend ID FILE --by --reason` corrects a pending entry; the previous payload is kept.
+- **Restricted offer components** (`offer_components`: kind, amount, restriction, expiry, verbatim text), e.g.
+  Venture's "$300 to use on hotel and vacation rental bookings through Capital One Travel in your first cardholder
+  year": a material term, shown on its own, never counted as cash, never converted into points or miles, never in the
+  first-year value.
+- **Variable offers** ("as high as" / up to): valued, and compared with history, only at a published guaranteed
+  minimum (`guaranteed_min` with its words; "starting at N" publishes N). Without one: points units only, no dollar
+  value even at the visitor's own point value, history label `variable_offer` (never "highest"). Amex Gold: no minimum.
+- **Third-party-quoted issuer rules** (Amex once per lifetime): a met rule is "Needs verification" (outcome
+  `needs_verification`, action "confirm first"), never a conflict, until the issuer's own document confirms it; source,
+  verification and classification are kept.
+- **Idempotent sync:** repeated syncs of unchanged offers add no campaign, version, status entry or check (test).
+- **Neon preparation** (`docs/NEON_MIGRATION.md`, `deploy/neon/`): backup / restore / verify scripts, a Neon test
+  branch as test target and rollback point, `bankrec db check-target` (no address printed). Advisory locks are
+  session-level on a direct connection and transaction-level (held in an open transaction) on a pooled one; the
+  workflow refuses a `-pooler` address. Manual workflow runs target the test branch by default and fail rather than
+  fall back to another database; the schedule needs `BANKREC_SCHEDULER=github` (not set).

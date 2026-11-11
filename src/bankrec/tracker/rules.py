@@ -17,7 +17,7 @@ from typing import Any, Literal
 from bankrec.tracker.profile import HeldCard, MatchProfile
 
 Tri = Literal["yes", "maybe", "no"]
-Outcome = Literal["conflict", "possible_conflict", "unknown", "clear", "info"]
+Outcome = Literal["conflict", "needs_verification", "possible_conflict", "unknown", "clear", "info"]
 
 BANK_NAME = {
     "chase": "Chase",
@@ -184,8 +184,11 @@ def _fmt(cards: list[HeldCard], facts: dict[str, CardFacts]) -> str:
 
 
 def _severity(rule: dict[str, Any]) -> Outcome:
-    """A met rule is a conflict when it is firm or names this very card — except a weakly corroborated community
-    rule, which is only ever a possible conflict (owner 2026-11-10)."""
+    """A met rule is a conflict when it is firm or names this very card — except (owner 2026-11-10):
+    an issuer rule this site could only read as quoted by a third party, which "needs verification" until the
+    issuer's own documents confirm it; and a weakly corroborated community rule, only ever a possible conflict."""
+    if rule.get("source_type") == "official" and rule.get("verification") == "third_party_quote":
+        return "needs_verification"
     if rule.get("source_type") == "community" and rule.get("confidence") != "strong":
         return "possible_conflict"
     m = (rule.get("scope") or {}).get("match") or rule.get("match") or {}

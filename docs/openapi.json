@@ -1295,39 +1295,6 @@
     "title": "CompareResponse",
     "type": "object"
    },
-   "Component": {
-    "properties": {
-     "contribution": {
-      "title": "Contribution",
-      "type": "number"
-     },
-     "key": {
-      "title": "Key",
-      "type": "string"
-     },
-     "label": {
-      "title": "Label",
-      "type": "string"
-     },
-     "normalized": {
-      "title": "Normalized",
-      "type": "number"
-     },
-     "weight": {
-      "title": "Weight",
-      "type": "number"
-     }
-    },
-    "required": [
-     "key",
-     "label",
-     "weight",
-     "normalized",
-     "contribution"
-    ],
-    "title": "Component",
-    "type": "object"
-   },
    "DeleteIn": {
     "additionalProperties": false,
     "properties": {
@@ -1537,6 +1504,7 @@
      "outcome": {
       "enum": [
        "conflict",
+       "needs_verification",
        "possible_conflict",
        "unknown",
        "clear",
@@ -1884,6 +1852,7 @@
      "code": {
       "enum": [
        "insufficient_history",
+       "variable_offer",
        "all_time_high",
        "above_usual",
        "recent_high",
@@ -4136,6 +4105,28 @@
       ],
       "title": "First Year Fee Cents"
      },
+     "guaranteed_min": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guaranteed Min"
+     },
+     "guaranteed_min_text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Guaranteed Min Text"
+     },
      "min_spend_cents": {
       "anyOf": [
        {
@@ -4146,6 +4137,13 @@
        }
       ],
       "title": "Min Spend Cents"
+     },
+     "offer_components": {
+      "items": {
+       "$ref": "#/components/schemas/bankrec__tracker__views__Component"
+      },
+      "title": "Offer Components",
+      "type": "array"
      },
      "offer_type": {
       "title": "Offer Type",
@@ -4684,6 +4682,79 @@
      "source_excerpt"
     ],
     "title": "VersionView",
+    "type": "object"
+   },
+   "bankrec__recommend__models__Component": {
+    "properties": {
+     "contribution": {
+      "title": "Contribution",
+      "type": "number"
+     },
+     "key": {
+      "title": "Key",
+      "type": "string"
+     },
+     "label": {
+      "title": "Label",
+      "type": "string"
+     },
+     "normalized": {
+      "title": "Normalized",
+      "type": "number"
+     },
+     "weight": {
+      "title": "Weight",
+      "type": "number"
+     }
+    },
+    "required": [
+     "key",
+     "label",
+     "weight",
+     "normalized",
+     "contribution"
+    ],
+    "title": "Component",
+    "type": "object"
+   },
+   "bankrec__tracker__views__Component": {
+    "description": "A restricted part of a welcome offer, shown on its own: never counted as cash, never converted to points.",
+    "properties": {
+     "amount_cents": {
+      "title": "Amount Cents",
+      "type": "integer"
+     },
+     "expires": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Expires"
+     },
+     "kind": {
+      "title": "Kind",
+      "type": "string"
+     },
+     "restriction": {
+      "title": "Restriction",
+      "type": "string"
+     },
+     "text": {
+      "title": "Text",
+      "type": "string"
+     }
+    },
+    "required": [
+     "kind",
+     "amount_cents",
+     "restriction",
+     "text"
+    ],
+    "title": "Component",
     "type": "object"
    }
   }

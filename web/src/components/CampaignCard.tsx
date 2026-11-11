@@ -4,7 +4,7 @@ import type { Campaign } from "@/lib/api/types";
 import { longDate, usd } from "@/lib/format";
 
 import { CampaignStatus, DemoBadge, SourceBadge } from "./CampaignStatus";
-import { rewardText, spendText } from "./CampaignTerms";
+import { ComponentsList, offerAmountText, spendText } from "./CampaignTerms";
 import { Countdown } from "./Countdown";
 import { SourceLink } from "./SourceLink";
 
@@ -24,7 +24,8 @@ export function CampaignCard({ c, pv }: { c: Campaign; pv?: string }) {
       <h3 className="mt-0.5 text-lg leading-snug">
         <Link href={href} className="text-ink-900 no-underline hover:underline">{c.card.name}</Link>
       </h3>
-      <p className="mt-2 text-base font-medium text-ink-900">{c.offer_type_label}: {rewardText(t.total_amount, t.unit, t.unit_name)}{t.tiers.length > 1 ? ` in ${t.tiers.length} tiers` : ""}</p>
+      <p className="mt-2 text-base font-medium text-ink-900">{c.offer_type_label}: {offerAmountText(t)}{t.tiers.length > 1 ? ` in ${t.tiers.length} tiers` : ""}</p>
+      <ComponentsList t={t} />
       {spend ? <p className="text-sm text-ink-700">{spend}</p> : null}
       <dl className="mt-3 space-y-1 text-sm">
         <div className="flex justify-between gap-3">

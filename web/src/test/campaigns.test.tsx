@@ -89,3 +89,20 @@ describe("terms wording", () => {
     expect(screen.getByText(/Community-reported rule/)).toBeInTheDocument();
   });
 });
+
+describe("variable offers and restricted offer_components", () => {
+  it("never shows an up-to amount as guaranteed", async () => {
+    const { offerAmountText } = await import("@/components/CampaignTerms");
+    const t = { total_amount: 100000, unit: "points", unit_name: "Example Rewards points", amount_qualifier: "up_to", guaranteed_min: null };
+    expect(offerAmountText(t)).toBe("Up to 100,000 Example Rewards points (varies by applicant; no guaranteed minimum)");
+    expect(offerAmountText({ ...t, guaranteed_min: 20000 })).toBe("Up to 100,000 Example Rewards points (at least 20,000 Example Rewards points)");
+  });
+
+  it("lists a restricted credit apart, with its restriction and expiry", async () => {
+    const { ComponentsList } = await import("@/components/CampaignTerms");
+    render(<ComponentsList t={{ offer_components: [{ kind: "travel_credit", amount_cents: 30000, restriction: "hotel bookings through Example Travel", expires: "in your first cardholder year", text: "Enjoy $300." }] }} />);
+    expect(screen.getByText(/Plus \$300 restricted credit/)).toBeInTheDocument();
+    expect(screen.getByText(/hotel bookings through Example Travel, in your first cardholder year/)).toBeInTheDocument();
+    expect(screen.getByText(/Not cash and not converted to points/)).toBeInTheDocument();
+  });
+});

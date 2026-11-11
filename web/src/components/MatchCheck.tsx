@@ -71,7 +71,7 @@ export function KindBadge({ kind }: { kind: "official" | "community" | "profile"
 }
 
 function findingKind(f: MatchFinding): "official" | "community" | "unconfirmed" {
-  if (f.outcome === "unknown") return "unconfirmed";
+  if (f.outcome === "unknown" || f.outcome === "needs_verification") return "unconfirmed";
   return f.basis === "official" ? "official" : "community";
 }
 
@@ -81,7 +81,7 @@ function Finding({ f }: { f: MatchFinding }) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="font-medium text-ink-900">{f.outcome_label}</span>
         <KindBadge kind={findingKind(f)} />
-        {f.outcome === "unknown" ? <KindBadge kind={f.basis === "official" ? "official" : "community"} /> : null}
+        {f.outcome === "unknown" || f.outcome === "needs_verification" ? <KindBadge kind={f.basis === "official" ? "official" : "community"} /> : null}
         <span className="text-xs text-ink-700">{f.basis_label}</span>
         <span className="text-xs text-ink-500">affects {f.effect === "approval" ? "approval" : "the bonus"}</span>
       </div>

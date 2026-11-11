@@ -444,6 +444,40 @@ def db_upgrade() -> None:
     typer.echo("migrated")
 
 
+@db_app.command("check-target")
+def db_check_target() -> None:
+    """Describe the database DATABASE_URL points to, without printing the URL or any credential: server version,
+    direct or pooled endpoint, migration revision, extensions and row counts of the main tables. Read-only."""
+    from sqlalchemy import text
+
+    from bankrec.schedule import is_pooled
+
+    engine = get_engine()
+    host = engine.url.host or ""
+    with engine.connect() as c:
+        out: dict[str, Any] = {
+            "server_version": c.execute(text("SHOW server_version")).scalar(),
+            "endpoint": "pooled (transaction-level locks)"
+            if is_pooled(c)
+            else "direct (session-level locks)",
+            "host_kind": "neon"
+            if host.endswith(".neon.tech")
+            else "local"
+            if host in ("localhost", "127.0.0.1", "db")
+            else "other",
+            "alembic_revision": c.execute(text("SELECT version_num FROM public.alembic_version")).scalar()
+            if c.execute(text("SELECT to_regclass('public.alembic_version')")).scalar()
+            else None,
+            "extensions": sorted(r[0] for r in c.execute(text("SELECT extname FROM pg_extension"))),
+            "rows": {},
+        }
+        for t in ("prod.products", "prod.offers", "prod.tracked_cards", "prod.campaigns", "prod.campaign_versions",
+                  "prod.application_rules", "staging.manual_campaign_entries", "staging.page_snapshots"):  # fmt: skip
+            if c.execute(text("SELECT to_regclass(:t)"), {"t": t}).scalar():
+                out["rows"][t] = c.execute(text(f"SELECT count(*) FROM {t}")).scalar()  # fixed table names
+    typer.echo(json.dumps(out, indent=1, default=str))
+
+
 @db_app.command("relabel")
 def db_relabel() -> None:
     """Recompute each published product's key-field gaps under the current config/validation.yaml.
@@ -735,6 +769,107 @@ def offers_add(
         row = add(s, entry, by=by, now=_now())
         s.commit()
         typer.echo(f"entry {row.id}: pending review")
+
+
+@offers_app.command("amend")
+def offers_amend(
+    entry_id: int,
+    path: Annotated[Path, typer.Argument(help="YAML or JSON file with the corrected entry")],
+    by: Annotated[str, typer.Option(help="who amends it")],
+    reason: Annotated[str, typer.Option(help="why (kept with the entry)")],
+) -> None:
+    """Correct an entry that is still pending review; it stays pending and keeps its previous version."""
+    import yaml
+
+    from bankrec.tracker.manual import ManualCampaignIn, amend
+
+    data = yaml.safe_load(path.read_text(encoding="utf-8"))
+    with _session() as s:
+        row = amend(s, entry_id, ManualCampaignIn.model_validate(data), by=by, reason=reason, now=_now())
+        s.commit()
+        typer.echo(f"entry {row.id}: amended, still pending review")
+
+
+@offers_app.command("evidence")
+def offers_evidence(
+    out: Annotated[Path, typer.Option(help="Markdown file to write the comparison tables to")],
+    entry: Annotated[list[int] | None, typer.Option(help="entry ids (default: every pending entry)")] = None,
+) -> None:
+    """Review evidence for pending manual entries: each stored field next to the official page's words, read now
+    from the official page (robots.txt and rate limits apply). Read-only: nothing is stored, published or approved."""
+    from datetime import UTC
+    from datetime import datetime as dt
+
+    from bankrec.db import staging as S
+    from bankrec.ingest.common.html import parse_html
+    from bankrec.ingest.fetch import Fetcher
+    from bankrec.tracker import evidence as E
+
+    settings = get_settings()
+    reg = load_registry()
+    with _session() as s:
+        rows = list(s.scalars(select(S.ManualCampaignEntry).where(S.ManualCampaignEntry.state == "pending_review")
+                              .order_by(S.ManualCampaignEntry.id)))  # fmt: skip
+        rows = [r for r in rows if not entry or r.id in entry]
+        payloads = [(r.id, r.payload) for r in rows]
+    fetcher = Fetcher(settings)
+    browser_ctx = renderer = None
+    parts = [
+        "# Pending manual entries: stored values vs. official pages",
+        "",
+        f"Generated {dt.now(UTC):%Y-%m-%d %H:%M} UTC by `bankrec offers evidence` (read-only; robots.txt and the rate"
+        " limit applied). Nothing was approved; the owner reviews each entry.",
+        "",
+    ]
+    try:
+        for eid, payload in payloads:
+            e = E.entry_of(payload)
+            src = next(
+                (
+                    x
+                    for x in reg.sources
+                    if str(x.source_url).split("?")[0].rstrip("/") == e.source_url.rstrip("/")
+                ),
+                None,
+            )
+            how, text, at = "", "", None
+            if src is None:
+                how = "no registered source for this URL: not fetched, entry stays pending"
+            else:
+                bank = reg.bank(src.bank_id)
+                if src.requires_render:
+                    if renderer is None:
+                        from playwright.sync_api import sync_playwright
+
+                        from bankrec.ingest.render import Renderer
+
+                        browser_ctx = sync_playwright().start()
+                        browser = browser_ctx.chromium.launch(
+                            headless=True, executable_path=settings.chromium_executable
+                        )
+                        renderer = Renderer(settings, browser, fetcher.robots, fetcher.limiter)
+                    fr = renderer.render(src, bank)
+                    how = "rendered in a browser (as the pipeline does for this page)"
+                else:
+                    fr = fetcher.fetch(src, bank)
+                    how = "plain HTTP GET"
+                if fr.failure is not None:
+                    how += f" — FAILED ({fr.failure.value}: {fr.detail[:80]}); entry stays pending"
+                else:
+                    text, at = parse_html(fr.body.decode("utf-8", errors="replace")).text, fr.retrieved_at
+                    how += f", HTTP {fr.status}"
+            if text:
+                parts.append(E.markdown(eid, e, E.compare(e, text), e.source_url, how, at))
+            else:
+                parts.append(f"### Entry {eid}: `{e.card_key}`\n\nSource: {e.source_url} · {how}\n")
+            typer.echo(f"entry {eid}: {how}")
+    finally:
+        if browser_ctx is not None:
+            browser_ctx.stop()
+        fetcher.close()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text("\n".join(parts), encoding="utf-8")
+    typer.echo(f"written: {out}")
 
 
 @offers_app.command("pending")

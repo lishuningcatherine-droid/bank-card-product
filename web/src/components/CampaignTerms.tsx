@@ -16,6 +16,37 @@ export function rewardText(amount: number | null | undefined, unit: string, unit
   return `${amount.toLocaleString("en-US")} ${unitName ?? UNIT[unit] ?? unit}`;
 }
 
+/** The offer's headline amount: a variable offer says "Up to …" (with its published minimum, if any), never a
+ * guaranteed figure. */
+export function offerAmountText(t: Pick<CampaignTerms, "total_amount" | "unit" | "unit_name" | "amount_qualifier" | "guaranteed_min">): string {
+  const base = rewardText(t.total_amount, t.unit, t.unit_name);
+  if (t.total_amount == null) return base;
+  if (t.amount_qualifier === "up_to") {
+    return t.guaranteed_min != null
+      ? `Up to ${base} (at least ${rewardText(t.guaranteed_min, t.unit, t.unit_name)})`
+      : `Up to ${base} (varies by applicant; no guaranteed minimum)`;
+  }
+  if (t.amount_qualifier === "starting_at") return `At least ${base}`;
+  return base;
+}
+
+/** Restricted parts of an offer (e.g. a travel credit), each with its restriction and expiry; never added to the
+ * reward and never shown as cash. */
+export function ComponentsList({ t }: { t: Pick<CampaignTerms, "offer_components"> }) {
+  const comps = t.offer_components ?? [];
+  if (!comps.length) return null;
+  return (
+    <ul className="mt-1 space-y-1 text-sm">
+      {comps.map((c, i) => (
+        <li key={i}>
+          <span className="font-medium text-ink-900">Plus {usd(c.amount_cents)} restricted credit</span>: for {c.restriction}
+          {c.expires ? `, ${c.expires}` : ""}. <span className="text-ink-500">Not cash and not converted to points; not counted in the value.</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 /** "Spend $4,000 within 3 months from account opening" (the qualifying period, not the application deadline). */
 export function spendText(t: Pick<CampaignTerms, "min_spend_cents" | "window_count" | "window_unit" | "window_start">): string | null {
   if (t.min_spend_cents === null || t.min_spend_cents === undefined) return null;
