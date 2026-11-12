@@ -8,11 +8,12 @@ Status (2026-11-11): **prepared and rehearsed locally; nothing is switched.** Th
 
 | Check | Result |
 |---|---|
-| Server version | local 16.15; create the Neon project with **PostgreSQL 16** |
+| Server version | local 16.15; the Neon project runs **PostgreSQL 18**. A 16 dump restores into 18 (`pg_restore` 16 client); CI runs the Python suite on 16 and 18, and the full suite passed locally on 18.6 |
 | Extensions | only `plpgsql` (built in) — nothing Neon must provide |
 | Roles / grants | the backup is taken with `--no-owner --no-privileges`, so Neon's own role owns everything; the read-only API role is created separately (step 7) |
 | Backup → restore → verify | rehearsed on a scratch local database: same migration revision (0017), same row counts in all main tables, `db upgrade` a no-op, a repeated `offers sync` made 0 changes |
 | Locks | scheduled runs take an advisory lock per tier. On a **direct** connection it is a session lock; on a **pooled** one (PgBouncer in transaction mode, Neon's `-pooler` host, or `BANKREC_DB_POOLED=1`) it is a transaction-level lock in a transaction held open for the run (tested). The workflow and the restore script refuse a `-pooler` address anyway: use the direct one. |
+| Idle-in-transaction timeout | Neon ends a session left idle inside a transaction (`bankrec db check-target` shows the setting). The first test-branch run (43167514716) failed on unlock because the lock connection sat in a transaction for the whole scrape. Fixed: the lock is held on an autocommit connection, pages are loaded before the pipeline's database transaction, a lost lock fails the run (exit 4) without saving partial work, and unlock after a dropped connection only logs a warning. Tested with the timeout set to 2 s (DESIGN §21.1). |
 | Secrets | scripts read addresses only from environment variables and never print them; `bankrec db check-target` reports endpoint kind, revision and row counts without the address (tested); the workflow masks the URL |
 
 Scripts: `deploy/neon/backup-local.sh`, `deploy/neon/restore-to-target.sh`, `deploy/neon/verify-target.sh`.
@@ -22,7 +23,7 @@ Backups go to `backups/` (git-ignored; they contain real data — keep them off 
 
 Do them in order; stop at the first failure (rollback below).
 
-1. **Create the Neon project** (console.neon.tech): PostgreSQL **16**, a US East region (close to GitHub's runners).
+1. **Create the Neon project** (console.neon.tech): PostgreSQL 18 (Neon's current default; the code is tested on 16 and 18), a US East region (close to GitHub's runners).
    Neon creates a default branch with a database and an owner role.
 2. **Create a test branch** from the default branch, e.g. `migration-test`. In *Connect*, turn **off** connection
    pooling and copy the **direct** connection string (its host has no `-pooler`). Keep `sslmode=require` in it.
@@ -38,13 +39,13 @@ Do them in order; stop at the first failure (rollback below).
    ```sh
    gh secret set DATABASE_URL_TEST            # paste the test branch's direct string, written as postgresql+psycopg://…
    gh secret set BANKREC_CONTACT_EMAIL        # an address you choose for bank sites to contact the crawler operator
-   gh workflow run scheduled-ingest.yml -f database=test
+   gh workflow run scheduled-ingest.yml --ref main -f database=test
    gh run watch                               # must succeed; the log shows "database target: test" and row counts
    ```
    Then re-run `ALLOW_GROWTH=1 deploy/neon/verify-target.sh` against the test branch: counts may only have grown
    (new checks/versions), and the repeated sync must still report 0 changes.
 5. **Production branch:** repeat step 3 with the **default** branch's direct string (from a fresh backup), then
-   `gh secret set DATABASE_URL` with that string, and run `gh workflow run scheduled-ingest.yml -f database=production`
+   `gh secret set DATABASE_URL` with that string, and run `gh workflow run scheduled-ingest.yml --ref main -f database=production`
    once while watching it.
 6. **Point the site at Neon** (only when you decide): set `DATABASE_URL` (and `API_DATABASE_URL`, step 7) in the
    environment the API runs in, then redeploy. Until then the site keeps reading the local database.

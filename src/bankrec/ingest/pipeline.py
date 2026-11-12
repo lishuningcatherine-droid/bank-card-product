@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -195,6 +195,11 @@ class Pipeline:
         manual: list[tuple[SourceEntry, FetchResult]] | None = None,
     ) -> RunResult:
         sources = sources if sources is not None else self.reg.enabled(tier=self.tier)
+        # Load every page before touching the database: fetching and rendering are slow (robots.txt, rate limits,
+        # a browser), and a transaction left open across them sits "idle in transaction", which a server-side
+        # idle_in_transaction_session_timeout (Neon sets one) ends. The database work below is then one short
+        # transaction, committed by the caller only if the whole run succeeded.
+        fetched = [(src, self._load(src)) for src in sources]
         run = S.ScrapeRun(
             run_id=self.result.run_id,
             started_at=self.result.started_at,
@@ -211,12 +216,7 @@ class Pipeline:
         self._mirror_registry()
         self.s.flush()
         self.result.registry_gaps = list(self.reg.banks_without_sources)
-        for src in sources:
-            bank = self.reg.bank(src.bank_id)
-            if src.requires_render and self.renderer is not None and not src.fixture_path:
-                fr = self.renderer.render(src, bank)
-            else:
-                fr = self.fetcher.fetch(src, bank)
+        for src, fr in fetched:
             self._process(src, fr)
         for src, fr in manual or []:
             self._process(src, fr)
@@ -228,6 +228,12 @@ class Pipeline:
         run.stage_counts = self.counts()
         self.s.flush()
         return self.result
+
+    def _load(self, src: SourceEntry) -> FetchResult:
+        bank = self.reg.bank(src.bank_id)
+        if src.requires_render and self.renderer is not None and not src.fixture_path:
+            return cast(FetchResult, self.renderer.render(src, bank))
+        return cast(FetchResult, self.fetcher.fetch(src, bank))
 
     def counts(self) -> dict[str, Any]:
         c: dict[str, int] = defaultdict(int)

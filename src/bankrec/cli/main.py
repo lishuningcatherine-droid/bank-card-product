@@ -117,7 +117,7 @@ def ingest(
     from bankrec.ingest.pipeline import Pipeline
     from bankrec.logging_setup import configure
     from bankrec.reports.writer import write_reports
-    from bankrec.schedule import try_lock, unlock
+    from bankrec.schedule import LockLost, TierLock
 
     configure()
     settings = get_settings()
@@ -146,11 +146,9 @@ def ingest(
         manual_items.append(_manual_item(reg, manual, source_url, captured_at))
         sources = []
     engine = get_engine()
-    lock_conn = engine.connect()
-    lock_tier = tier or "all"
-    if not try_lock(lock_conn, lock_tier):
-        typer.echo(f"skipped: tier {lock_tier} already running")
-        lock_conn.close()
+    lock = TierLock(engine, tier or "all")
+    if not lock.acquire():
+        typer.echo(f"skipped: tier {lock.tier} already running")
         raise typer.Exit(0)
     fetcher: Any = Fetcher(settings)
     fixture = FixtureFetcher(settings, REPO_ROOT)
@@ -186,24 +184,29 @@ def ingest(
                 reprocess=reprocess,
             )
             result = p.run(sources, manual=manual_items)
+            lock.ensure()  # never commit without the lock: a lost lock rolls this run's work back
             s.commit()
             out = write_reports(s, result, reg, settings.reports_dir, _now())
+            lock.ensure()
             s.commit()
             from bankrec.revalidate import dispatch
 
             dispatch(s, settings, _now())
+            lock.ensure()
             s.commit()
         typer.echo(json.dumps({"run_id": result.run_id, "reports": str(out), **p.counts()}, indent=1))
         if reg.banks_without_sources and not include_test and not manual:
             typer.echo(
                 f"warning: banks without enabled sources: {', '.join(reg.banks_without_sources)}", err=True
             )
+    except LockLost as e:
+        typer.echo(f"error: {e}", err=True)
+        raise typer.Exit(4) from e
     finally:
         fetcher.close()
         if browser_ctx is not None:
             browser_ctx.stop()
-        unlock(lock_conn, lock_tier)
-        lock_conn.close()
+        lock.release()
 
 
 def _manual_item(reg: Any, path: Path, source_url: str | None, captured_at: str | None) -> Any:
@@ -458,8 +461,13 @@ def db_check_target() -> None:
         out: dict[str, Any] = {
             "server_version": c.execute(text("SHOW server_version")).scalar(),
             "endpoint": "pooled (transaction-level locks)"
-            if is_pooled(c)
+            if is_pooled(engine)
             else "direct (session-level locks)",
+            # Neon sets one; the scheduled run holds its lock on an autocommit connection, so it is never idle in a
+            # transaction (DESIGN §21.1)
+            "idle_in_transaction_session_timeout": c.execute(
+                text("SHOW idle_in_transaction_session_timeout")
+            ).scalar(),
             "host_kind": "neon"
             if host.endswith(".neon.tech")
             else "local"

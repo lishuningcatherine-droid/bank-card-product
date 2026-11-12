@@ -11,6 +11,10 @@ owner's later decisions win (sections 2 and 3).
 Reply to the owner in Chinese; code, comments, docs and commit messages in English. Commit and push after each
 step, then watch CI and fix failures before continuing.
 
+Git: the repository's default branch is **`main`** (scheduled workflows run from the default branch; manual runs
+use `--ref main`). Work branches are merged into `main`; `claude/blissful-feynman-qua5w1` is the earlier work
+branch, kept as it was.
+
 ---
 
 ## 1. Current state
@@ -135,16 +139,17 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 
 ### 4.1 Cloud database and automatic updates (manual steps; full runbook `docs/NEON_MIGRATION.md`)
 Prepared and rehearsed locally; nothing switched. In order — stop at the first failure:
-1. Create a Neon project: PostgreSQL 16, US East.
+1. Create a Neon project: PostgreSQL 18 (tested on 16 and 18), US East. **Done by the owner**; the first test-branch
+   run (43167514716) failed on Neon's idle-in-transaction timeout — fixed 2026-11-11 (DESIGN §21.1), re-run step 4.
 2. Create a test branch (e.g. `migration-test`); copy its **direct** connection string (pooling off, no `-pooler`,
    `sslmode=require`).
 3. In your own terminal: `deploy/neon/backup-local.sh`; `read -rs TARGET_DATABASE_URL && export TARGET_DATABASE_URL`;
    `deploy/neon/restore-to-target.sh backups/<new>.dump`; `deploy/neon/verify-target.sh` (must print "target
    verified"); `unset TARGET_DATABASE_URL`.
 4. `gh secret set DATABASE_URL_TEST` (test branch, `postgresql+psycopg://…`), `gh secret set BANKREC_CONTACT_EMAIL`
-   (an address you choose; it goes into the crawler's User-Agent), `gh workflow run scheduled-ingest.yml -f
+   (an address you choose; it goes into the crawler's User-Agent), `gh workflow run scheduled-ingest.yml --ref main -f
    database=test`, `gh run watch`; then `ALLOW_GROWTH=1 deploy/neon/verify-target.sh`.
-5. Production branch: repeat step 3 with a fresh backup on the default branch, `gh secret set DATABASE_URL`, one
+5. Production branch: repeat step 3 with a fresh backup on the Neon project's default (production) branch, `gh secret set DATABASE_URL`, one
    watched run with `-f database=production`.
 6. (Your choice) point the API at Neon (`DATABASE_URL`, read-only `API_DATABASE_URL` with role `bankrec_api`), redeploy.
 7. **Last:** `gh variable set BANKREC_SCHEDULER --body github` (daily 06:15 UTC). Stop: `gh variable delete

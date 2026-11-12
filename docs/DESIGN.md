@@ -629,6 +629,22 @@ timezone: UTC
 - **Only one scheduler at a time.** `BANKREC_SCHEDULER=worker|github|off` decides which scheduler acts. Each run also
   takes a Postgres advisory lock per tier, so overlapping runs from both schedulers or from manual triggers can't
   collide. A run that can't get the lock exits 0 with "skipped: tier already running".
+- **Lock and idle transactions** (`bankrec.schedule.TierLock`; fixed after Neon test-branch run 43167514716 failed
+  with `IdleInTransactionSessionTimeout` on unlock). Neon sets `idle_in_transaction_session_timeout`; a local
+  PostgreSQL does not. Rules:
+  - The session lock is held on its own **autocommit** connection, so it is never "idle in transaction" during a
+    long scrape. On a pooled endpoint it is a transaction-level lock whose transaction sets the timeout to 0 for
+    itself only (`SET LOCAL`); the workflow refuses pooled addresses anyway.
+  - The pipeline loads every page (fetch/render) **before** opening its database transaction; the database work is
+    then one short transaction, committed only if the run succeeded.
+  - `TierLock.ensure()` runs before every commit of the run's work: if the lock connection was lost, the command
+    fails with "lost the database lock … rolled back" (exit 4) and nothing uncommitted is written.
+  - Releasing never raises: if the connection is already gone the server released the lock when the session ended;
+    the failed unlock is logged as a warning (exception class only, no address).
+  - Tests (`tests/integration/test_tier_lock.py`) set the timeout to 2 s and run slower jobs: the old pattern
+    reproduces the Neon error; the lock, a slow ingest, a dropped lock connection and the pooled mode all pass.
+- **PostgreSQL versions:** local docker and CI use 16; Neon runs 18. CI also runs the Python suite on 18 (one job);
+  a 16 dump restores into 18 with `pg_restore` 16.
 
 ### 21.2 Change detection (item 2)
 
@@ -1650,9 +1666,9 @@ alone never decides; no card has a stated minimum score. The response also lists
   verification and classification are kept.
 - **Idempotent sync:** repeated syncs of unchanged offers add no campaign, version, status entry or check (test).
 - **Neon preparation** (`docs/NEON_MIGRATION.md`, `deploy/neon/`): backup / restore / verify scripts, a Neon test
-  branch as test target and rollback point, `bankrec db check-target` (no address printed). Advisory locks are
-  session-level on a direct connection and transaction-level (held in an open transaction) on a pooled one; the
-  workflow refuses a `-pooler` address. Manual workflow runs target the test branch by default and fail rather than
+  branch as test target and rollback point, `bankrec db check-target` (no address printed; it also shows the
+  server's idle-in-transaction timeout). Advisory locks: see §21.1 "Lock and idle transactions"; the workflow
+  refuses a `-pooler` address. Manual workflow runs target the test branch by default and fail rather than
   fall back to another database; the schedule needs `BANKREC_SCHEDULER=github` (not set).
 
 ### 27.13 Owner review of 2026-11-11 (second round)

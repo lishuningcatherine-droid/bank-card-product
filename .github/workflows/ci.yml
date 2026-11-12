@@ -16,9 +16,14 @@ jobs:
       matrix:
         # requires-python is ">=3.12": test the oldest supported and the pinned (.python-version) interpreter.
         python: ["3.12", "3.13"]
+        # 16: the local docker database; 18: what Neon runs (docs/NEON_MIGRATION.md)
+        postgres: ["16"]
+        include:
+          - { python: "3.13", postgres: "18" }
+    name: python ${{ matrix.python }} / postgres ${{ matrix.postgres }}
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:${{ matrix.postgres }}-alpine
         env: { POSTGRES_USER: bankrec, POSTGRES_PASSWORD: bankrec, POSTGRES_DB: bankrec_test }
         ports: ["5432:5432"]
         options: >-

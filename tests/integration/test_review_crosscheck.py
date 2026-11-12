@@ -309,44 +309,19 @@ def test_revalidation_dispatch_signed(session, settings) -> None:  # type: ignor
     assert mac == sig["v1"] and "listing:credit_card" in json.loads(got[0].content)["tags"]
 
 
-def test_pooled_endpoint_uses_transaction_level_locks(engine, monkeypatch) -> None:  # type: ignore[no-untyped-def]
-    """Behind PgBouncer in transaction mode (Neon's pooled endpoint) a session lock would not hold; the lock is then
-    a transaction-level lock in a transaction kept open until unlock."""
-    from bankrec.schedule import is_pooled, try_lock, unlock
-
-    monkeypatch.setenv("BANKREC_DB_POOLED", "1")
-    c1, c2 = engine.connect(), engine.connect()
-    try:
-        assert is_pooled(c1)
-        assert try_lock(c1, "offer") and c1.in_transaction()
-        assert not try_lock(c2, "offer")
-        unlock(c2, "offer")  # c2 never held it: ending its transaction changes nothing for c1
-        assert not try_lock(c2, "offer")
-        unlock(c2, "offer")
-        unlock(c1, "offer")
-        assert not c1.in_transaction()
-        assert try_lock(c2, "offer")
-        unlock(c2, "offer")
-    finally:
-        c1.close()
-        c2.close()
-    monkeypatch.delenv("BANKREC_DB_POOLED")
-    with engine.connect() as c:
-        assert not is_pooled(c)
-
-
 def test_schedule_lock_and_crontab(engine) -> None:  # type: ignore[no-untyped-def]
-    from bankrec.schedule import crontab, try_lock, unlock
+    from bankrec.schedule import TierLock, crontab
 
     tab = crontab()
     assert "0 */12 * * * bankrec ingest --tier apy" in tab and "--tier offer" in tab and "--tier terms" in tab
     assert "--tier regulator_release" in tab
     assert "45 6 * * * bankrec offers sync" in tab  # the offer tracker follows the daily offer ingestion
-    c1, c2 = engine.connect(), engine.connect()
+    # pooled endpoints and the idle-in-transaction timeout: tests/integration/test_tier_lock.py
+    a1, a2, o2 = TierLock(engine, "apy"), TierLock(engine, "apy"), TierLock(engine, "offer")
     try:
-        assert try_lock(c1, "apy") and not try_lock(c2, "apy") and try_lock(c2, "offer")
-        unlock(c1, "apy")
-        assert try_lock(c2, "apy")
+        assert a1.acquire() and not a2.acquire() and o2.acquire()
+        a1.release()
+        assert a2.acquire()
     finally:
-        c1.close()
-        c2.close()
+        for lk in (a1, a2, o2):
+            lk.release()
