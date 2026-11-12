@@ -301,7 +301,7 @@ def approve(session: Session, entry_id: int, *, reviewer: str, now: datetime) ->
             session,
             c,
             st,
-            f"manual entry {row.id} approved by {reviewer}; {why}",
+            f"manual entry {row.id} approved by {reviewer}; {reason_for(st, why, entry)}",
             now,
             trigger="manual",
             actor=reviewer,
@@ -368,10 +368,24 @@ def verify_existing(
         not_seen=False,
     )
     if st != c.status:
-        log_status(session, c, st, f"manual entry {entry_id} approved by {reviewer}; {why}", now,
+        log_status(session, c, st, f"manual entry {entry_id} approved by {reviewer}; {reason_for(st, why, entry)}", now,
                    trigger="manual", actor=reviewer)  # fmt: skip
     session.flush()
     return changed
+
+
+MANUAL_ACTIVE_REASON = (
+    "terms verified by hand against the {kind} page read {day} (not confirmed by automatic reading)"
+)
+
+
+def reason_for(st: str, why: str, entry: ManualCampaignIn) -> str:
+    """The status reason after a manual verification: an "active" status rests on the reviewer's check of the page,
+    never on an automatic reading (whose reason text says "shown on the official page at the last successful check")."""
+    if st == "active":
+        kind = "official" if entry.source_kind == "official" else "third-party"
+        return MANUAL_ACTIVE_REASON.format(kind=kind, day=entry.observed_from)
+    return why
 
 
 def merge_duplicates(session: Session, *, now: datetime, apply: bool) -> list[str]:

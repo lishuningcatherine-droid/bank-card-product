@@ -220,6 +220,8 @@ def test_manual_entry_waits_for_review(session) -> None:  # type: ignore[no-unty
         manual.approve(session, row.id, reviewer="alice", now=T0)
     c = manual.approve(session, row.id, reviewer="bob", now=T0)
     assert c.channel == "branch" and c.source_kind == "manual" and c.demo
+    [log] = session.scalars(select(P.CampaignStatusLog).where(P.CampaignStatusLog.campaign_id == c.id))
+    assert "verified by hand" in log.reason and "last successful check" not in log.reason
     assert c.versions[0].terms["end"]["time"] is None  # no time stated → none invented
     assert row.state == "approved" and row.reviewed_by == "bob"
 
@@ -342,3 +344,54 @@ def test_a_version_that_keeps_the_amount_is_one_history_record(session) -> None:
     assert [v.version for v in c.versions] == [1, 2]
     recs = TV.Builder(session, allow_demo=True).records(CARD["card_key"], "cash", c)
     assert len(recs) == 1 and recs[0].current and recs[0].valid_from == c.versions[0].valid_from
+
+
+def _tier(**over):  # type: ignore[no-untyped-def]
+    t = {"amount": 20000, "unit": "cash", "spend_cents": 50000, "window_count": 3, "window_unit": "months",
+         "window_start": "account_opening",
+         "text": "Earn a $200 bonus after you spend $500 on purchases in the first 3 months from account opening."}  # fmt: skip
+    return [{**t, **over}]
+
+
+@pytest.mark.parametrize(
+    "change,records",
+    [
+        ({}, 1),  # only the eligibility wording changed: one record
+        ({"spend_cents": 100000}, 2),  # same amount, higher spend: a different offer level
+        ({"window_count": 6}, 2),  # same amount and spend, longer window
+        ({"window_unit": "days", "window_count": 90}, 2),
+    ],
+)
+def test_history_merges_versions_only_when_amount_spend_and_window_are_unchanged(
+    session, change, records
+) -> None:  # type: ignore[no-untyped-def]
+    from bankrec.tracker import views as TV
+
+    p = _product(session)
+    _offer(session, p)
+    sync(session, T0)
+    extra = {"tiers": _tier(**change), "eligibility_text": "Not available if you have had this card."}
+    row = manual.add(session, _same_as_offer(**extra), by="claude", now=T0)
+    c = manual.approve(session, row.id, reviewer="owner", now=T0 + timedelta(days=2))
+    assert [v.version for v in c.versions] == [1, 2]
+    recs = TV.Builder(session, allow_demo=True).records(CARD["card_key"], "cash", c)
+    assert len(recs) == records
+    assert recs[-1].current
+
+
+def test_manual_verification_says_so_in_the_status_log(session) -> None:  # type: ignore[no-untyped-def]
+    p = _product(session)
+    _offer(session, p)
+    sync(session, T0)
+    [c] = _campaigns(session)
+    c.status = "pending_verification"  # the page was captured but the reader no longer found the offer
+    row = manual.add(session, _same_as_offer(), by="claude", now=T0)
+    manual.approve(session, row.id, reviewer="owner", now=T0 + timedelta(days=2))
+    last = session.scalars(
+        select(P.CampaignStatusLog)
+        .where(P.CampaignStatusLog.campaign_id == c.id)
+        .order_by(P.CampaignStatusLog.at.desc())
+    ).first()
+    assert last.to_status == "active" and last.trigger == "manual" and last.actor == "owner"
+    assert "verified by hand against the official page read 2026-11-02" in last.reason
+    assert "last successful check" not in last.reason

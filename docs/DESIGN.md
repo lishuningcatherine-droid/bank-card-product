@@ -1676,4 +1676,8 @@ alone never decides; no card has a stated minimum score. The response also lists
   current campaign. `bankrec offers merge-duplicates [--apply]` folded the four duplicates created on 2026-11-11
   (Savor: verification; Sapphire Preferred / Reserve: v2 adding the eligibility wording; Venture: v2 adding the $300
   stays credit). Tier terms compare only amount, unit, spend, window and incremental (display labels are not terms).
-- **History records:** consecutive versions of one campaign with the same reward amount count as one record.
+- **History records:** consecutive versions of one campaign count as one record only when the reward amount, the
+  spend requirement and the spend window (count and unit) are all unchanged (owner 2026-11-11).
+- **Status reasons after a manual review** say the terms were verified by hand against the page read on a given day,
+  never the automatic "shown on the official page at the last successful check" (five such log reasons written on
+  2026-11-11 were corrected the same day).

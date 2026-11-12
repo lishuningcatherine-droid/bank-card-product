@@ -339,6 +339,7 @@ class Builder:
         ):
             latest = max(c.versions, key=lambda v: v.version)
             prev: history.Record | None = None
+            prev_key: tuple[Any, ...] | None = None
             for v in sorted(c.versions, key=lambda v: v.version):
                 # a variable offer ("as high as") counts only at a published guaranteed minimum, else not at all
                 amount = valuation.guaranteed_amount(v.terms)
@@ -353,15 +354,21 @@ class Builder:
                     official=c.source_kind in ("official", "manual"),
                     current=c.id == current.id and v.id == latest.id,
                 )
-                if prev is not None and prev.amount == amount:
-                    # a new version that kept the reward amount (e.g. reworded eligibility) is the same history
-                    # record, extended — not another one
+                key = (
+                    amount,
+                    v.terms.get("min_spend_cents"),
+                    v.terms.get("window_count"),
+                    v.terms.get("window_unit"),
+                )
+                if prev is not None and prev_key == key:
+                    # a new version that kept the amount, the spending requirement and its window (e.g. added
+                    # eligibility wording) is the same history record, extended — not another one
                     rec = history.Record(amount=amount, unit=unit, valid_from=prev.valid_from, valid_to=v.valid_to,
                                          official=rec.official, current=rec.current)  # fmt: skip
                     out[-1] = rec
                 else:
                     out.append(rec)
-                prev = rec
+                prev, prev_key = rec, key
         return out
 
     def view(self, c: P.Campaign, now: datetime) -> CampaignView:
