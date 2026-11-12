@@ -260,6 +260,8 @@ def sync_campaigns(session: Session, card: P.TrackedCard, now: datetime, report:
         stored = terms.material_hash(latest.terms)
         if latest.material_hash != stored:
             latest.material_hash = stored
+        # a term the automatic reading did not capture is not a removal (DESIGN §27.14)
+        t, _kept = terms.carry_forward(latest.terms, t)
         changed = terms.material_hash(t) != stored
         if changed:
             changes = terms.diff(latest.terms, t)

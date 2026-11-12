@@ -51,8 +51,8 @@ jobs:
           echo "::add-mask::$url"
           { echo "DATABASE_URL<<EOF_DB_URL"; echo "$url"; echo "EOF_DB_URL"; } >> "$GITHUB_ENV"
           echo "database target: $DB_TARGET"
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.3.3
         with: { version: "0.11.32" }
       - run: uv sync --frozen --no-dev
       - run: uv run playwright install --with-deps chromium
@@ -68,7 +68,7 @@ jobs:
       - run: uv run bankrec offers sync
         if: ${{ always() && inputs.tier }}
       - run: uv run bankrec report stale
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: reports-${{ inputs.tier || 'tracker' }}-${{ github.run_id }}

@@ -140,7 +140,11 @@ Checking $300 bonus), 365 (U.S. Bank Shield), 366 (Business Altitude Connect), 3
 ### 4.1 Cloud database and automatic updates (manual steps; full runbook `docs/NEON_MIGRATION.md`)
 Prepared and rehearsed locally; nothing switched. In order — stop at the first failure:
 1. Create a Neon project: PostgreSQL 18 (tested on 16 and 18), US East. **Done by the owner**; the first test-branch
-   run (43167514716) failed on Neon's idle-in-transaction timeout — fixed 2026-11-11 (DESIGN §21.1), re-run step 4.
+   run (43167514716) failed on Neon's idle-in-transaction timeout — fixed (DESIGN §21.1). The second run
+   (43175900432) succeeded, but made 2 false versions (Sapphire Preferred/Reserve v3 dropping the hand-verified
+   eligibility clause) — fixed (DESIGN §27.14). **Status (2026-11-12): the test branch still holds those 2 false
+   versions; reset it and redo steps 3–4 from a fresh backup**, then the repeated run must make no false versions
+   (`bankrec offers versions --since <run start>` lists what it made). Production branch and schedule: not started.
 2. Create a test branch (e.g. `migration-test`); copy its **direct** connection string (pooling off, no `-pooler`,
    `sslmode=require`).
 3. In your own terminal: `deploy/neon/backup-local.sh`; `read -rs TARGET_DATABASE_URL && export TARGET_DATABASE_URL`;
@@ -168,7 +172,8 @@ Prepared and rehearsed locally; nothing switched. In order — stop at the first
 ---
 
 ## 5. Next steps
-1. Do section 4.1 with the owner; switch the schedule on only after the test branch passes.
+1. Do section 4.1 with the owner; switch the schedule on only after the test branch passes **and** a run on it makes
+   no false versions (check each new version with `bankrec offers versions`).
 2. Re-verify the four manually verified offers (Savor, Venture, Sapphire Preferred / Reserve) within 7 days, or fix
    their adapters (Chase and Capital One pages changed layout on 2026-11-10).
 3. Refresh the stale campaigns listed in section 1 (`bankrec offers update`).

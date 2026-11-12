@@ -395,3 +395,55 @@ def test_manual_verification_says_so_in_the_status_log(session) -> None:  # type
     assert last.to_status == "active" and last.trigger == "manual" and last.actor == "owner"
     assert "verified by hand against the official page read 2026-11-02" in last.reason
     assert "last successful check" not in last.reason
+
+
+def test_terms_the_automatic_reading_did_not_capture_are_kept_not_removed(session) -> None:  # type: ignore[no-untyped-def]
+    """The Neon test-branch run of 2026-11-12: a hand-verified eligibility clause (Chase Sapphire v2) and the page
+    read again, unchanged, by the automatic reader, which does not capture that clause. Sync made a v3 'removing'
+    it. An empty value from the automatic reading means "not captured", so no version (DESIGN §27.14)."""
+    p = _product(session)
+    o = _offer(session, p)
+    sync(session, T0)
+    clause = "This card is unavailable to you if you currently have this card open."
+    extra = {
+        "eligibility_text": clause,
+        "offer_components": [{"kind": "travel_credit", "amount_cents": 10000, "restriction": "hotel bookings",
+                              "expires": None, "text": "Plus $100 for hotel bookings"}],
+    }  # fmt: skip
+    row = manual.add(session, _same_as_offer(**extra), by="claude", now=T0)
+    [c] = [manual.approve(session, row.id, reviewer="owner", now=T0 + timedelta(days=1))]
+    assert [v.version for v in c.versions] == [1, 2]
+    before = _counts(session)
+    for day in (2, 3):  # the page is read again (unchanged) and synced, twice
+        o.last_confirmed_at = o.verified_at = T0 + timedelta(days=day)
+        _run(session, T0 + timedelta(days=day), "unchanged")
+        report = sync(session, T0 + timedelta(days=day))
+        assert report.new_versions == []
+    assert [v.version for v in c.versions] == [1, 2]
+    assert _counts(session)["campaign_versions"] == before["campaign_versions"]
+    latest = c.versions[-1].terms
+    assert latest["eligibility_text"] == clause
+    assert latest["offer_components"][0]["amount_cents"] == 10000
+
+    # a real change on the page still makes a version, which keeps the hand-verified terms it did not contradict
+    o.amount_min = o.amount_max = 30000
+    o.verbatim_text = (
+        "Earn a $300 bonus after you spend $500 on purchases in the first 3 months from account opening."
+    )
+    report = sync(session, T0 + timedelta(days=4))
+    assert [v.version for v in c.versions] == [1, 2, 3]
+    v3 = c.versions[-1]
+    assert [ch["field"] for ch in v3.change_summary] == ["tiers", "total_amount"]
+    assert (
+        v3.terms["eligibility_text"] == clause
+        and v3.terms["offer_components"][0]["restriction"] == "hotel bookings"
+    )
+    assert v3.terms["kept_from_previous"] == ["eligibility_text", "offer_components"]
+
+    # wording the automatic reading does capture, and that differs, is a change
+    o.eligibility_restrictions = "This card is not available to current cardmembers."
+    report = sync(session, T0 + timedelta(days=5))
+    assert [ch["field"] for ch in c.versions[-1].change_summary] == ["eligibility_text"]
+    assert report.new_versions and c.versions[-1].terms["eligibility_text"].startswith(
+        "This card is not available"
+    )

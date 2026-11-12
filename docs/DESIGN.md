@@ -1697,3 +1697,24 @@ alone never decides; no card has a stated minimum score. The response also lists
 - **Status reasons after a manual review** say the terms were verified by hand against the page read on a given day,
   never the automatic "shown on the official page at the last successful check" (five such log reasons written on
   2026-11-11 were corrected the same day).
+
+### 27.14 Not captured is not removed (Neon test-branch run of 2026-11-12)
+The first successful GitHub run on the Neon test branch made 2 versions: Chase Sapphire Preferred v3 and Sapphire
+Reserve v3, both `eligibility_text`: the hand-verified clause (v2, owner-approved manual entries 3 and 4) → none.
+Both were **false positives**. The pages were not different on the runner (both sources were `unchanged` at
+change detection: same content hash as the stored snapshot). The automatic reader does not capture Chase's
+eligibility clause, so its terms had no `eligibility_text`, and sync recorded that as a removal. It did not happen
+locally only because the local offers were `recheck_pending` (not compared) at the time.
+
+Rule: `eligibility_text`, `guaranteed_min` (with its wording) and `offer_components` are **supplementary terms**
+(`terms.SUPPLEMENTARY`): the automatic reading supplies them only sometimes or never. When it lacks one that the
+latest version has, sync keeps the stored value (`terms.carry_forward`); the version is unchanged, or a version
+made for a real change records the kept fields in `kept_from_previous`. A different non-empty value read from the
+page is still a change. A removal is recorded only by a manual entry. Test:
+`test_terms_the_automatic_reading_did_not_capture_are_kept_not_removed`.
+
+`bankrec offers versions --since <time>` lists versions with old → new values, the page snapshot the automatic
+reading used (id, run, time, HTTP status, content hash, final URL — never the user agent, which carries the contact
+address) and the checks around it. Read-only; prints no database address. The snapshot files themselves stay on the
+machine that ran the capture (a GitHub runner's disk is discarded after the run).
+

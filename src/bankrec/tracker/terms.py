@@ -175,6 +175,37 @@ def material(t: dict[str, Any]) -> dict[str, Any]:
     return out
 
 
+# Terms the automatic page reading supplies only sometimes (eligibility wording when a page uses a pattern the
+# extractor knows) or never (a guaranteed minimum, restricted offer components): they usually come from a manual
+# entry checked against the official page. When the automatic reading lacks one, that means "not captured", not
+# "removed": the stored value is kept (DESIGN §27.14). A removal is recorded only by a manual entry.
+SUPPLEMENTARY = {
+    "eligibility_text": ("eligibility_text",),
+    "guaranteed_min": ("guaranteed_min", "guaranteed_min_text"),
+    "offer_components": ("offer_components",),
+}
+
+
+def _empty(v: Any) -> bool:
+    return v is None or v == [] or v == ""
+
+
+def carry_forward(stored: dict[str, Any], read: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """``read`` (terms from the automatic reading) with the supplementary terms it lacks taken from ``stored`` (the
+    campaign's latest version). Returns the terms and the fields kept this way."""
+    out, kept = dict(read), []
+    for field, keys in SUPPLEMENTARY.items():
+        if _empty(read.get(field)) and not _empty(stored.get(field)):
+            for k in keys:
+                out[k] = stored.get(k)
+            kept.append(field)
+    if kept:
+        out["kept_from_previous"] = (
+            kept  # not a term: a note that the automatic reading did not capture these
+        )
+    return out, kept
+
+
 def material_hash(t: dict[str, Any]) -> str:
     return hashlib.sha1(json.dumps(material(t), sort_keys=True, default=str).encode()).hexdigest()  # noqa: S324
 

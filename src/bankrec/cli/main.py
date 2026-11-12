@@ -906,6 +906,76 @@ def offers_merge_duplicates(
         typer.echo("dry run: re-run with --apply to merge")
 
 
+@offers_app.command("versions")
+def offers_versions(
+    since: Annotated[str, typer.Option(help="versions valid from this UTC time on (YYYY-MM-DD or ISO time)")],
+) -> None:
+    """Read-only: the offer versions created since a time — card, changed fields (old → new) and the page snapshot
+    the automatic reading used (the snapshot's file stays where the run wrote it). Prints no database address."""
+    from datetime import timedelta
+
+    from sqlalchemy import select
+
+    from bankrec.db import prod as P
+    from bankrec.db import staging as S
+
+    t0 = datetime.fromisoformat(since)
+    t0 = t0 if t0.tzinfo else t0.replace(tzinfo=UTC)
+
+    def short(v: Any) -> str:
+        txt = json.dumps(v, default=str) if not isinstance(v, str) else v
+        return txt if len(txt) <= 300 else txt[:297] + "..."
+
+    with _session() as s:
+        rows = s.execute(
+            select(P.CampaignVersion, P.Campaign)
+            .join(P.Campaign, P.Campaign.id == P.CampaignVersion.campaign_id)
+            .where(P.CampaignVersion.valid_from >= t0)
+            .order_by(P.CampaignVersion.valid_from)
+        ).all()
+        if not rows:
+            typer.echo(f"no versions since {t0.isoformat()}")
+        for v, c in rows:
+            card = s.get(P.TrackedCard, c.card_key)
+            typer.echo(f"{c.card_key}  v{v.version}  from {v.valid_from.isoformat()}  ({c.campaign_key})")
+            for ch in v.change_summary or []:
+                typer.echo(
+                    f"  {ch['field']}:\n    old: {short(ch.get('old'))}\n    new: {short(ch.get('new'))}"
+                )
+            if v.terms.get("kept_from_previous"):
+                typer.echo(f"  kept (not captured by the automatic reading): {v.terms['kept_from_previous']}")
+            typer.echo(f"  source: {v.source_url}")
+            snap = s.scalars(
+                select(S.PageSnapshot)
+                .where(
+                    S.PageSnapshot.source_id.in_(card.source_ids if card else []),
+                    S.PageSnapshot.retrieved_at <= v.valid_from,
+                )
+                .order_by(S.PageSnapshot.retrieved_at.desc())
+                .limit(1)
+            ).first()
+            if snap is None:
+                typer.echo("  snapshot: none (a manual entry, or no automatic reading before this version)")
+            else:
+                cond = snap.capture_conditions or {}
+                typer.echo(
+                    f"  snapshot: {snap.snapshot_id}  run {snap.run_id}  {snap.retrieved_at.isoformat()}  "
+                    f"{snap.capture_method}  HTTP {snap.http_status}  outcome {snap.outcome}  "
+                    f"content {snap.content_sha256[:12]}  context {cond.get('capture_context', '-')}  "
+                    f"final URL {cond.get('url_final', '-')}"  # never the user agent: it carries the contact address
+                )
+            checks = s.scalars(
+                select(P.CampaignCheck)
+                .where(
+                    P.CampaignCheck.campaign_id == c.id,
+                    P.CampaignCheck.at >= v.valid_from - timedelta(days=1),
+                )
+                .order_by(P.CampaignCheck.at)
+            ).all()
+            for k in checks:
+                typer.echo(f"  check {k.at.isoformat()}  {k.outcome}  {short(k.detail or '')}")
+
+
 @offers_app.command("pending")
 def offers_pending() -> None:
     """List hand-entered campaigns waiting for review."""
