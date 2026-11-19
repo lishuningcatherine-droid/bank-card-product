@@ -33,3 +33,11 @@
 - "for Good Credit" variants are separate products (no welcome bonus or intro APR); the fuzzy-duplicate pairs they
   form with the main cards are in the review queue, never auto-merged.
 - Checking and savings (360 Checking, 360 Performance Savings) are offered but not yet ingested.
+
+## Page design of 2026-11 (DESIGN §27.15)
+Venture, Savor, Savor Rewards for Students and Platinum Secured pages (fixtures `*-2026-11-19.html`): no `h1`; the
+card name is an uppercase label (`[class*="grv-tw-uppercase"]`, a bank heading selector), cased as the card art's
+alt text; facts are `h3.grv-tw-utility-eyebrow-medium` labels ("Annual fee", "PURCHASE RATE") followed by their
+value; footnote numbers follow sentences directly and are removed. Pages still using the earlier design
+(Quicksilver for Students, Venture X) are read as before.
+

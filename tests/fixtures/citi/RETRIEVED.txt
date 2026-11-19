@@ -4,3 +4,8 @@
 aadvantage-business.html | https://www.citi.com/credit-cards/citi-aadvantage-business-credit-card | 200 | text/html; charset=utf-8 | 832705 | 2026-11-09T23:46:58Z
 double-cash.html | https://www.citi.com/credit-cards/citi-double-cash-credit-card | 200 | text/html; charset=utf-8 | 837703 | 2026-11-09T23:46:41Z
 strata-premier.html | https://www.citi.com/credit-cards/citi-strata-premier-credit-card | 200 | text/html; charset=utf-8 | 864761 | 2026-11-09T23:46:25Z
+# 2026-11-19, plain HTTP GET (no rendering, robots.txt checked): the static page before the script fills in the offer
+# numbers ("Earn $ cash back bonus"); used to test that an unfilled offer is "unreadable", never "no offer".
+double-cash-static-2026-11-19.html | https://www.citi.com/credit-cards/citi-double-cash-credit-card | 200 | text/html | 726052 | 2026-11-19T01:25:39Z
+# 2026-11-19, rendered as above (waiting for the filled bonus amount): the new wording "after $1,500 in purchases".
+double-cash-2026-11-19.html | https://www.citi.com/credit-cards/citi-double-cash-credit-card | 200 | text/html; charset=utf-8 | 873178 | 2026-11-19T01:37:44Z

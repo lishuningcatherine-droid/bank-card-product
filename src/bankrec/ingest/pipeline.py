@@ -1008,6 +1008,11 @@ class Pipeline:
             for o in existing.offers
             if o.status in {"current", "recheck_pending"}
         }
+        if mp.offer_status in {"unreadable", "not_captured"}:
+            # The page shows an offer that could not be read (e.g. its amounts were not filled in by the page
+            # script): nothing read is not "gone". Stored offers stay as they are, not re-confirmed, so the tracker
+            # records a failed check instead of "not shown" (DESIGN §27.15).
+            old_offers = {}
         new_offers: dict[str, MergedOffer] = {
             offer_key(key, jsonable(o.rec.model_dump())): o for o in valid_offers
         }

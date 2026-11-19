@@ -447,3 +447,27 @@ def test_terms_the_automatic_reading_did_not_capture_are_kept_not_removed(sessio
     assert report.new_versions and c.versions[-1].terms["eligibility_text"].startswith(
         "This card is not available"
     )
+
+
+@pytest.mark.parametrize("how", ["parser_failure", "unreadable_page"])
+def test_an_offer_the_page_did_not_let_us_read_is_a_failed_check_not_missing(session, how) -> None:  # type: ignore[no-untyped-def]
+    """The Neon test-branch run of 2026-11-19: Citi Double Cash was captured before its script filled in the offer
+    ("Earn $ cash back bonus"); sync recorded "no longer shows this offer" and moved it to pending verification. An
+    offer that could not be read is a failed check (DESIGN §27.15); a real disappearance still needs verification."""
+    p = _product(session)
+    o = _offer(session, p)
+    sync(session, T0)
+    if how == "parser_failure":  # alerts.downgrade after fields were lost
+        o.status, o.recheck_reason = "recheck_pending", "parser_failure"
+    else:  # the page was published with an unreadable offer block
+        o.status, o.recheck_reason = "recheck_pending", None
+        p.offer_status = "unreadable"
+    t1 = T0 + timedelta(days=1)
+    _run(session, t1, "published")
+    sync(session, t1)
+    [c] = _campaigns(session)
+    assert c.status == "active" and c.consecutive_failures == 1
+    checks = list(session.scalars(select(P.CampaignCheck).where(P.CampaignCheck.campaign_id == c.id)))
+    assert [k.outcome for k in checks][-1] == "failed"
+    assert "could not be read" in (checks[-1].detail or "")
+    assert not any(k.outcome == "not_seen" for k in checks)

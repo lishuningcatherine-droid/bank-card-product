@@ -24,6 +24,10 @@ sources:
   priority: 100
   expected_entity: Citi Double Cash® Card
   has_offers: true
+  # the bonus amount is filled in by a later request (gcgapi …/offerPricingPositioning/retrieve); the 2026-11-19
+  # GitHub run captured the page before it arrived ("Earn $ cash back bonus"). Wait for it; if it never arrives the
+  # capture fails (a failed check), it is not read as "no offer".
+  render_ready_selector: '[data-id^="cashBackAmount-"]:not(:empty)'
   notes: card page; registered 2026-11-09 for the offer tracker (config/tracker/cards.yaml)
 - bank_id: citi
   slug: custom-cash

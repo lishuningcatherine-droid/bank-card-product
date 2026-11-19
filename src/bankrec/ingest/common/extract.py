@@ -816,6 +816,18 @@ def offer_signal(text: str) -> str | None:
     return None
 
 
+_OFFER_CUE = re.compile(r"\b(?:earn|bonus|after\s+(?:you\s+)?spend(?:ing)?)\b", re.IGNORECASE)
+
+
+def placeholder_offer(text: str) -> str | None:
+    """An offer line whose numbers a page script did not fill in ("Earn $ cash back bonus", "after spending $ on
+    purchases in the first  months"): the offer is there but unreadable, never "no offer"."""
+    for ln in text.split("\n"):
+        if len(ln) <= 200 and _OFFER_CUE.search(ln) and contains_placeholder(ln):
+            return ln.strip()
+    return None
+
+
 _BT_FEE = re.compile(
     r"balance\s+transfer\s+fee\s+(?:of|is|:)?\s*(?:either\s+)?(?P<pct>\d{1,2}(?:\.\d{1,2})?)%\s+of\s+(?:each|the)\s+"
     r"(?:transfer|amount)[^.$]{0,40}?(?:,|\s+or)\s*\$(?P<min>\d{1,3}(?:\.\d{2})?)\s+(?:minimum|whichever)",

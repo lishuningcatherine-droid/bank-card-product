@@ -145,6 +145,9 @@ Prepared and rehearsed locally; nothing switched. In order — stop at the first
    eligibility clause) — fixed (DESIGN §27.14). **Status (2026-11-12): the test branch still holds those 2 false
    versions; reset it and redo steps 3–4 from a fresh backup**, then the repeated run must make no false versions
    (`bankrec offers versions --since <run start>` lists what it made). Production branch and schedule: not started.
+   **2026-11-19:** the redone test branch passed (run 44430968042: no new campaigns or versions). Its 3 parser
+   regressions were page-layout changes (Capital One new design; Citi script timing and new wording), fixed in
+   DESIGN §27.15. Next: one more test-branch run must read those pages without regressions.
 2. Create a test branch (e.g. `migration-test`); copy its **direct** connection string (pooling off, no `-pooler`,
    `sslmode=require`).
 3. In your own terminal: `deploy/neon/backup-local.sh`; `read -rs TARGET_DATABASE_URL && export TARGET_DATABASE_URL`;

@@ -29,7 +29,8 @@ from bankrec.model import ExtractionContext, RewardRateRec, Sourced
 _HERO = re.compile(
     r"^Earn (?:[\d,]+ (?:AAdvantage® )?bonus (?:points|miles)|\$[\d,]+ cash back bonus)$", re.I
 )
-_HERO_REQ = re.compile(r"^(?:after spending|For your business after) \$[\d,]+", re.I)
+# "after spending $1,500 on purchases ..." (to 2026-11-09), "after $1,500 in purchases ..." (seen 2026-11-19)
+_HERO_REQ = re.compile(r"^(?:after spending|after|For your business after) \$[\d,]+", re.I)
 _FEE_WAIVED = re.compile(r"^Annual Fee, waived for the first year\d?$", re.I)
 _TERMS = re.compile(r"^This offer may not be available if you leave this page\.", re.I)
 _ELIGIBILITY = re.compile(
@@ -45,7 +46,7 @@ _DOUBLE = re.compile(r"^Unlimited (\d)% cash back on purchases$", re.I)
 
 class Adapter(DeclarativeAdapter):
     bank_id = "citi"
-    parser_version = "citi/1.0.0"
+    parser_version = "citi/1.1.0"
 
     def product_name(self, page: ClassifiedPage) -> str | None:
         expected = page.source.expected_entity
@@ -128,14 +129,17 @@ class Adapter(DeclarativeAdapter):
     ) -> None:
         super()._offers(page, ctx, c, offer_type)
         blocks = self.statements(page, "offer", None)
-        if not blocks or "AAdvantage® bonus miles" not in blocks[0]:
-            return
-        # The shared offer reader knows "75,000 bonus miles", not "75,000 AAdvantage® bonus miles ... For your
-        # business after $5,000": it reads the same words without the program name and the business phrase, with
-        # the page's hero as the located evidence.
+        if not blocks or any(o.value and o.value.requirement_type for o in c.offers):
+            return  # already read in full
+        # The shared offer reader knows "75,000 bonus miles after spending $5,000 on purchases", not "75,000
+        # AAdvantage® bonus miles ... For your business after $5,000" nor "$200 cash back bonus after $1,500 in
+        # purchases": it reads the same words in its own phrasing, with the page's hero as the located evidence.
         plain = re.sub(
             r"AAdvantage® bonus miles\s+For your business after", "bonus miles after spending", blocks[0]
         )
+        plain = re.sub(r"\bafter \$([\d,]+) in purchases\b", r"after spending $\1 on purchases", plain)
+        if plain == blocks[0]:
+            return
         foot = " ".join(self.statements(page, "offer_footnote", None))
         o = X.offer(plain, foot, ctx, offer_type=offer_type, offer_url=page.url, evidence=blocks[0])
         if o is not None and o.value is not None and o.value.requirement_type is not None:

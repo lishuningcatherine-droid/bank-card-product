@@ -20,7 +20,9 @@ product_types:
 meaningful_query_params: []
 referral_url_patterns: []
 boilerplate_phrases: []
-product_heading_selectors: [".eyebrow"]
+# ".eyebrow": the earlier design; '[class*="grv-tw-uppercase"]': the card-name label of the design seen from 2026-11
+# (Venture, Savor, Savor for Students, Platinum Secured pages have no h1)
+product_heading_selectors: [".eyebrow", '[class*="grv-tw-uppercase"]']
 cfpb_issuer_names: ["Capital One, National Association"]  # as spelled in the TCCP release 2025-12-31
 discovery:
   robots_url: "https://www.capitalone.com/robots.txt"

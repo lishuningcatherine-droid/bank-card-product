@@ -21,6 +21,8 @@ from bankrec.tracker import config, status, terms
 
 log = logging.getLogger("bankrec.tracker")
 SUCCESS = {"published", "unchanged"}
+UNREADABLE = {"unreadable", "not_captured"}  # products.offer_status: an offer is shown but was not read
+UNREAD_REASONS = {"parser_failure"}  # offers.recheck_reason set when a parser lost fields
 _SEEN_SLACK = timedelta(minutes=30)
 
 
@@ -282,7 +284,25 @@ def sync_campaigns(session: Session, card: P.TrackedCard, now: datetime, report:
             continue
         seen_now = key in current
         not_seen = c.status == "pending_verification" and not seen_now
+        # The page was read but its offer could not be (numbers not filled in by the page script, or fields lost to a
+        # parser failure): that is a failed check, never evidence that the offer is gone (DESIGN §27.15).
+        unreadable = product.offer_status in UNREADABLE or any(
+            str(o.id) in (c.prod_offer_ids or []) and o.recheck_reason in UNREAD_REASONS for o in offers
+        )
         for rs in _runs_since(session, card.source_ids, c.last_checked_at):
+            if rs.terminal_status in SUCCESS and not seen_now and unreadable:
+                c.consecutive_failures += 1
+                _check(
+                    session,
+                    c,
+                    rs.at,
+                    "failed",
+                    report,
+                    run_id=rs.run_id,
+                    source_id=rs.source_id,
+                    detail="page read, but its offer could not be read (not treated as a missing offer)",
+                )
+                continue
             if rs.terminal_status in SUCCESS:
                 if seen_now and c.last_verified_at is not None and c.last_verified_at >= rs.at - _SEEN_SLACK:
                     continue  # recorded above as seen/changed

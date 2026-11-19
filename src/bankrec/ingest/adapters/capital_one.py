@@ -6,6 +6,10 @@ by value-asserting tests in ``tests/adapters/test_capital_one.py``. See ``docs/a
 * Consumer card pages state their facts as "showcase" pairs: an ``h3.showcase-headline`` ("Annual Fee", "Purchase
   Rate", "Credit Level", "10X", "New Cardmember Offer") and a ``.showcase-body`` ("$395", "19.74% - 28.74% variable
   APR", ...). Small-business pages state them as plain lines ("$395 annual fee", "24.74% variable APR.").
+* Since November 2026 several consumer pages (Venture, Savor, Savor for Students, Platinum Secured) use a new
+  design: no ``h1``; the card name is an uppercase label (``[class*=grv-tw-uppercase]``, "Venture Rewards"), and
+  facts are ``h3.grv-tw-utility-eyebrow-medium`` labels ("Annual fee", "PURCHASE RATE") followed by their value.
+  Footnote numbers follow sentences directly ("…from account opening.3"); they are removed. Both designs are read.
 * Pages are static HTML. Rendering them is not possible within robots.txt: the page script loads its card data from
   ``card-apis.capitalone.com`` (robots.txt answers 403 → treated as disallow-all), and without it the app redirects
   to ``/page-not-found/``. Sources are therefore fetched with plain HTTP, and offers stated in the static HTML are
@@ -41,7 +45,11 @@ _EARN_LINE = re.compile(
     re.IGNORECASE,
 )
 _NOT_EARN = re.compile(
-    r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|\bdiscount|\bcould earn|statement\s+credit|\bpromo", re.IGNORECASE
+    r"\bup\s+to\s+\d|\bsave\b|%\s+off\b|\bdiscount|\bcould earn|statement\s+credit|\bpromo"
+    # the new design's Capital One Entertainment perk: "Earn 5X miles on purchases and get cardholder-only access to
+    # VIP packages, pre-sales and on-site perks across sports, music, dining and more" (its purchases, not dining)
+    r"|cardholder-only\s+access|\bVIP\s+packages\b",
+    re.IGNORECASE,
 )
 _OFFER = re.compile(
     r"\bearn\s+(?:a\s+)?(?:one-time\s+)?(?:\$[\d,]+\s+cash\s+bonus|[\d,]{5,}\s+bonus\s+miles|bonus\s+of\s+[\d,]{5,}"
@@ -53,6 +61,14 @@ _OFFER = re.compile(
 _INTRO_FEE = re.compile(r"\$(\d[\d,]*) annual fee for the first year, and then \$(\d[\d,]*)", re.IGNORECASE)
 
 
+_FOOTNOTE = re.compile(r"(?<=[.!?])\s?\d{1,2}$")
+
+
+def _clean(s: str) -> str:
+    """Collapse whitespace and drop a footnote number that follows the last sentence ("…after that.5")."""
+    return _FOOTNOTE.sub("", re.sub(r"\s+", " ", s).strip())
+
+
 def _plain(s: str) -> str:
     """Same normalisation as the R-NAME validation rule, so a chosen name always passes it."""
     return re.sub(r"[^a-z0-9 ]+", "", re.sub(r"[®™℠]", "", s.lower())).strip()
@@ -60,7 +76,7 @@ def _plain(s: str) -> str:
 
 class Adapter(DeclarativeAdapter):
     bank_id = "capital_one"
-    parser_version = "capital_one/1.0.0"
+    parser_version = "capital_one/1.1.0"
 
     # ------------------------------------------------------------------ helpers
     def _pairs(self, page: ClassifiedPage) -> list[tuple[str, str]]:
@@ -72,6 +88,17 @@ class Adapter(DeclarativeAdapter):
             ht = re.sub(r"\s+", " ", doc.node_text(h)).strip() if h is not None else ""
             bt = re.sub(r"\s+", " ", doc.node_text(b)).strip() if b is not None else ""
             if ht or bt:
+                out.append((ht, bt))
+        # new design: an eyebrow-style h3 label, its value in the next element with text
+        for h in doc.select('h3[class*="utility-eyebrow"]'):
+            sib = h.next
+            while sib is not None and (
+                sib.tag in {"-text", "#text", "-comment"} or not doc.node_text(sib).strip()
+            ):
+                sib = sib.next
+            ht = _clean(doc.node_text(h))
+            bt = _clean(doc.node_text(sib)) if sib is not None else ""
+            if ht and bt:
                 out.append((ht, bt))
         return out
 
@@ -87,6 +114,18 @@ class Adapter(DeclarativeAdapter):
         line = X.first_line(doc, r"^[\w’'®\s.-]{3,60} from Capital One$")
         if line:
             return line.strip()
+        # new design: the uppercase label ("Venture Rewards"; CSS uppercases it, the HTML may be lower case), spelled
+        # as the card art's alt text when that is the same name ("savor rewards for students" → "Savor Rewards for
+        # Students")
+        for n in doc.select('[class*="grv-tw-uppercase"]'):
+            label = re.sub(r"\s+", " ", doc.node_text(n)).strip()
+            if not label or _plain(label) not in visible or len(label) > 60:
+                continue
+            for img in doc.select("img[alt]"):
+                alt = (img.attributes.get("alt") or "").strip()
+                if alt.lower() == label.lower():
+                    return alt
+            return label
         # The document title ("Spark Cash Plus | 2% Cash Back Business Card | Capital One") when the page states it.
         title = doc.title.split("|")[0].strip()
         return title if title and _plain(title) in visible else None
@@ -202,7 +241,7 @@ class Adapter(DeclarativeAdapter):
                     )
                 elif head.lower() == "unlimited rewards":
                     out += [p.strip() for p in re.split(r"(?=\bEarn unlimited\b)", body) if p.strip()]
-            out += [ln for ln in doc.text.split("\n") if _EARN_LINE.search(ln)]
+            out += [_clean(ln) for ln in doc.text.split("\n") if _EARN_LINE.search(ln)]
             uniq: list[str] = []
             for line in out:
                 # "3% cash back at grocery stores ..., plus 1% cash back on all other purchases"
@@ -212,7 +251,7 @@ class Adapter(DeclarativeAdapter):
                         uniq.append(part)
             return uniq
         if key == "offer":
-            cands = [b for _, b in self._pairs(page)] + doc.text.split("\n")
+            cands = [b for _, b in self._pairs(page)] + [_clean(ln) for ln in doc.text.split("\n")]
             for s in cands:
                 m = _OFFER.search(s)
                 if m and s not in out:

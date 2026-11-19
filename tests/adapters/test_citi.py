@@ -5,6 +5,7 @@ Every expected value was read off the fixture's page text by hand.
 
 from decimal import Decimal
 
+from bankrec.model import NullReason
 from tests.adapters._helpers import rates, run_official
 
 
@@ -15,7 +16,7 @@ def _offer(c):  # type: ignore[no-untyped-def]
 
 def test_strata_premier() -> None:
     c = run_official("citi", "strata-premier", "strata-premier.html")
-    assert c.parser_version == "citi/1.0.0"
+    assert c.parser_version == "citi/1.1.0"
     assert c.name == "Citi Strata Premier® Card"
     assert c.value("annual_fee_cents") == 9500  # "Annual Fee1" / "$95"
     assert (c.value("purchase_apr_min_pct"), c.value("purchase_apr_max_pct")) == (
@@ -82,3 +83,30 @@ def test_aadvantage_business() -> None:
         500000,
         5,
     )
+
+
+def test_unfilled_offer_is_unreadable_not_absent() -> None:
+    """The 2026-11-19 GitHub run captured Double Cash before its script filled in the offer ("Earn $ cash back bonus",
+    "after spending $ on purchases in the first  months"). That is a reading failure, never "no offer"."""
+    c = run_official("citi", "double-cash", "double-cash-static-2026-11-19.html")
+    assert not [o for o in c.offers if o.value]
+    assert c.offer_status == "unreadable"
+    assert c.fields["offer_capture"].null_reason is NullReason.ambiguous
+    assert any("not filled in by the page script" in n for n in c.notes)
+
+
+def test_double_cash_waits_for_the_filled_amount() -> None:
+    from bankrec.registry.loader import load_registry
+
+    src = next(s for s in load_registry(require_sources=False).sources if s.source_id == "citi:double-cash")
+    assert src.requires_render and src.render_ready_selector == '[data-id^="cashBackAmount-"]:not(:empty)'
+
+
+def test_double_cash_new_requirement_wording() -> None:
+    """2026-11-19: "Earn $200 cash back bonus" / "after $1,500 in purchases in the first 6 months of account opening"
+    (earlier: "after spending $1,500 on purchases ...")."""
+    c = run_official("citi", "double-cash", "double-cash-2026-11-19.html")
+    o = _offer(c)
+    assert (o.amount_max, o.reward_unit, o.requirement_min_cents) == (20000, "cents", 150000)
+    assert (o.qualification_window_count, o.qualification_window_unit) == (6, "months")
+    assert o.verbatim_text.startswith("Earn $200 cash back bonus after $1,500 in purchases")

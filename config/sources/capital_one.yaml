@@ -27,10 +27,10 @@ sources:
   requires_render: false
   enabled: true
   priority: 100
-  expected_entity: Venture Rewards from Capital One
+  expected_entity: Venture Rewards
   has_offers: false
   refresh_tier: offer
-  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13; new page design from 2026-11 (name in an uppercase label, no h1), name and facts re-read 2026-11-19
 - bank_id: capital_one
   slug: ventureone
   product_type: credit_card
@@ -79,10 +79,10 @@ sources:
   requires_render: false
   enabled: true
   priority: 100
-  expected_entity: Savor Rewards from Capital One
+  expected_entity: Savor Rewards
   has_offers: false
   refresh_tier: offer
-  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13; new page design from 2026-11 (name in an uppercase label, no h1), name and facts re-read 2026-11-19
 - bank_id: capital_one
   slug: savorone
   product_type: credit_card
@@ -108,7 +108,7 @@ sources:
   expected_entity: Savor Rewards for Students
   has_offers: false
   refresh_tier: offer
-  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13; new page design from 2026-11 (name in an uppercase label, no h1), name and facts re-read 2026-11-19
 - bank_id: capital_one
   slug: quicksilver-student
   product_type: credit_card
@@ -144,10 +144,10 @@ sources:
   requires_render: false
   enabled: true
   priority: 100
-  expected_entity: Platinum Secured Credit Card from Capital One
+  expected_entity: Platinum Secured
   has_offers: false
   refresh_tier: offer
-  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13
+  notes: static HTML (rendering blocked by robots on card-apis.capitalone.com); verbatim capture 2026-10-13; new page design from 2026-11 (name in an uppercase label, no h1), name and facts re-read 2026-11-19
 - bank_id: capital_one
   slug: quicksilver-secured
   product_type: credit_card

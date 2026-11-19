@@ -14,3 +14,7 @@ quicksilver-student-2026-10-14.html | https://www.capitalone.com/credit-cards/qu
 savor-good-credit-2026-10-14.html | https://www.capitalone.com/credit-cards/savor-good-credit/ | https://www.capitalone.com/credit-cards/savor-good-credit/ | 200 | text/html | 936754 | 2026-10-14T16:49:03Z
 360-checking-2026-10-19.html | https://www.capitalone.com/bank/checking-accounts/online-checking-account/ | https://www.capitalone.com/bank/checking-accounts/online-checking-account/ | 200 | text/html | 658281 | 2026-10-19T03:11:00Z
 360-performance-savings-2026-10-19.html | https://www.capitalone.com/bank/savings-accounts/online-performance-savings-account/ | https://www.capitalone.com/bank/savings-accounts/online-performance-savings-account/ | 200 | text/html | 596691 | 2026-10-19T03:11:06Z
+# 2026-11-19: the new page design (no h1; name in an uppercase label; facts as eyebrow h3 + value). Same method.
+venture-2026-11-19.html | https://www.capitalone.com/credit-cards/venture/ | https://www.capitalone.com/credit-cards/venture/ | 200 | text/html | 737677 | 2026-11-19T01:26:47Z
+savor-student-2026-11-19.html | https://www.capitalone.com/credit-cards/savor-student/ | https://www.capitalone.com/credit-cards/savor-student/ | 200 | text/html | 731188 | 2026-11-19T01:25:33Z
+platinum-secured-2026-11-19.html | https://www.capitalone.com/credit-cards/platinum-secured/ | https://www.capitalone.com/credit-cards/platinum-secured/ | 200 | text/html | 652318 | 2026-11-19T01:25:36Z

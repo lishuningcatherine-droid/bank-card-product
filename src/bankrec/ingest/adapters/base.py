@@ -1028,6 +1028,16 @@ class DeclarativeAdapter:
             c.offer_absent_note = (
                 f"We couldn't read the welcome offer on this page. Check {bank} for the current offer."
             )
+        elif (
+            unfilled := X.placeholder_offer(page.doc.text if page.doc is not None else page.text)
+        ) is not None:
+            # the page script did not fill in the offer's numbers (seen on Citi, 2026-11-19): a reading failure
+            c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.ambiguous)
+            c.notes.append(f"offer amounts not filled in by the page script: {unfilled[:160]}")
+            c.offer_status = "unreadable"
+            c.offer_absent_note = (
+                f"We couldn't read the welcome offer on this page. Check {bank} for the current offer."
+            )
         elif self.rules.get("offers_script_only"):
             c.fields["offer_capture"] = ctx.field(None, None, null_reason=NullReason.not_applicable)
             c.offer_status = "not_captured"

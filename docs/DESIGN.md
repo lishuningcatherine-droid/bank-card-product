@@ -1718,3 +1718,27 @@ reading used (id, run, time, HTTP status, content hash, final URL — never the 
 address) and the checks around it. Read-only; prints no database address. The snapshot files themselves stay on the
 machine that ran the capture (a GitHub runner's disk is discarded after the run).
 
+### 27.15 Parser regressions of the 2026-11-19 test-branch run (layout changes, not runner pages)
+Run 44430968042 raised 3 new `parser_regression` alerts. All three pages were read again from a different machine
+the same day and gave the same result, so none is a bot/region page served to GitHub runners, and no card is
+discontinued or redirected (HTTP 200, same URL).
+
+| Source | Cause | Fix |
+|---|---|---|
+| `capital_one:savor-student`, `capital_one:platinum-secured` (`non_product_page`, "faq") | Capital One's new page design: no `h1`; the card name is an uppercase label; an FAQ section with 5–6 questions made the classifier call them FAQ pages. Venture and Savor (older incidents, "expected entity not found") have the same design, and their pages no longer say "… from Capital One". | Bank heading selector `[class*="grv-tw-uppercase"]`; expected names as the pages state them ("Venture Rewards", "Savor Rewards", "Platinum Secured"; same canonical keys); the adapter reads the new design's name (label, cased as the card art's alt text), its fact pairs (`h3.grv-tw-utility-eyebrow-medium` + value) and drops footnote numbers after sentences; the Capital One Entertainment perk sentence is not read as a dining rate. |
+| `citi:double-cash` (`fields_lost:offer_capture`) | The rendered page was captured before its script filled in the offer ("Earn $ cash back bonus"; the numbers come from a later request, `gcgapi/…/offerPricingPositioning/retrieve`). The wording also changed: "after $1,500 in purchases" (was "after spending $1,500 on purchases"). | `render_ready_selector` waits for the filled amount (a timeout is a failed capture, never "no offer"); the adapter reads both wordings. |
+
+Rules added (all banks):
+- An offer line whose numbers a script did not fill in (`extract.placeholder_offer`) makes the offer
+  **unreadable**, never "none found".
+- When a page's offer is unreadable or not captured, a stored offer missing from the reading is **not**
+  "disappeared" (no review item that could end it); it stays as it was and is not re-confirmed.
+- The tracker records an official campaign whose page was read but whose offer could not be (product
+  `offer_status` unreadable/not captured, or the offer set aside with `recheck_reason = parser_failure`) as a
+  **failed** check, never "not shown". Before this, Citi Double Cash went to pending verification ("not shown")
+  on that run; it was never ended. A real disappearance still goes to pending verification.
+
+Observed: Citi showed different Double Cash requirements on two renders minutes apart ($750 / 3 months and
+$1,500 / 6 months; the page says "Offers may vary"). If that persists, alternating readings would show as
+alternating versions; watch `bankrec offers versions` after scheduled runs.
+

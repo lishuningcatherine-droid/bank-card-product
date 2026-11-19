@@ -557,3 +557,25 @@ def test_product_with_a_degraded_supplementary_page_is_held(session, settings, t
     assert not r.review_items
     session.expire_all()
     assert not _product(session, "Example Bank Everyday Cash Card").recheck_pending
+
+
+def test_unfilled_offer_is_not_a_disappeared_offer(session, settings, tmp_path) -> None:  # type: ignore[no-untyped-def]
+    """A capture whose page script did not fill in the offer's numbers (Citi Double Cash, GitHub run of 2026-11-19:
+    "Earn $ cash back bonus") reads as "unreadable": the stored offer is neither "disappeared" nor re-confirmed."""
+    reg = registry()
+    run(session, settings, reg, [source(reg, "everyday-cash")])
+    p = _product(session, "Example Bank Everyday Cash Card")
+    [o] = p.offers
+    confirmed = o.last_confirmed_at
+    unfilled = mutate(
+        tmp_path,
+        "card_everyday_cash.html",
+        "Earn a $200 bonus after you spend $500 on purchases in the first 3 months from account opening.",
+        "Earn a $ bonus after you spend $ on purchases in the first  months from account opening.",
+    )
+    run(session, settings, reg, [source(reg, "everyday-cash", unfilled)])
+    assert not any(c.rule_id == "offer_disappeared" for c in session.scalars(select(S.ChangeEvent)))
+    session.refresh(o)
+    # set aside as a reading failure (the parser-regression path), never as a disappeared offer that review could end
+    assert o.status in {"current", "recheck_pending"} and o.recheck_reason in {None, "parser_failure"}
+    assert o.last_confirmed_at == confirmed  # not re-confirmed by an unreadable capture
