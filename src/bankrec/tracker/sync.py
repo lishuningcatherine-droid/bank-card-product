@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from bankrec.db import prod as P
@@ -33,6 +33,7 @@ class SyncReport:
     new_campaigns: list[str] = field(default_factory=list)
     new_versions: list[str] = field(default_factory=list)
     status_changes: list[str] = field(default_factory=list)
+    variants: dict[str, list[int]] = field(default_factory=dict)  # campaign → earlier versions seen again
     checks: dict[str, int] = field(default_factory=dict)
     rules: int = 0
     rules_retired: list[str] = field(default_factory=list)
@@ -182,13 +183,55 @@ def _check(
     run_id: str | None = None,
     source_id: str | None = None,
     detail: str | None = None,
+    variant: int | None = None,
 ) -> None:
     session.add(
         P.CampaignCheck(
-            campaign_id=c.id, at=at, run_id=run_id, source_id=source_id, outcome=outcome, detail=detail
+            campaign_id=c.id,
+            at=at,
+            run_id=run_id,
+            source_id=source_id,
+            outcome=outcome,
+            detail=detail,
+            variant_version=variant,
         )
     )
     report.checks[outcome] = report.checks.get(outcome, 0) + 1
+
+
+def last_observed(session: Session, c: P.Campaign) -> dict[int, datetime]:
+    """When each version's terms were last observed: its latest matching check, else the end of its validity."""
+    out: dict[int, datetime] = {}
+    for v in c.versions:
+        if v.valid_to is not None:
+            out[v.version] = v.valid_to
+    for ver, at in session.execute(
+        select(P.CampaignCheck.variant_version, func.max(P.CampaignCheck.at))
+        .where(P.CampaignCheck.campaign_id == c.id, P.CampaignCheck.variant_version.is_not(None))
+        .group_by(P.CampaignCheck.variant_version)
+    ):
+        if ver is not None:
+            out[ver] = max(at, out.get(ver, at))
+    return out
+
+
+def recent_variant(
+    session: Session, c: P.Campaign, t: dict[str, Any], at: datetime
+) -> P.CampaignVersion | None:
+    """An earlier version with exactly these material terms, observed within VARIANT_WINDOW_DAYS before ``at``."""
+    h = terms.material_hash(t)
+    seen = last_observed(session, c)
+    window = timedelta(days=terms.VARIANT_WINDOW_DAYS)
+    latest = _latest(c)
+    if at - seen.get(latest.version, latest.valid_from) > window:
+        return None  # the latest terms are no longer being seen: a return to earlier terms is a real change
+    for v in sorted(c.versions, key=lambda v: v.version, reverse=True):
+        if v.version == c.current_version or terms.material_hash(v.terms) != h:
+            continue
+        last = seen.get(v.version)
+        if last is not None and at - last <= window:
+            return v
+    return None
 
 
 def _runs_since(session: Session, source_ids: list[str], since: datetime | None) -> list[S.RunSourceStatus]:
@@ -252,7 +295,7 @@ def sync_campaigns(session: Session, card: P.TrackedCard, now: datetime, report:
                 not_seen=False,
             )
             log_status(session, c, st, f"first seen on the official page ({url}); {why}", now)
-            _check(session, c, o.last_confirmed_at, "seen", report, detail=url)
+            _check(session, c, o.last_confirmed_at, "seen", report, detail=url, variant=1)
             report.new_campaigns.append(key)
             existing[key] = c
             continue
@@ -265,14 +308,37 @@ def sync_campaigns(session: Session, card: P.TrackedCard, now: datetime, report:
         # a term the automatic reading did not capture is not a removal (DESIGN §27.14)
         t, _kept = terms.carry_forward(latest.terms, t)
         changed = terms.material_hash(t) != stored
+        variant: P.CampaignVersion | None = None
         if changed:
+            # terms seen recently as an earlier version: the offer varies by visit (DESIGN §27.16)
+            variant = recent_variant(session, c, t, o.last_confirmed_at)
+        if variant is not None:
+            changed = False
+            observed, detail = (
+                variant.version,
+                f"{url} — terms of version {variant.version} seen again (offer varies by visit)",
+            )
+            if variant.version not in report.variants.get(key, []):
+                report.variants.setdefault(key, []).append(variant.version)
+        elif changed:
             changes = terms.diff(latest.terms, t)
             add_version(session, c, t, now, url=url, excerpt=excerpt, changes=changes)
             report.new_versions.append(
                 f"{key} v{c.current_version}: " + ", ".join(ch["field"] for ch in changes)
             )
+            observed, detail = c.current_version, url
+        else:
+            observed, detail = latest.version, url
         if c.last_verified_at is None or o.last_confirmed_at > c.last_verified_at:
-            _check(session, c, o.last_confirmed_at, "changed" if changed else "seen", report, detail=url)
+            _check(
+                session,
+                c,
+                o.last_confirmed_at,
+                "changed" if changed else "seen",
+                report,
+                detail=detail,
+                variant=observed,
+            )
             c.last_verified_at = o.last_confirmed_at
             c.consecutive_failures = 0
         if str(o.id) not in (c.prod_offer_ids or []):

@@ -190,6 +190,11 @@ def _empty(v: Any) -> bool:
     return v is None or v == [] or v == ""
 
 
+# Terms seen again within this time of their last observation are another observation of that variant (issuers
+# whose pages show different terms on different visits, "Offers may vary"), not a new version (DESIGN §27.16).
+VARIANT_WINDOW_DAYS = 30
+
+
 def carry_forward(stored: dict[str, Any], read: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
     """``read`` (terms from the automatic reading) with the supplementary terms it lacks taken from ``stored`` (the
     campaign's latest version). Returns the terms and the fields kept this way."""

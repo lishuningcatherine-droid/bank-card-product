@@ -447,6 +447,28 @@ def db_upgrade() -> None:
     typer.echo("migrated")
 
 
+@db_app.command("check-revision")
+def db_check_revision() -> None:
+    """Exit 1 when the database's migration revision is not the code's head (run `bankrec db upgrade` first).
+    Read-only; prints no address."""
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+    from sqlalchemy import text
+
+    cfg = Config(str(REPO_ROOT / "alembic.ini"))
+    cfg.set_main_option("script_location", str(REPO_ROOT / "migrations"))
+    head = ScriptDirectory.from_config(cfg).get_current_head()
+    with get_engine().connect() as c:
+        at = c.execute(text("SELECT version_num FROM alembic_version")).scalar()
+    if at != head:
+        typer.echo(
+            f"error: database at migration {at}, code expects {head}: run `bankrec db upgrade` first",
+            err=True,
+        )
+        raise typer.Exit(1)
+    typer.echo(f"database at migration {head} (current)")
+
+
 @db_app.command("check-target")
 def db_check_target() -> None:
     """Describe the database DATABASE_URL points to, without printing the URL or any credential: server version,

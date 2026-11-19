@@ -148,6 +148,8 @@ Prepared and rehearsed locally; nothing switched. In order — stop at the first
    **2026-11-19:** the redone test branch passed (run 44430968042: no new campaigns or versions). Its 3 parser
    regressions were page-layout changes (Capital One new design; Citi script timing and new wording), fixed in
    DESIGN §27.15. Next: one more test-branch run must read those pages without regressions.
+   **Offers that vary by visit** (Citi) are observations of a variant, not new versions (DESIGN §27.16, migration
+   0018). Test runs migrate the test branch; production must be migrated by hand before its first run of new code.
 2. Create a test branch (e.g. `migration-test`); copy its **direct** connection string (pooling off, no `-pooler`,
    `sslmode=require`).
 3. In your own terminal: `deploy/neon/backup-local.sh`; `read -rs TARGET_DATABASE_URL && export TARGET_DATABASE_URL`;

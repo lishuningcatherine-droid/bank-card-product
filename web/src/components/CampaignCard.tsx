@@ -4,7 +4,7 @@ import type { Campaign } from "@/lib/api/types";
 import { longDate, usd } from "@/lib/format";
 
 import { CampaignStatus, DemoBadge, SourceBadge } from "./CampaignStatus";
-import { ComponentsList, offerAmountText, spendText } from "./CampaignTerms";
+import { ComponentsList, offerAmountText, spendText, VariantsList, VariesBadge } from "./CampaignTerms";
 import { Countdown } from "./Countdown";
 import { SourceLink } from "./SourceLink";
 
@@ -18,6 +18,7 @@ export function CampaignCard({ c, pv }: { c: Campaign; pv?: string }) {
       <div className="flex flex-wrap items-center gap-2">
         <CampaignStatus c={c} />
         <span className="text-xs text-ink-500">{c.channel_label} · {c.card.segment === "business" ? "Business card" : "Personal card"}</span>
+        {c.varies ? <VariesBadge /> : null}
         {c.demo ? <DemoBadge /> : null}
       </div>
       <p className="mt-3 text-sm text-ink-500">{c.card.bank_name}</p>
@@ -27,6 +28,7 @@ export function CampaignCard({ c, pv }: { c: Campaign; pv?: string }) {
       <p className="mt-2 text-base font-medium text-ink-900">{c.offer_type_label}: {offerAmountText(t)}{t.tiers.length > 1 ? ` in ${t.tiers.length} tiers` : ""}</p>
       <ComponentsList t={t} />
       {spend ? <p className="text-sm text-ink-700">{spend}</p> : null}
+      <VariantsList c={c} />
       <dl className="mt-3 space-y-1 text-sm">
         <div className="flex justify-between gap-3">
           <dt className="text-ink-500">Application deadline</dt>

@@ -1742,3 +1742,27 @@ Observed: Citi showed different Double Cash requirements on two renders minutes 
 $1,500 / 6 months; the page says "Offers may vary"). If that persists, alternating readings would show as
 alternating versions; watch `bankrec offers versions` after scheduled runs.
 
+### 27.16 Offers that vary by visit (owner 2026-11-19)
+Some issuers show different terms on different visits (Citi Double Cash on 2026-11-19: $750 / 3 months and
+$1,500 / 6 months minutes apart; the page says "Offers may vary"). Alternating readings must not make alternating
+versions.
+
+- `campaign_checks.variant_version` (migration 0018) records which version's terms each observation matched.
+- In sync, terms that differ from the latest version but **equal an earlier version** (same material hash) whose
+  last observation is within **30 days** (`terms.VARIANT_WINDOW_DAYS`) are another observation of that variant:
+  a `seen` check with `variant_version` = that version ("terms of version N seen again (offer varies by visit)"),
+  no new version, the campaign stays verified. A→B→A→B makes 2 versions, not 4.
+- Only while the latest version is itself still being seen (within the window): if B has not been seen for 30 days
+  and A returns, the offer settled on A — a real change, a new version.
+- A campaign is shown as **"Offer varies by visit"** when at least two versions were observed within 30 days of
+  its latest observation; the API gives `varies` and `variants` (terms, last seen, number of observations), and the
+  card and detail page list them. Headline terms, value and history stay those of the latest version.
+- Test: `test_offer_that_varies_by_visit_does_not_flip_flop_versions` (A→B→A→B→A, a repeated sync, and the
+  settled-on-A case).
+- Not changed: the ingestion pipeline still treats a published offer whose terms differ as a major change for
+  review; the tracker only reads published offers.
+
+Schema changes and the scheduled workflow: the workflow migrates the **test** target (`bankrec db upgrade`) but never
+production; for production it runs `bankrec db check-revision` and stops if the database is behind the code.
+Production is migrated by hand (docs/NEON_MIGRATION.md) before the first run of new code.
+

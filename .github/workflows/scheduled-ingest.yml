@@ -56,6 +56,15 @@ jobs:
         with: { version: "0.11.32" }
       - run: uv sync --frozen --no-dev
       - run: uv run playwright install --with-deps chromium
+      # Schema: the test branch (a disposable copy) is migrated here; production is never migrated by a workflow —
+      # it must already be at the code's revision, or the run stops before writing anything (DESIGN §27.16).
+      - name: Database schema
+        run: |
+          if [ "$DB_TARGET" = "test" ]; then
+            uv run bankrec db upgrade
+          else
+            uv run bankrec db check-revision
+          fi
       # which database this run writes to, without printing its address: endpoint kind, revision, row counts
       - run: uv run bankrec db check-target
       - name: Offer tracker cards

@@ -55,6 +55,11 @@ Do them in order; stop at the first failure (rollback below).
 8. **Switch the schedule on — last:** `gh variable set BANKREC_SCHEDULER --body github`. The daily run (06:15 UTC)
    then writes to the `DATABASE_URL` database.
 
+**Schema changes.** Scheduled and production runs never migrate the database: they run `bankrec db check-revision`
+and stop if the database is behind the code. After code with a new migration reaches `main`, migrate production by
+hand in your own terminal (`read -rs DATABASE_URL && export DATABASE_URL; uv run bankrec db upgrade; unset
+DATABASE_URL`), taking a Neon branch of it first as the rollback point. Test runs migrate the test branch themselves.
+
 Never paste a connection string into an issue, PR, commit, chat or report. The repository is **public**: workflow
 logs and artifacts are visible to others (secrets are masked; the scripts print no address).
 

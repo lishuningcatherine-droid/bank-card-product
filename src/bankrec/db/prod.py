@@ -505,6 +505,8 @@ class CampaignCheck(ProdBase):
     source_id: Mapped[str | None] = mapped_column(Text)
     outcome: Mapped[str] = mapped_column(String(20))  # seen | changed | not_seen | failed | manual
     detail: Mapped[str | None] = mapped_column(Text)
+    # the version whose terms this observation matched (offers that vary by visit, DESIGN §27.16)
+    variant_version: Mapped[int | None] = mapped_column(Integer)
 
 
 class ApplicationRule(ProdBase):

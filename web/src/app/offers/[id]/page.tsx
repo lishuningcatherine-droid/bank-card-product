@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { CampaignStatus, DemoBadge, SourceBadge } from "@/components/CampaignStatus";
-import { ComponentsList, offerAmountText, spendText, TiersList } from "@/components/CampaignTerms";
+import { ComponentsList, offerAmountText, spendText, TiersList, VariantsList, VariesBadge } from "@/components/CampaignTerms";
 import { Countdown } from "@/components/Countdown";
 import { Disclaimer } from "@/components/Disclaimer";
 import { FitCheck } from "@/components/FitCheck";
@@ -81,8 +81,10 @@ export default async function CampaignPage({ params, searchParams }: Props) {
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <CampaignStatus c={c} />
           <SourceBadge c={c} />
+          {c.varies ? <VariesBadge /> : null}
           {c.demo ? <DemoBadge /> : null}
         </div>
+        <VariantsList c={c} />
         {c.status_reason ? <p className="mt-2 text-sm text-ink-700">Status: {c.status_reason}.</p> : null}
         <p className="mt-2 text-sm text-ink-700">
           Last verified {c.last_verified_at ? longDate(c.last_verified_at) : "—"} · last checked {c.last_checked_at ? longDate(c.last_checked_at) : "—"} · first seen by this site {longDate(c.first_seen_at)} (not the bank&apos;s start date)

@@ -471,3 +471,59 @@ def test_an_offer_the_page_did_not_let_us_read_is_a_failed_check_not_missing(ses
     assert [k.outcome for k in checks][-1] == "failed"
     assert "could not be read" in (checks[-1].detail or "")
     assert not any(k.outcome == "not_seen" for k in checks)
+
+
+def _show(session, o: P.Offer, amount: int, at: datetime):  # type: ignore[no-untyped-def]
+    """The page shows ``amount`` at ``at`` (read, published and synced)."""
+    o.amount_min = o.amount_max = amount
+    o.verbatim_text = f"Earn a ${amount // 100} bonus after you spend $500 on purchases in the first 3 months from account opening."
+    o.last_confirmed_at = o.verified_at = at
+    _run(session, at, "published")
+    return sync(session, at)
+
+
+def test_offer_that_varies_by_visit_does_not_flip_flop_versions(session) -> None:  # type: ignore[no-untyped-def]
+    """Citi Double Cash showed $750/3 months and $1,500/6 months on two renders minutes apart ("Offers may vary").
+    A → B → A → B within 30 days: two versions, later sightings are observations of a variant (DESIGN §27.16)."""
+    from bankrec.tracker import views as TV
+
+    p = _product(session)
+    o = _offer(session, p)  # A: $200
+    sync(session, T0)
+    r = _show(session, o, 30000, T0 + timedelta(days=1))  # B: $300, a new version
+    assert len(r.new_versions) == 1
+    r = _show(session, o, 20000, T0 + timedelta(days=2))  # A again
+    assert r.new_versions == [] and r.variants == {_campaigns(session)[0].campaign_key: [1]}
+    r = _show(session, o, 30000, T0 + timedelta(days=3))  # B again: the current version, plainly seen
+    assert r.new_versions == []
+    r = _show(session, o, 20000, T0 + timedelta(days=4))  # A again
+    assert r.new_versions == []
+    sync(session, T0 + timedelta(days=4))  # a repeated sync adds nothing
+    [c] = _campaigns(session)
+    assert [v.version for v in c.versions] == [1, 2] and c.current_version == 2
+    assert c.status == "active" and c.last_verified_at == T0 + timedelta(days=4)
+    checks = list(
+        session.scalars(
+            select(P.CampaignCheck).where(P.CampaignCheck.campaign_id == c.id).order_by(P.CampaignCheck.at)
+        )
+    )
+    assert [(k.outcome, k.variant_version) for k in checks] == [
+        ("seen", 1), ("changed", 2), ("seen", 1), ("seen", 2), ("seen", 1),
+    ]  # fmt: skip
+    assert "offer varies by visit" in (checks[2].detail or "")
+
+    view = TV.Builder(session, allow_demo=True).view(c, T0 + timedelta(days=4))
+    assert view.varies
+    assert [(x.version, x.terms.total_amount, x.observations) for x in view.variants] == [
+        (1, 20000, 3),
+        (2, 30000, 2),
+    ]
+    assert view.variants[0].last_seen_at == T0 + timedelta(days=4)
+
+    # B not seen for more than 30 days, then A: the offer settled on A — a real change, a new version
+    r = _show(session, o, 20000, T0 + timedelta(days=40))
+    assert len(r.new_versions) == 1  # B last seen on day 3: not alternating any more
+    [c] = _campaigns(session)
+    assert [v.version for v in c.versions] == [1, 2, 3] and c.current_version == 3
+    view = TV.Builder(session, allow_demo=True).view(c, T0 + timedelta(days=40))
+    assert not view.varies  # only A seen in the last 30 days

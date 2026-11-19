@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from typing import Any, Literal
 
 from pydantic import BaseModel, Field
@@ -10,7 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from bankrec.db import prod as P
-from bankrec.tracker import config, deadline, history, status, valuation
+from bankrec.tracker import config, deadline, history, status, terms, valuation
 
 CHANNEL_LABEL = {
     "public": "Public application",
@@ -160,6 +160,7 @@ class CheckEntry(BaseModel):
     at: datetime
     outcome: str
     detail: str | None
+    variant_version: int | None = None
 
 
 class RuleView(BaseModel):
@@ -178,6 +179,15 @@ class RuleView(BaseModel):
     excerpt: str
     notes: list[str]
     verified_at: date
+
+
+class VariantView(BaseModel):
+    """One set of terms the issuer showed for this offer (offers that vary by visit, DESIGN §27.16)."""
+
+    version: int
+    terms: Terms
+    last_seen_at: datetime
+    observations: int = Field(description="how many checks saw these terms within the variant window")
 
 
 class CampaignView(BaseModel):
@@ -207,6 +217,13 @@ class CampaignView(BaseModel):
     value: Value
     history: HistoryLabel
     demo: bool
+    varies: bool = Field(
+        default=False,
+        description="the issuer showed different terms on different visits within the variant window (30 days)",
+    )
+    variants: list[VariantView] = Field(
+        default_factory=list, description="the terms observed in that window, most recently seen first"
+    )
 
 
 class CampaignDetail(CampaignView):
@@ -371,6 +388,38 @@ class Builder:
                 prev, prev_key = rec, key
         return out
 
+    def variants(self, c: P.Campaign) -> list[VariantView]:
+        """The versions observed within the variant window before the latest observation, if more than one."""
+        rows = self.s.execute(
+            select(P.CampaignCheck.variant_version, P.CampaignCheck.at).where(
+                P.CampaignCheck.campaign_id == c.id, P.CampaignCheck.variant_version.is_not(None)
+            )
+        ).all()
+        if not rows:
+            return []
+        since = max(at for _, at in rows) - timedelta(days=terms.VARIANT_WINDOW_DAYS)
+        seen: dict[int, list[datetime]] = {}
+        for ver, at in rows:
+            if ver is not None and at >= since:
+                seen.setdefault(ver, []).append(at)
+        if len(seen) < 2:
+            return []
+        by_version = {v.version: v for v in c.versions}
+        return sorted(
+            (
+                VariantView(
+                    version=ver,
+                    terms=terms_view(by_version[ver].terms),
+                    last_seen_at=max(ats),
+                    observations=len(ats),
+                )
+                for ver, ats in seen.items()
+                if ver in by_version
+            ),
+            key=lambda x: x.last_seen_at,
+            reverse=True,
+        )
+
     def view(self, c: P.Campaign, now: datetime) -> CampaignView:
         latest = max(c.versions, key=lambda v: v.version)
         t = latest.terms
@@ -431,6 +480,8 @@ class Builder:
             ),
             history=HistoryLabel(**h),
             demo=c.demo,
+            varies=len(variants := self.variants(c)) > 1,
+            variants=variants,
         )
 
     def detail(self, c: P.Campaign, now: datetime) -> CampaignDetail:
@@ -471,7 +522,10 @@ class Builder:
                 )
                 for x in log
             ],
-            checks=[CheckEntry(at=x.at, outcome=x.outcome, detail=x.detail) for x in checks],
+            checks=[
+                CheckEntry(at=x.at, outcome=x.outcome, detail=x.detail, variant_version=x.variant_version)
+                for x in checks
+            ],
             rules=rules_for(self.s, self._cards[c.card_key]),
         )
 

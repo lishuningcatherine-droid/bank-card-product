@@ -106,3 +106,27 @@ describe("variable offers and restricted offer_components", () => {
     expect(screen.getByText(/Not cash and not converted to points/)).toBeInTheDocument();
   });
 });
+
+describe("offers that vary by visit", () => {
+  it("labels the card and lists every variant seen recently", () => {
+    const base = campaign();
+    const a = { ...base.terms, total_amount: 20000, min_spend_cents: 75000, window_count: 3 };
+    const b = { ...base.terms, total_amount: 20000, min_spend_cents: 150000, window_count: 6 };
+    render(<CampaignCard c={campaign({
+      varies: true,
+      variants: [
+        { version: 1, terms: a, last_seen_at: "2026-11-19T01:30:00Z", observations: 2 },
+        { version: 2, terms: b, last_seen_at: "2026-11-18T01:30:00Z", observations: 1 },
+      ],
+    })} />);
+    expect(screen.getAllByText("Offer varies by visit").length).toBeGreaterThan(0);
+    expect(screen.getByText(/Spend \$750 within 3 months/)).toBeInTheDocument();
+    expect(screen.getByText(/Spend \$1,500 within 6 months/)).toBeInTheDocument();
+    expect(screen.getByText(/seen 2 times/)).toBeInTheDocument();
+  });
+
+  it("shows nothing extra for an offer seen with one set of terms", () => {
+    render(<CampaignCard c={campaign()} />);
+    expect(screen.queryByText("Offer varies by visit")).toBeNull();
+  });
+});

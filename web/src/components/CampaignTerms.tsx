@@ -1,5 +1,5 @@
-import type { CampaignTerms } from "@/lib/api/types";
-import { usd } from "@/lib/format";
+import type { Campaign, CampaignTerms } from "@/lib/api/types";
+import { longDate, usd } from "@/lib/format";
 
 const UNIT: Record<string, string> = { cash: "cash back", statement_credit: "statement credit", points: "points", miles: "miles", free_night: "free night award", other: "" };
 const START: Record<string, string> = {
@@ -67,5 +67,32 @@ export function TiersList({ t }: { t: CampaignTerms }) {
         </li>
       ))}
     </ol>
+  );
+}
+
+/** The bank's page showed different terms on different visits (DESIGN §27.16): every set of terms seen recently. */
+export function VariesBadge() {
+  return <span className="inline-flex items-center rounded-sm bg-warning-bg px-2 py-0.5 text-xs font-medium text-warning">Offer varies by visit</span>;
+}
+
+export function VariantsList({ c }: { c: Pick<Campaign, "varies" | "variants"> }) {
+  const variants = c.variants ?? [];
+  if (!c.varies || variants.length < 2) return null;
+  return (
+    <div className="mt-2 rounded-md border border-border p-3 text-sm">
+      <p className="font-medium text-ink-900">Offer varies by visit</p>
+      <p className="text-xs text-ink-700">The bank&apos;s page showed different terms on different visits in the last 30 days. You may see any of these:</p>
+      <ul className="mt-1 list-disc space-y-0.5 pl-5 text-ink-700">
+        {variants.map((v) => {
+          const spend = spendText(v.terms);
+          return (
+            <li key={v.version}>
+              {offerAmountText(v.terms)}{spend ? ` — ${spend}` : ""}
+              <span className="text-xs text-ink-500"> · seen {v.observations} {v.observations === 1 ? "time" : "times"}, last {longDate(v.last_seen_at)}</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }

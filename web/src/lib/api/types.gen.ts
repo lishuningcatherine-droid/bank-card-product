@@ -599,6 +599,17 @@ export interface components {
             status_reason: string | null;
             terms: components["schemas"]["Terms"];
             value: components["schemas"]["Value"];
+            /**
+             * Variants
+             * @description the terms observed in that window, most recently seen first
+             */
+            variants?: components["schemas"]["VariantView"][];
+            /**
+             * Varies
+             * @description the issuer showed different terms on different visits within the variant window (30 days)
+             * @default false
+             */
+            varies: boolean;
             /** Version */
             version: number;
             /** Versions */
@@ -663,6 +674,17 @@ export interface components {
             status_reason: string | null;
             terms: components["schemas"]["Terms"];
             value: components["schemas"]["Value"];
+            /**
+             * Variants
+             * @description the terms observed in that window, most recently seen first
+             */
+            variants?: components["schemas"]["VariantView"][];
+            /**
+             * Varies
+             * @description the issuer showed different terms on different visits within the variant window (30 days)
+             * @default false
+             */
+            varies: boolean;
             /** Version */
             version: number;
         };
@@ -807,6 +829,8 @@ export interface components {
             detail: string | null;
             /** Outcome */
             outcome: string;
+            /** Variant Version */
+            variant_version?: number | null;
         };
         /** CheckingRequest */
         CheckingRequest: {
@@ -1989,6 +2013,25 @@ export interface components {
             year2_cents?: number | null;
             /** Year3 Cents */
             year3_cents?: number | null;
+        };
+        /**
+         * VariantView
+         * @description One set of terms the issuer showed for this offer (offers that vary by visit, DESIGN §27.16).
+         */
+        VariantView: {
+            /**
+             * Last Seen At
+             * Format: date-time
+             */
+            last_seen_at: string;
+            /**
+             * Observations
+             * @description how many checks saw these terms within the variant window
+             */
+            observations: number;
+            terms: components["schemas"]["Terms"];
+            /** Version */
+            version: number;
         };
         /** VersionView */
         VersionView: {

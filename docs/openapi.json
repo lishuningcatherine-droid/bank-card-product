@@ -476,6 +476,20 @@
      "value": {
       "$ref": "#/components/schemas/Value"
      },
+     "variants": {
+      "description": "the terms observed in that window, most recently seen first",
+      "items": {
+       "$ref": "#/components/schemas/VariantView"
+      },
+      "title": "Variants",
+      "type": "array"
+     },
+     "varies": {
+      "default": false,
+      "description": "the issuer showed different terms on different visits within the variant window (30 days)",
+      "title": "Varies",
+      "type": "boolean"
+     },
      "version": {
       "title": "Version",
       "type": "integer"
@@ -679,6 +693,20 @@
      },
      "value": {
       "$ref": "#/components/schemas/Value"
+     },
+     "variants": {
+      "description": "the terms observed in that window, most recently seen first",
+      "items": {
+       "$ref": "#/components/schemas/VariantView"
+      },
+      "title": "Variants",
+      "type": "array"
+     },
+     "varies": {
+      "default": false,
+      "description": "the issuer showed different terms on different visits within the variant window (30 days)",
+      "title": "Varies",
+      "type": "boolean"
      },
      "version": {
       "title": "Version",
@@ -1065,6 +1093,17 @@
      "outcome": {
       "title": "Outcome",
       "type": "string"
+     },
+     "variant_version": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Variant Version"
      }
     },
     "required": [
@@ -4613,6 +4652,36 @@
      "first_year_cents"
     ],
     "title": "Values",
+    "type": "object"
+   },
+   "VariantView": {
+    "description": "One set of terms the issuer showed for this offer (offers that vary by visit, DESIGN \u00a727.16).",
+    "properties": {
+     "last_seen_at": {
+      "format": "date-time",
+      "title": "Last Seen At",
+      "type": "string"
+     },
+     "observations": {
+      "description": "how many checks saw these terms within the variant window",
+      "title": "Observations",
+      "type": "integer"
+     },
+     "terms": {
+      "$ref": "#/components/schemas/Terms"
+     },
+     "version": {
+      "title": "Version",
+      "type": "integer"
+     }
+    },
+    "required": [
+     "version",
+     "terms",
+     "last_seen_at",
+     "observations"
+    ],
+    "title": "VariantView",
     "type": "object"
    },
    "VersionView": {

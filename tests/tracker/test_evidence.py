@@ -107,3 +107,20 @@ def test_versions_listing_is_read_only_and_prints_no_address(db_url: str, engine
     assert res.exit_code == 0, res.output
     assert "no versions since 2026-11-12T00:00:00+00:00" in res.output
     assert db_url not in res.output and "postgresql" not in res.output
+
+
+def test_check_revision_passes_at_head_and_prints_no_address(db_url: str, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    from bankrec.cli.main import app
+    from bankrec.db.session import engine_for
+    from bankrec.settings import get_settings
+
+    monkeypatch.setenv("DATABASE_URL", db_url)
+    get_settings.cache_clear()
+    engine_for.cache_clear()
+    try:
+        res = CliRunner().invoke(app, ["db", "check-revision"])
+    finally:
+        get_settings.cache_clear()
+        engine_for.cache_clear()
+    assert res.exit_code == 0, res.output
+    assert "(current)" in res.output and "postgresql" not in res.output
